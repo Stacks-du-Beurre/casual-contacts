@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Text with the two-fill treatment from Figma: a 20%-opacity black base fill
-/// (NORMAL blend) stacked beneath a 100%-opacity black OVERLAY fill. The net
-/// result is a softer-than-pure-black letterform that subtly reveals the
-/// backdrop through it — used for the empty-state title and any static
-/// "name" label that sits on top of a `HologramPill`.
+/// Text with the two-fill treatment from Figma: a 100%-opacity black OVERLAY
+/// base fill stacked beneath a 20%-opacity black NORMAL fill. Order matches
+/// Figma's `fills` array (index 0 = bottom), so the OVERLAY blends with the
+/// pill contents below the text, and the 20% black paints flat over the
+/// result — used for the empty-state title and any static "name" label that
+/// sits on top of a `HologramPill`.
 ///
 /// This is NOT the animated title-name hologram from the design-spec PDF
 /// section 5 (lighten + luminosity + gyroscope-driven transfusion); that
@@ -24,12 +25,12 @@ public struct HologramText: View {
         ZStack {
             Text(text)
                 .font(font)
-                .foregroundStyle(Color.black.opacity(0.2))
+                .foregroundStyle(.black)
+                .blendMode(.overlay)
 
             Text(text)
                 .font(font)
-                .foregroundStyle(.black)
-                .blendMode(.overlay)
+                .foregroundStyle(Color.black.opacity(0.2))
         }
     }
 }
