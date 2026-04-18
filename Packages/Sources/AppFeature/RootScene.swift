@@ -62,10 +62,10 @@ public struct RootScene: Scene {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
             for await raw in environment.motionService.attitude {
-                currentAttitude = ReducedMotionAdapter.attitude(
-                    raw: raw,
-                    reduceMotionEnabled: reduceMotionEnabled
-                )
+                // Re-read @State each tick so mid-session toggles from the
+                // UIAccessibility notification propagate on the next gyro sample.
+                let enabled = reduceMotionEnabled
+                currentAttitude = ReducedMotionAdapter.attitude(raw: raw, reduceMotionEnabled: enabled)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
