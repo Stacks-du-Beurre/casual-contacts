@@ -31,8 +31,7 @@ struct SettingsRow<Trailing: View>: View {
     var body: some View {
         let content = HStack(spacing: 12) {
             Text(label)
-                .font(CCDesign.Typography.description)
-                .fontWeight(.semibold)
+                .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(SettingsPalette.label(scheme))
                 .frame(maxWidth: .infinity, alignment: .leading)
