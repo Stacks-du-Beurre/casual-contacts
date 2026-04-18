@@ -10,57 +10,24 @@ let package = Package(
         .library(name: "StorageTestSupport", targets: ["StorageTestSupport"]),
         .library(name: "Services", targets: ["Services"]),
         .library(name: "ServicesTestSupport", targets: ["ServicesTestSupport"]),
+        .library(name: "DesignSystem", targets: ["DesignSystem"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0")
     ],
     targets: [
-        .target(
-            name: "CoreModels",
-            path: "Sources/CoreModels"
-        ),
-        .testTarget(
-            name: "CoreModelsTests",
-            dependencies: ["CoreModels"],
-            path: "Tests/CoreModelsTests"
-        ),
-        .target(
-            name: "Storage",
-            dependencies: ["CoreModels"],
-            path: "Sources/Storage"
-        ),
-        .testTarget(
-            name: "StorageTests",
-            dependencies: ["Storage", "CoreModels"],
-            path: "Tests/StorageTests"
-        ),
-        .target(
-            name: "StorageTestSupport",
-            dependencies: ["CoreModels"],
-            path: "Sources/StorageTestSupport"
-        ),
-        .testTarget(
-            name: "StorageTestSupportTests",
-            dependencies: ["StorageTestSupport", "CoreModels"],
-            path: "Tests/StorageTestSupportTests"
-        ),
-        .target(
-            name: "Services",
-            dependencies: ["CoreModels"],
-            path: "Sources/Services"
-        ),
-        .testTarget(
-            name: "ServicesTests",
-            dependencies: ["Services", "CoreModels"],
-            path: "Tests/ServicesTests"
-        ),
-        .target(
-            name: "ServicesTestSupport",
-            dependencies: ["CoreModels"],
-            path: "Sources/ServicesTestSupport"
-        ),
-        .testTarget(
-            name: "ServicesTestSupportTests",
-            dependencies: ["ServicesTestSupport", "CoreModels"],
-            path: "Tests/ServicesTestSupportTests"
-        ),
+        .target(name: "CoreModels", path: "Sources/CoreModels"),
+        .testTarget(name: "CoreModelsTests", dependencies: ["CoreModels"], path: "Tests/CoreModelsTests"),
+        .target(name: "Storage", dependencies: ["CoreModels"], path: "Sources/Storage"),
+        .testTarget(name: "StorageTests", dependencies: ["Storage", "CoreModels"], path: "Tests/StorageTests"),
+        .target(name: "StorageTestSupport", dependencies: ["CoreModels"], path: "Sources/StorageTestSupport"),
+        .testTarget(name: "StorageTestSupportTests", dependencies: ["StorageTestSupport", "CoreModels"], path: "Tests/StorageTestSupportTests"),
+        .target(name: "Services", dependencies: ["CoreModels"], path: "Sources/Services"),
+        .testTarget(name: "ServicesTests", dependencies: ["Services", "CoreModels"], path: "Tests/ServicesTests"),
+        .target(name: "ServicesTestSupport", dependencies: ["CoreModels"], path: "Sources/ServicesTestSupport"),
+        .testTarget(name: "ServicesTestSupportTests", dependencies: ["ServicesTestSupport", "CoreModels"], path: "Tests/ServicesTestSupportTests"),
+        .target(name: "DesignSystem", path: "Sources/DesignSystem"),
+        .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem"], path: "Tests/DesignSystemTests")
     ],
     swiftLanguageModes: [.v6]
 )
