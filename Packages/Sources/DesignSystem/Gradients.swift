@@ -8,16 +8,16 @@ public extension CCDesign {
         // PNGs in `Resources/Gradients.xcassets/`, matching `docs/CC Design Specifications.pdf §2`.
         // See `GradientBackdrop` for the rendering primitive.
 
-        public static var dawn:     GradientBackdrop { .init(assetName: "Dawn") }
-        public static var sunrise:  GradientBackdrop { .init(assetName: "Sunrise") }
-        public static var midday:   GradientBackdrop { .init(assetName: "Midday") }
-        public static var sunset:   GradientBackdrop { .init(assetName: "Sunset") }
-        public static var dusk:     GradientBackdrop { .init(assetName: "Dusk") }
-        public static var night:    GradientBackdrop { .init(assetName: "Night") }
+        public static var dawn: GradientBackdrop { .init(assetName: "Dawn") }
+        public static var sunrise: GradientBackdrop { .init(assetName: "Sunrise") }
+        public static var midday: GradientBackdrop { .init(assetName: "Midday") }
+        public static var sunset: GradientBackdrop { .init(assetName: "Sunset") }
+        public static var dusk: GradientBackdrop { .init(assetName: "Dusk") }
+        public static var night: GradientBackdrop { .init(assetName: "Night") }
         public static var midnight: GradientBackdrop { .init(assetName: "Midnight") }
 
         public static var all: [GradientBackdrop] {
-            [dawn, sunrise, midday, sunset, dusk, night, midnight]
+            TimeOfDay.allCases.map { view(for: $0) }
         }
 
         /// Maps a `TimeOfDay` to the canonical bitmap gradient for that period.

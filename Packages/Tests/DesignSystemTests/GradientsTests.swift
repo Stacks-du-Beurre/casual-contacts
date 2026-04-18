@@ -1,5 +1,4 @@
 import Testing
-import SwiftUI
 @testable import DesignSystem
 #if canImport(UIKit)
 import UIKit
@@ -12,7 +11,7 @@ import UIKit
     #if canImport(UIKit)
     @Test func allSevenBitmapsResolveFromBundle() {
         for name in Self.names {
-            let image = UIImage(named: name, in: .designSystemBundle, compatibleWith: nil)
+            let image = UIImage(named: name, in: CCDesign.bundle, compatibleWith: nil)
             #expect(image != nil, "\(name) must be resolvable from DesignSystem bundle")
         }
     }
