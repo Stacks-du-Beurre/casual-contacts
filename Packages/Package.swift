@@ -39,7 +39,8 @@ let package = Package(
                 "CoreModels",
                 "DesignSystem"
             ],
-            path: "Sources/Visuals"
+            path: "Sources/Visuals",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "VisualsTests",

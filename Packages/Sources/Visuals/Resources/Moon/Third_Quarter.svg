@@ -1,0 +1,19 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="10" cy="10" r="10" transform="rotate(-180 10 10)" fill="white" fill-opacity="0.2"/>
+<mask id="mask0" mask-type="alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<path d="M-8.74228e-07 10C-3.91405e-07 4.47715 4.47715 -3.10551e-06 10 -2.62268e-06C15.5228 -2.13986e-06 20 4.47715 20 10C20 15.5228 15.5228 20 10 20C4.47715 20 -1.35705e-06 15.5228 -8.74228e-07 10Z" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask0)">
+<line x1="10.25" y1="-8" x2="10.25" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="9.25" y1="-8" x2="9.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="8.25" y1="-8" x2="8.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="7.25" y1="-8" x2="7.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="6.25" y1="-8" x2="6.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="5.25" y1="-8" x2="5.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="4.25" y1="-8" x2="4.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="3.25" y1="-8" x2="3.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="2.25" y1="-8" x2="2.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="1.25" y1="-8" x2="1.24999" y2="27" stroke="white" stroke-width="0.5"/>
+<line x1="0.25" y1="-8" x2="0.249992" y2="27" stroke="white" stroke-width="0.5"/>
+</g>
+</svg>
