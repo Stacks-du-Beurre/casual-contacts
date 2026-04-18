@@ -1,10 +1,18 @@
 import SwiftUI
+import AppFeature
 
 @main
 struct CasualContactsApp: App {
-    var body: some Scene {
-        WindowGroup {
-            Text("Hello, Casual Contacts")
+    @MainActor
+    static let environment: AppEnvironment = {
+        do {
+            return try AppEnvironment.production()
+        } catch {
+            fatalError("Failed to initialize AppEnvironment: \(error)")
         }
+    }()
+
+    var body: some Scene {
+        RootScene(environment: Self.environment)
     }
 }
