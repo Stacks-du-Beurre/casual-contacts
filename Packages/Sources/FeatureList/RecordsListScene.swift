@@ -42,55 +42,61 @@ public struct RecordsListScene: View {
     @MainActor
     private var isEmpty: Bool { store.records.isEmpty }
 
-    /// Title color per Figma: white on the sunset empty state, D4 on the populated light
-    /// collection view, L2 on the populated dark collection view.
-    @MainActor
-    private var titleColor: Color {
-        if isEmpty { return .white }
-        return colorScheme == .dark ? CCDesign.Colors.L2 : CCDesign.Colors.D4
+    /// Chrome inverts per mode — L2 on dark, D4 on light.
+    /// Used for nav title, FAB fill, and right-item circle fill.
+    private var chromePrimary: Color {
+        colorScheme == .dark ? CCDesign.Colors.L2 : CCDesign.Colors.D4
+    }
+
+    /// Accent sits inside chrome primary — D4 on dark, L2 on light.
+    /// Used for FAB `+` glyph and right-item ellipsis dots.
+    private var chromeAccent: Color {
+        colorScheme == .dark ? CCDesign.Colors.D4 : CCDesign.Colors.L2
+    }
+
+    /// Populated-list background. Empty state draws its own sunset gradient
+    /// which covers this in the empty case.
+    private var populatedBackground: Color {
+        colorScheme == .dark ? CCDesign.Colors.D4 : CCDesign.Colors.L2
     }
 
     public var body: some View {
         NavigationStack {
             listContent
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
+                .background(populatedBackground.ignoresSafeArea())
                 .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
-                .toolbar {
-                    #if os(iOS)
-                    ToolbarItem(placement: .principal) {
-                        navTitle
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: onTapSettings) {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                        .accessibilityLabel("Settings")
-                    }
-                    #else
-                    ToolbarItem(placement: .principal) {
-                        navTitle
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button(action: onTapSettings) {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                        .accessibilityLabel("Settings")
-                    }
-                    #endif
-                }
                 #if os(iOS)
-                .modifier(NavBarBackground(isEmpty: isEmpty, colorScheme: colorScheme))
+                .toolbar(.hidden, for: .navigationBar)
                 #endif
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    customNavBar
+                }
         }
     }
 
-    private var navTitle: some View {
-        Text("MY CONTACTS")
-            .font(CCDesign.Typography.headline)
-            .tracking(CCDesign.Typography.Tracking.headline)
-            .foregroundStyle(titleColor)
+    private var customNavBar: some View {
+        // Empty state sits on the sunset gradient in both modes, so the
+        // title stays L2; only the populated-list title inverts.
+        let titleColor: Color = isEmpty ? CCDesign.Colors.L2 : chromePrimary
+        return ZStack {
+            Text("MY CONTACTS")
+                .font(CCDesign.Typography.headline)
+                .tracking(CCDesign.Typography.Tracking.headline)
+                .foregroundStyle(titleColor)
+
+            HStack {
+                Spacer()
+                ViewControllerButton(
+                    action: onTapSettings,
+                    fill: chromePrimary,
+                    glyph: chromeAccent
+                )
+                .accessibilityLabel("Settings")
+                .padding(.trailing, 10)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 44)
     }
 
     @ViewBuilder
@@ -110,14 +116,13 @@ public struct RecordsListScene: View {
                 }
             }
 
-            Button(action: onTapCreate) {
-                Image(systemName: "plus")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(Circle().fill(CCDesign.Colors.D4))
-            }
-            .padding(16)
+            AddButton(
+                action: onTapCreate,
+                fill: chromePrimary,
+                glyph: chromeAccent
+            )
+            .padding(.trailing, 24)
+            .padding(.bottom, 16)
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
         }
@@ -136,21 +141,3 @@ private struct ConditionalSearchable: ViewModifier {
         }
     }
 }
-
-#if os(iOS)
-private struct NavBarBackground: ViewModifier {
-    let isEmpty: Bool
-    let colorScheme: ColorScheme
-
-    func body(content: Content) -> some View {
-        if isEmpty || colorScheme == .dark {
-            content
-                .toolbarBackground(.hidden, for: .navigationBar)
-        } else {
-            content
-                .toolbarBackground(CCDesign.Colors.L2.opacity(0.8), for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
-        }
-    }
-}
-#endif

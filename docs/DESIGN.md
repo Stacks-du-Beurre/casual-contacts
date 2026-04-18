@@ -11,6 +11,89 @@ Reference data for UI work. The **10 design fidelity directives** (Figma canonic
 
 Every screen has both `L_` (Light) and `D_` (Dark) frames. The app ships dark-first (background `#141415`, Dark/D4 token), so **Dark is primary**; Light is listed in parens. Use the Dark node unless explicitly building a light variant.
 
+**Chrome inverts per mode** — title text, nav-bar right-item fill, and FAB fill always use the mode's *primary* color (L2 on dark, D4 on light); the inner glyph detail (ellipsis dots, `+`) uses the inverse *accent* (D4 on dark, L2 on light). The populated-list background tracks the mode (D4 on dark, L2 on light). The empty state's sunset gradient does **not** change across modes — only its chrome flips.
+
+## Reference viewport & device scaling
+
+Every Figma frame in this file is authored at **375 × 812 pt** — the iPhone X / XS / 11 Pro / 12 mini / 13 mini viewport (first shipped with iPhone X, 2017). The designer's spec PDF is dated Jan 2021, so the canonical target was **iPhone 11 Pro**. Modern iPhones are larger.
+
+| Device | Logical size (pt) | Width Δ | Height Δ | Top safe area |
+|---|---|---|---|---|
+| iPhone 11 Pro (canonical) | 375 × 812 | 1.000× | 1.000× | 44 (notch) |
+| iPhone 15 / 16 / 17 | 402 × 874 | 1.072× | 1.076× | 59 (Dynamic Island) |
+| iPhone 15 / 16 / 17 Pro Max | 440 × 956 | 1.173× | 1.177× | 59 (Dynamic Island) |
+| iPhone SE (3rd gen) | 375 × 667 | 1.000× | 0.821× | 20 (no notch) |
+
+Bottom home-indicator area is 34 pt across all notched devices; 0 on iPhone SE.
+
+### What stays fixed vs what scales
+
+**Fixed (same pt across every device):**
+- **Touch targets** — FAB 56 pt; nav right-item circle 24 pt; nav bar 44 pt; hit-areas ≥ 44 pt per Apple HIG. These are gesture targets, not layout.
+- **Edge gutters** — 16 pt horizontal padding (iOS convention; do not scale with width).
+- **Font pt sizes** — Cormorant SC headline 16, title 33, IBM Plex Mono 13; always authored in pt via `CCDesign.Typography` tokens. Dynamic Type scales these through the system, not through device size.
+- **Icon detail weights** — ellipsis dot size, `+` stroke width, guilloche stroke. A 2 pt line at 11 Pro reads identically at 17 Pro Max.
+
+**Flexes with the device:**
+- **Card / row widths** — use `.frame(maxWidth: .infinity).padding(.horizontal, 16)`. On 11 Pro → 343 pt; on 17 → 370 pt; on 17 Pro Max → 408 pt.
+- **Background / gradient layers** — `.ignoresSafeArea()` + `.frame(maxWidth: .infinity, maxHeight: .infinity)` so they fill any screen.
+- **Decorative art (guilloche, zodiac, moon)** — render at intrinsic Figma size (e.g. 380 × 380) and center; let empty space grow around it on wider devices. Don't stretch. Don't shrink to fit either — the designer's stroke weights are tuned for the absolute size.
+- **Vertical element positions** — use `Spacer()`, `.frame(maxHeight: .infinity, alignment: .top/.bottom)`, or `.safeAreaInset(...)`. Never position by absolute y-offset from Figma.
+
+### Right / wrong patterns
+
+**Wrong — hardcoded position from Figma's 11 Pro coords:**
+```swift
+AddButton(...).position(x: 323, y: 734)   // Figma coords
+```
+Lands in the middle of the screen on iPhone 17.
+
+**Right — relative anchoring:**
+```swift
+ZStack(alignment: .bottomTrailing) {
+    content
+    AddButton(...).padding(16)
+}
+```
+
+**Wrong — hardcoded card width from Figma:**
+```swift
+SmallCard(...).frame(width: 343)   // leaves a gap on anything wider than 11 Pro
+```
+
+**Right — flex width + fixed gutter:**
+```swift
+SmallCard(...).frame(maxWidth: .infinity).padding(.horizontal, 16)
+```
+
+**Wrong — absolute y for the nav bar:**
+```swift
+CustomNavBar().offset(y: 44)   // assumes 11 Pro notch
+```
+
+**Right — use the safe area:**
+```swift
+content.safeAreaInset(edge: .top, spacing: 0) { CustomNavBar() }
+```
+Pushes below whatever the device's actual top safe area is (44 on 11 Pro, 59 on 17).
+
+### Reading Figma screenshots for verification
+
+When comparing simulator output to a Figma screenshot:
+1. The Figma screenshot is 375 pt wide; your simulator is probably 402 or 440 pt. Elements will occupy a smaller *percentage* of the screen — that's correct.
+2. Bug signals: element-to-element *ratios* change (e.g. FAB no longer 16 pt from the bottom-right; title not centered; card rows bleeding into the safe area).
+3. Not-a-bug signals: more whitespace around decorative art, wider gutters, slightly taller ScrollView.
+
+### Testing matrix
+
+Verify each new screen on at least:
+- **iPhone SE (3rd gen)** — narrow + short, no notch; catches SafeArea assumptions.
+- **iPhone 11 Pro / 12 mini** — canonical reference; implementation should match Figma 1:1 here.
+- **iPhone 17** — current default; catches hardcoded-width assumptions.
+- **iPhone 17 Pro Max** — widest; catches decorative art that looks lost in whitespace.
+
+Xcode previews with `.previewDevice("iPhone SE (3rd generation)")` etc. cover this cheaply during iteration.
+
 ## Screens
 
 | Screen | Figma layer | Node ID |
