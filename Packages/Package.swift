@@ -3,10 +3,20 @@ import PackageDescription
 
 let package = Package(
     name: "CasualContactsPackages",
-    platforms: [
-        .iOS(.v18),
-        .macOS(.v14)
+    platforms: [.iOS(.v18), .macOS(.v14)],
+    products: [
+        .library(name: "CoreModels", targets: ["CoreModels"])
     ],
-    products: [],
-    targets: []
+    targets: [
+        .target(
+            name: "CoreModels",
+            path: "Sources/CoreModels"
+        ),
+        .testTarget(
+            name: "CoreModelsTests",
+            dependencies: ["CoreModels"],
+            path: "Tests/CoreModelsTests"
+        )
+    ],
+    swiftLanguageModes: [.v6]
 )
