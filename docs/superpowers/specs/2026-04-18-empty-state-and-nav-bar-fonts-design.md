@@ -30,13 +30,17 @@ File key: `aYjd42Fr66HRCV0vQcJAtS`.
 
 ### Navigation bar
 
-On both the empty and populated states the nav bar is the same shared `Nav_Bar` component:
+The shared `Nav_Bar` component has **three styling variants** in Figma, driven by the state of the collection view:
 
-- Title: **"MY CONTACTS"** — Cormorant SC Bold 16 pt, tracking 2.4, uppercase, white.
-- The bar has a 10 px backdrop blur.
-- Status bar sits above; the bar has no visible bottom rule.
+| State | Nav bar bg | Title color | Source node |
+|---|---|---|---|
+| Empty (both modes) | transparent, 10 px blur | `#FFFFFF` (white) | `421:13621` |
+| Populated — Light | `CCDesign.Colors.L2` (#E9EAF1) at 80% opacity, 10 px blur | `CCDesign.Colors.D4` (#141415) | `45:4392` |
+| Populated — Dark | transparent, 10 px blur | `CCDesign.Colors.L2` (#E9EAF1) | `277:12853` |
 
-User direction: the title is **always white**. If that causes contrast issues on a future screen, we change that screen — we do not compromise the component styling.
+Title typography is identical across all three: **"MY CONTACTS"** — Cormorant SC Bold 16 pt, tracking 2.4, uppercase. Only bar background and text color change.
+
+The sorting toggle (left-side up/down-arrow glyph) visible in Figma's populated states is tied to the deferred default/advanced sorting screens; it is **out of scope** for this task and omitted per the v1.1+ deferrals in CLAUDE.md. Only the title and the existing ellipsis/settings trailing item stay.
 
 ## Changes
 
@@ -82,7 +86,12 @@ GeometryReader { geo in
 ### `RecordsListScene` (Packages/Sources/FeatureList/RecordsListScene.swift)
 
 - Remove `.navigationTitle("My Contacts")`.
-- Add `.toolbar { ToolbarItem(placement: .principal) { Text("MY CONTACTS").font(CCDesign.Typography.headline).tracking(CCDesign.Typography.Tracking.headline).foregroundStyle(.white) } }`.
+- Add `.toolbar { ToolbarItem(placement: .principal) { Text("MY CONTACTS").font(CCDesign.Typography.headline).tracking(CCDesign.Typography.Tracking.headline).foregroundStyle(isEmpty ? .white : CCDesign.Colors.D4) } }` where `isEmpty = store.records.isEmpty`.
+- Branch title color + bar surface on `(isEmpty, colorScheme)`:
+  - `isEmpty == true` → title `.white`, `.toolbarBackground(.hidden, for: .navigationBar)` so the sunset shows through.
+  - `isEmpty == false && colorScheme == .light` → title `CCDesign.Colors.D4`, `.toolbarBackground(CCDesign.Colors.L2.opacity(0.8), for: .navigationBar)` + `.toolbarBackground(.visible, for: .navigationBar)`.
+  - `isEmpty == false && colorScheme == .dark` → title `CCDesign.Colors.L2`, `.toolbarBackground(.hidden, for: .navigationBar)`.
+- Inject `@Environment(\.colorScheme) private var colorScheme` in `RecordsListScene`.
 - Keep `.navigationBarTitleDisplayMode(.inline)` (iOS-only).
 - Only apply `.searchable` when `!store.records.isEmpty`.
 - Pass the `paths` provider down to `EmptyStateView(paths: paths)`.
