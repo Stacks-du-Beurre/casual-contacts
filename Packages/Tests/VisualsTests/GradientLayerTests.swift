@@ -8,7 +8,7 @@ import DesignSystem
 
     @Test func resolvesGradientForEveryTimeOfDay() {
         for timeOfDay in TimeOfDay.allCases {
-            _ = GradientLayer.gradient(for: timeOfDay)
+            _ = GradientLayer.backdrop(for: timeOfDay)
         }
     }
 

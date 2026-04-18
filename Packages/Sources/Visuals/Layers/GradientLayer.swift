@@ -16,16 +16,19 @@ public struct GradientLayer: View {
 
     public var body: some View {
         ZStack {
-            Self.gradient(for: timeOfDay)
+            Self.backdrop(for: timeOfDay)
             if !reduceTransparency {
-                Self.gradient(for: timeOfDay)
+                Self.backdrop(for: timeOfDay)
                     .opacity(Self.transfusionOpacity(for: attitude, reduceTransparency: false))
             }
         }
         .accessibilityHidden(true)
     }
 
-    static func gradient(for timeOfDay: TimeOfDay) -> LinearGradient {
+    /// Resolves the canonical bitmap gradient for a given `TimeOfDay`.
+    /// Mirrors `CCDesign.Gradients.view(for:)` but kept here for symmetry with
+    /// the prior `gradient(for:)` API shape and to keep `body` readable.
+    static func backdrop(for timeOfDay: TimeOfDay) -> CCDesign.GradientBackdrop {
         switch timeOfDay {
         case .dawn:     return CCDesign.Gradients.dawn
         case .sunrise:  return CCDesign.Gradients.sunrise
@@ -37,12 +40,15 @@ public struct GradientLayer: View {
         }
     }
 
-    /// Legacy single-argument variant, retained for existing callers/snapshot tests.
-    static func transfusionOpacity(for attitude: DeviceAttitude) -> Double {
-        (attitude.roll + 1) / 2
-    }
-
+    /// Spec §2 "Transfusion": top-layer opacity tracks `attitude.roll` ∈ [-1, 1] → [0, 1].
+    /// At roll = 0 (resting / Reduce Motion) the result is 0.5 — the spec's "Default_50%" state.
+    /// Reduce Transparency forces 0, collapsing to the bottom layer only.
     static func transfusionOpacity(for attitude: DeviceAttitude, reduceTransparency: Bool) -> Double {
         reduceTransparency ? 0 : (attitude.roll + 1) / 2
+    }
+
+    /// Legacy single-argument variant, retained for existing callers/snapshot tests.
+    static func transfusionOpacity(for attitude: DeviceAttitude) -> Double {
+        transfusionOpacity(for: attitude, reduceTransparency: false)
     }
 }
