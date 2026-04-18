@@ -1,0 +1,178 @@
+# Casual Contacts
+
+iOS app for quickly recording people you've just met in casual settings — cafés, parties, concerts — where you might only have a first name and a short association. The app auto-captures ambient metadata (time, time-of-day label, moon phase, optional location) and derives a unique visual "card" from that metadata to reinforce memory through mental association.
+
+**Status (2026-04-18):** Plans 1–3 merged to `main`. Installable v1 running on iPhone 17 simulator, empty state visible. Plan 3.1 tracks remaining polish.
+
+## Canonical docs
+
+- **Design spec:** `docs/superpowers/specs/2026-04-17-casual-contacts-design.md` — architecture, data model, screens, visual system, testing strategy, accessibility. If anything here conflicts, the spec wins.
+- **Design specifications PDF:** `docs/CC Design Specifications.pdf` — designer-authored, explains guilloche techniques (rotation + blend), holographic blend-mode stacks, photo treatments.
+- **Original proposal:** `docs/proposal/Casual_Contacts_App_Proposal.pdf` — 2020-era pitch; functional requirements are still valid, aesthetic direction was superseded by the Figma designs.
+- **Figma file:** aesthetic source of truth. Pages + node IDs in `docs/casual-contacts-figma.md`. Figma MCP is authenticated for `hello@therealadammork.com`; both Stacks du Beurre and Beonest teams give Expert access.
+- **Plans:** `docs/superpowers/plans/` — each plan is a TDD-driven task list. Read the relevant plan before starting a task.
+
+## Architecture at a glance
+
+```
+App Target (CasualContacts/)         ← thin @main shell
+      │ imports AppFeature
+      ▼
+AppFeature                            ← wiring layer, only module that sees concrete services
+      │
+      ├── Feature{List,Create,Detail,Settings}   ← depend on CoreModels protocols only
+      │
+      ├── Visuals (CardView + layers)            ← SwiftUI, Canvas, blend modes
+      │
+      ├── DesignSystem                           ← colors, typography, fonts, gradients
+      │
+      ├── CoreModels                             ← pure types + protocols, zero framework deps
+      │
+      ├── Storage (SwiftDataRecordStore, FileSystemPhotoStore)
+      │     └── StorageTestSupport (InMemory fakes)
+      │
+      └── Services (CoreLocationService, CoreMotionService, MoonPhase/TimeOfDay)
+            └── ServicesTestSupport (Mock/Static/Fixed fakes)
+```
+
+**Rule:** Feature modules only import `CoreModels` protocols, `DesignSystem`, and `Visuals`. They never see SwiftData, CoreLocation, or CoreMotion directly. The compiler enforces this via Swift Package target dependencies.
+
+## Common workflows
+
+### Run tests on macOS host
+
+```bash
+cd /Users/adam/Projects/cc/Packages
+swift test
+```
+
+Expected: ~125 tests pass across ~36 suites. Fast, no simulator needed. Use this for quick feedback while iterating on pure-Swift code.
+
+### Run tests on iOS simulator
+
+```bash
+cd /Users/adam/Projects/cc/Packages
+xcodebuild test \
+    -scheme CasualContactsPackages-Package \
+    -destination 'platform=iOS Simulator,name=iPhone 17'
+```
+
+Needed for: `CardSnapshotTests` (UIKit-gated), `AppEnvironmentTests.production()` (CoreMotion-gated), anything that exercises actual iOS APIs.
+
+### Build + install the app
+
+```bash
+cd /Users/adam/Projects/cc
+xcodebuild build \
+    -scheme CasualContacts \
+    -destination 'platform=iOS Simulator,name=iPhone 17'
+
+xcrun simctl boot "iPhone 17" 2>/dev/null || true
+xcrun simctl install "iPhone 17" \
+    /Users/adam/Projects/cc/CasualContacts/build/Debug-iphonesimulator/CasualContacts.app
+xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
+```
+
+### Regenerate guilloche Swift files
+
+After any change to `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Rotation/` or `design-assets/Blended_export/SVG/`:
+
+```bash
+cd /Users/adam/Projects/cc
+./Tools/regenerate-svg.sh
+```
+
+Produces ~130 Swift files in `Packages/Sources/Visuals/Guilloche/Generated/` (gitignored). Without this, `RealCardPathProvider` fails to compile.
+
+### Run snapshot tests (visual regression)
+
+Reference images live at `Packages/Tests/VisualsTests/__Snapshots__/CardSnapshotTests/`. Committed. Only re-run when visuals intentionally change:
+
+```bash
+cd /Users/adam/Projects/cc/Packages
+xcodebuild test \
+    -scheme CasualContactsPackages-Package \
+    -destination 'platform=iOS Simulator,name=iPhone 17' \
+    -only-testing:VisualsTests/CardSnapshotTests
+```
+
+Delete the PNGs first if you want to re-record from scratch.
+
+## Plan execution workflow
+
+We use the `superpowers:subagent-driven-development` skill. One plan per major chunk of work. Branch → execute tasks → review → merge fast-forward to main.
+
+1. Read the plan file from `docs/superpowers/plans/`.
+2. `git checkout -b plan/<N>-<short-name>`.
+3. Create TaskCreate entries for each task in the plan.
+4. Dispatch implementer subagent per task with the task text + scene-setting context. Agents should `Read` the plan file for details; don't inline 500-line task descriptions.
+5. After each task: verify tests pass, commit, mark task complete.
+6. For mechanical tasks a combined spec+quality review works; for substantive tasks run them separately per the skill.
+7. After all tasks: merge fast-forward, delete branch.
+
+Plans 1, 2, and 3 followed this pattern. Each produced 15–20 TDD commits.
+
+## Patterns that have emerged (follow these)
+
+- **Swift 6 strict concurrency** is on. When a test `@Test` function accesses a view's `.body` or touches `@MainActor` state, annotate the test (or the `@Suite`) with `@MainActor`. Without it Swift Testing's parallel workers trigger UIKit/actor crashes.
+- **iOS-only APIs** (`.navigationBarTitleDisplayMode`, `.topBarLeading/.topBarTrailing`, `.presentationDetents`, `.fullScreenCover`) must be wrapped with `#if os(iOS)` because the package supports macOS for host-side testing. Provide minimal macOS fallbacks (usually a plain `Text` or `.primaryAction` placement).
+- **CoreMotion is not available on macOS** despite being importable. Gate `CoreMotionService` class with `#if canImport(CoreMotion) && !os(macOS)`. `AttitudeLowPass` (pure math) stays cross-platform.
+- **CLAuthorizationStatus.authorizedWhenInUse** is iOS-only; wrap with `#if os(iOS)` on the `case` branches.
+- **Assets:** SVG resources consumed by SwiftUI `Image(name:bundle:)` must live in `.xcassets` catalogs, not loose Resources folders. SPM `.process("Resources")` compiles the catalog automatically.
+- **Font names:** `CormorantInfant` is a variable-axis font; use `Font.custom("CormorantInfant", size:)` plus `.fontWeight(.semibold)` rather than a named SemiBold variant.
+- **UUID hashing for stable derivations:** Swift's `String.hashValue` is process-seeded. For deterministic cross-launch derivations, hash the raw UUID bytes (see `VisualAccoutrements.accoutrements` for the byte-sum pattern).
+
+## Outstanding work — Plan 3.1
+
+Polish tasks deferred from Plan 3:
+
+- **T10 — Accessibility pass**
+  - Dynamic Type scaling verified at XXXL on all cards
+  - Composite VoiceOver labels on every card
+  - `.accessibilityHidden(true)` on decorative layers (gradients, guilloche, holograms)
+
+- **T11 — Reduce Motion / Reduce Transparency**
+  - `MotionService` publishes `.zero` permanently when `UIAccessibility.isReduceMotionEnabled`
+  - Blend-mode stacks collapse to solid fills when `isReduceTransparencyEnabled`
+  - Hologram rotations, transfusion opacity shifts, letter-blend parallax all static in reduced-motion mode
+
+- **T13 — XCUITest suite**
+  - Target creation may require manual Xcode UI step (File → New → Target → iOS UI Testing Bundle)
+  - Cover: first launch → empty state → tap + → enter name → Save → verify row appears
+
+- **T14 — App icon**
+  - Export from Figma node `388:13592` at iOS 18 required sizes
+  - Populate `CasualContacts/CasualContacts/Assets.xcassets/AppIcon.appiconset/`
+  - Verify release-mode `xcodebuild build -configuration Release` succeeds
+
+## Known rough edges worth verifying on simulator
+
+- Fonts may not visually resolve as Cormorant even though `FontRegistration` runs — snapshot pass last verified before `FontRegistration` wiring. Do a visual QA pass on an iOS simulator build.
+- CardView layout in small/medium/large sizes may need proportional tweaks — the zodiac layer currently takes a large chunk of the card with no frame constraint in the snapshot that was captured.
+- Empty-state placeholder glyph is a rounded rectangle; should eventually use the `A/Polygon` asset from design-assets.
+
+## Deferred to v1.1+ (beyond Plan 3.1)
+
+Per the design spec Section 8. Clean seams exist for each:
+
+- Recommended section (location-proximity retrieval)
+- Default + Advanced Sorting screens
+- 2-person add flow
+- iCloud sync (SwiftData `ModelConfiguration(cloudKitDatabase:)`)
+- Advanced Card Stack list layout
+- Phone / email fields
+
+## Quirks & conventions
+
+- **Source filename typos preserved:** the designer's SVG filenames include `Waxing_Crescennt` and `Waning_Crescennt` (double-n). The `MoonPhase` enum uses correct spelling; `MoonPhaseLayer.assetName(for:)` maps between them.
+- **Cyrillic folder name preserved:** `design-assets/Zodiac/Сonstellations/` starts with Cyrillic С, not Latin C. We copy the files into a normalized `Zodiac.xcassets` at build time so the Cyrillic leak doesn't reach the app bundle.
+- **Nobody pushes to GitHub from the agent.** Push is a user-visible action — ask first. Currently `main` is 43 commits ahead of `origin/main` (all local).
+
+## Memory
+
+Auto-memory at `/Users/adam/.claude/projects/-Users-adam-Projects-cc/memory/`. Honored in every session automatically. Current entries:
+
+- `feedback_avoid_political_references.md` — no political figures in examples
+- `feedback_structure_for_future_refactor.md` — skip deferred features, but keep boundaries clean for later
+
+Add to `MEMORY.md` when you learn something durable about the user or project that isn't obvious from code.
