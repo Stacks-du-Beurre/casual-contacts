@@ -26,7 +26,11 @@ let package = Package(
         .testTarget(name: "ServicesTests", dependencies: ["Services", "CoreModels"], path: "Tests/ServicesTests"),
         .target(name: "ServicesTestSupport", dependencies: ["CoreModels"], path: "Sources/ServicesTestSupport"),
         .testTarget(name: "ServicesTestSupportTests", dependencies: ["ServicesTestSupport", "CoreModels"], path: "Tests/ServicesTestSupportTests"),
-        .target(name: "DesignSystem", path: "Sources/DesignSystem"),
+        .target(
+            name: "DesignSystem",
+            path: "Sources/DesignSystem",
+            resources: [.process("Resources")]
+        ),
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem"], path: "Tests/DesignSystemTests")
     ],
     swiftLanguageModes: [.v6]
