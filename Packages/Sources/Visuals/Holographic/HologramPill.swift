@@ -79,9 +79,14 @@ public struct HologramPill<Backdrop: View, Content: View>: View {
 
                         Color.white.opacity(whiteFill)
 
+                        // Hologram texture sized to COVER the pill: preserves
+                        // aspect ratio, scales up to fully fill the pill region,
+                        // then crops the overflow.
                         Image(hologram.rawValue, bundle: .module)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
                             .opacity(hologramOpacity)
                             .blendMode(.luminosity)
                             .allowsHitTesting(false)
