@@ -15,15 +15,17 @@ public struct SmallCardListItem: View {
     }
 
     public var body: some View {
-        CardView(record: record, size: .small, attitude: attitude, paths: paths)
-            .accessibilityHidden(true)
-            .frame(height: 120)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(Self.accessibilityLabel(for: record))
-            .accessibilityAddTraits(.isButton)
+        ZStack {
+            CardView(record: record, size: .small, attitude: attitude, paths: paths)
+                .accessibilityHidden(true)
+                .frame(height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Self.accessibilityLabel(for: record))
+        .accessibilityAddTraits(.isButton)
     }
 
     static func accessibilityLabel(for record: Record) -> String {

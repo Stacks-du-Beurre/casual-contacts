@@ -26,15 +26,11 @@ import CoreModels
 
     @Test func mediumDetailLabelComposesRecordFields() {
         let label = MediumDetailSheet.accessibilityLabel(for: makeRecord())
-        #expect(label.contains("Jane"))
-        #expect(label.contains("Met at cafe"))
-        #expect(label.contains("Mission St"))
+        #expect(label == "Jane. Met at cafe. Mission St")
     }
 
     @Test func largeDetailLabelComposesRecordFields() {
         let label = LargeDetailScene.accessibilityLabel(for: makeRecord())
-        #expect(label.contains("Jane"))
-        #expect(label.contains("Met at cafe"))
-        #expect(label.contains("Mission St"))
+        #expect(label == "Jane. Met at cafe. Mission St")
     }
 }

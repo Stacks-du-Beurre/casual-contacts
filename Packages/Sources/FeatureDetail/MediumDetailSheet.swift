@@ -40,6 +40,7 @@ public struct MediumDetailSheet: View {
             Text(Self.accessibilityLabel(for: record))
                 .font(.body)
                 .multilineTextAlignment(.leading)
+                .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
                 .accessibilityAddTraits(.isHeader)
