@@ -6,9 +6,11 @@ import Visuals
 public struct EmptyStateView: View {
 
     public let paths: any CardPathProvider
+    public let onTap: () -> Void
 
-    public init(paths: any CardPathProvider) {
+    public init(paths: any CardPathProvider, onTap: @escaping () -> Void = {}) {
         self.paths = paths
+        self.onTap = onTap
     }
 
     public var body: some View {
@@ -33,17 +35,22 @@ public struct EmptyStateView: View {
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)
 
-            Text("add the first person")
-                .font(CCDesign.Typography.title)
-                .foregroundStyle(.black)
-                .padding(.horizontal, 6)
-                .background {
-                    ZStack {
-                        Rectangle().fill(.ultraThinMaterial)
-                        Color.white.opacity(0.05)
+            Button(action: onTap) {
+                Text("add the first person")
+                    .font(CCDesign.Typography.title)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 6)
+                    .background {
+                        ZStack {
+                            Rectangle().fill(.ultraThinMaterial)
+                            Color.white.opacity(0.05)
+                        }
                     }
-                }
-                .accessibilityIdentifier("emptyStateTitle")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("emptyStateTitle")
+            .accessibilityLabel("add the first person")
+            .accessibilityHint("Opens the new contact form")
         }
     }
 

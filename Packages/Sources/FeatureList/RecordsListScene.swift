@@ -97,7 +97,7 @@ public struct RecordsListScene: View {
     private var listContent: some View {
         ZStack(alignment: .bottomTrailing) {
             if isEmpty {
-                EmptyStateView(paths: paths)
+                EmptyStateView(paths: paths, onTap: onTapCreate)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
