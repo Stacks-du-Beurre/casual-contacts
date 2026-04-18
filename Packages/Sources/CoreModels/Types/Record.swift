@@ -1,0 +1,35 @@
+import Foundation
+
+public struct Record: Identifiable, Hashable, Codable, Sendable {
+    public let id: UUID
+    public var name: String
+    public var description: String
+    public var photoID: PhotoID?
+    public var location: LocationInfo?
+    public var zodiacSign: ZodiacSign?
+    public let createdAt: Date
+    public var updatedAt: Date
+    public let metadata: RecordMetadata
+
+    public init(
+        id: UUID,
+        name: String,
+        description: String,
+        photoID: PhotoID?,
+        location: LocationInfo?,
+        zodiacSign: ZodiacSign?,
+        createdAt: Date,
+        updatedAt: Date,
+        metadata: RecordMetadata
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.photoID = photoID
+        self.location = location
+        self.zodiacSign = zodiacSign
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.metadata = metadata
+    }
+}
