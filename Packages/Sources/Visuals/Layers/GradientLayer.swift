@@ -7,6 +7,8 @@ public struct GradientLayer: View {
     public let timeOfDay: TimeOfDay
     public let attitude: DeviceAttitude
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     public init(timeOfDay: TimeOfDay, attitude: DeviceAttitude) {
         self.timeOfDay = timeOfDay
         self.attitude = attitude
@@ -15,8 +17,10 @@ public struct GradientLayer: View {
     public var body: some View {
         ZStack {
             Self.gradient(for: timeOfDay)
-            Self.gradient(for: timeOfDay)
-                .opacity(Self.transfusionOpacity(for: attitude))
+            if !reduceTransparency {
+                Self.gradient(for: timeOfDay)
+                    .opacity(Self.transfusionOpacity(for: attitude, reduceTransparency: false))
+            }
         }
         .accessibilityHidden(true)
     }
@@ -33,7 +37,12 @@ public struct GradientLayer: View {
         }
     }
 
+    /// Legacy single-argument variant, retained for existing callers/snapshot tests.
     static func transfusionOpacity(for attitude: DeviceAttitude) -> Double {
         (attitude.roll + 1) / 2
+    }
+
+    static func transfusionOpacity(for attitude: DeviceAttitude, reduceTransparency: Bool) -> Double {
+        reduceTransparency ? 0 : (attitude.roll + 1) / 2
     }
 }
