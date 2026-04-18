@@ -23,6 +23,7 @@ public struct ZodiacLayer: View {
             .resizable()
             .scaledToFit()
             .offset(Self.translation(for: attitude))
+            .accessibilityHidden(true)
     }
 
     static func assetName(for sign: ZodiacSign, variant: Variant) -> String {

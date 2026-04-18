@@ -16,6 +16,12 @@ public struct PhotoLayer: View {
     }
 
     public var body: some View {
+        content
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch style {
         case .card:
             image

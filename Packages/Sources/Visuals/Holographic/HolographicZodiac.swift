@@ -15,5 +15,6 @@ public struct HolographicZodiac: View {
         // Just translates — no rotation. Figurative asset already has holographic rendering baked in.
         ZodiacLayer(sign: sign, attitude: attitude, variant: .figure)
             .blendMode(.luminosity)
+            .accessibilityHidden(true)
     }
 }

@@ -33,6 +33,7 @@ public struct GuillocheBlendLayer: View {
                     .offset(Self.offset(forPathIndex: index, attitude: attitude))
             }
         }
+        .accessibilityHidden(true)
     }
 
     static func offset(forPathIndex index: Int, attitude: DeviceAttitude) -> CGSize {

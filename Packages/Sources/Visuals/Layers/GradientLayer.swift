@@ -18,6 +18,7 @@ public struct GradientLayer: View {
             Self.gradient(for: timeOfDay)
                 .opacity(Self.transfusionOpacity(for: attitude))
         }
+        .accessibilityHidden(true)
     }
 
     static func gradient(for timeOfDay: TimeOfDay) -> LinearGradient {

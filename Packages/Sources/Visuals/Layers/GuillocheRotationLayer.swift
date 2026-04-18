@@ -20,5 +20,6 @@ public struct GuillocheRotationLayer: View {
                 context.stroke(path, with: .color(tint.opacity(opacity)), lineWidth: 0.5)
             }
         }
+        .accessibilityHidden(true)
     }
 }

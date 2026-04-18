@@ -13,6 +13,7 @@ public struct MoonPhaseLayer: View {
         Image(Self.assetName(for: phase), bundle: .module)
             .resizable()
             .scaledToFit()
+            .accessibilityHidden(true)
     }
 
     static func assetName(for phase: MoonPhase) -> String {
