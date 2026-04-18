@@ -258,6 +258,7 @@ let package = Package(
 Create `Packages/Tests/CoreModelsTests/EnumsTests.swift`:
 ```swift
 import Testing
+import Foundation
 import CoreModels
 
 @Suite struct EnumsTests {
