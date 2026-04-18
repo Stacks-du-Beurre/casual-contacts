@@ -50,6 +50,7 @@ public struct CreateRecordScene: View {
                         onSave(model.draft)
                     }
                     .disabled(!model.isSaveable)
+                    .accessibilityIdentifier("saveRecordButton")
                 }
             }
             .sheet(isPresented: $showingZodiacPicker) {

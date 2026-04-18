@@ -12,6 +12,7 @@ struct CreateFormFields: View {
             TextField("Name", text: $model.name)
                 .font(CCDesign.Typography.description)
                 .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("nameField")
 
             TextField("Description", text: $model.description, axis: .vertical)
                 .font(CCDesign.Typography.descriptionSmall)

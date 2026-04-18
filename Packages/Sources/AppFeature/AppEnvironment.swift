@@ -69,5 +69,36 @@ public final class AppEnvironment {
             cardPathProvider: RealCardPathProvider()
         )
     }
+
+    @MainActor
+    public static func productionOrUITestReset() throws -> AppEnvironment {
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "-UITestReset"),
+           idx + 1 < args.count,
+           args[idx + 1] == "YES" {
+            return try uiTestResetEnvironment()
+        }
+        return try production()
+    }
+
+    @MainActor
+    private static func uiTestResetEnvironment() throws -> AppEnvironment {
+        let container = try ModelContainer(
+            for: PersistedRecord.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let photoRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CCUITestPhotos-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: photoRoot, withIntermediateDirectories: true)
+
+        return AppEnvironment(
+            recordStore: SwiftDataRecordStore(container: container),
+            photoStore: FileSystemPhotoStore(rootURL: photoRoot),
+            locationService: CoreLocationService(),
+            motionService: CoreMotionService(),
+            metadataGenerator: SystemMetadataGenerator(),
+            cardPathProvider: RealCardPathProvider()
+        )
+    }
     #endif
 }

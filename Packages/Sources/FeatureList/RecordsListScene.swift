@@ -64,6 +64,7 @@ public struct RecordsListScene: View {
                 }
                 .padding(16)
                 .accessibilityLabel("Add new contact")
+                .accessibilityIdentifier("createRecordButton")
             }
             .navigationTitle("My Contacts")
             #if os(iOS)

@@ -24,6 +24,7 @@ public struct EmptyStateView: View {
                 Text("No one here yet")
                     .font(CCDesign.Typography.title)
                     .foregroundStyle(.white)
+                    .accessibilityIdentifier("emptyStateTitle")
 
                 Text("Tap + to record your first contact")
                     .font(CCDesign.Typography.descriptionSmall)

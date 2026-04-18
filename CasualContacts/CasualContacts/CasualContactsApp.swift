@@ -6,7 +6,7 @@ struct CasualContactsApp: App {
     @MainActor
     static let environment: AppEnvironment = {
         do {
-            return try AppEnvironment.production()
+            return try AppEnvironment.productionOrUITestReset()
         } catch {
             fatalError("Failed to initialize AppEnvironment: \(error)")
         }
