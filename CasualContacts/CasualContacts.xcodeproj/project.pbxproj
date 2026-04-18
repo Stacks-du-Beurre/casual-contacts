@@ -10,14 +10,30 @@
 		66EB56012F934D5C00452128 /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 66EB56002F934D5C00452128 /* AppFeature */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		66EB560F2F9412E300452128 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 66EB55D72F934D5900452128 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 66EB55DE2F934D5900452128;
+			remoteInfo = CasualContacts;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		66EB55DF2F934D5900452128 /* CasualContacts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CasualContacts.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		66EB56092F9412E300452128 /* CasualContactsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CasualContactsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		66EB55E12F934D5900452128 /* CasualContacts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CasualContacts;
+			sourceTree = "<group>";
+		};
+		66EB560A2F9412E300452128 /* CasualContactsUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CasualContactsUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -31,6 +47,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		66EB56062F9412E300452128 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -38,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				66EB55E12F934D5900452128 /* CasualContacts */,
+				66EB560A2F9412E300452128 /* CasualContactsUITests */,
 				66EB55E02F934D5900452128 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -46,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				66EB55DF2F934D5900452128 /* CasualContacts.app */,
+				66EB56092F9412E300452128 /* CasualContactsUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -76,6 +101,29 @@
 			productReference = 66EB55DF2F934D5900452128 /* CasualContacts.app */;
 			productType = "com.apple.product-type.application";
 		};
+		66EB56082F9412E300452128 /* CasualContactsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 66EB56132F9412E300452128 /* Build configuration list for PBXNativeTarget "CasualContactsUITests" */;
+			buildPhases = (
+				66EB56052F9412E300452128 /* Sources */,
+				66EB56062F9412E300452128 /* Frameworks */,
+				66EB56072F9412E300452128 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				66EB56102F9412E300452128 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				66EB560A2F9412E300452128 /* CasualContactsUITests */,
+			);
+			name = CasualContactsUITests;
+			packageProductDependencies = (
+			);
+			productName = CasualContactsUITests;
+			productReference = 66EB56092F9412E300452128 /* CasualContactsUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -88,6 +136,10 @@
 				TargetAttributes = {
 					66EB55DE2F934D5900452128 = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					66EB56082F9412E300452128 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 66EB55DE2F934D5900452128;
 					};
 				};
 			};
@@ -109,12 +161,20 @@
 			projectRoot = "";
 			targets = (
 				66EB55DE2F934D5900452128 /* CasualContacts */,
+				66EB56082F9412E300452128 /* CasualContactsUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		66EB55DD2F934D5900452128 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		66EB56072F9412E300452128 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -131,7 +191,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		66EB56052F9412E300452128 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		66EB56102F9412E300452128 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 66EB55DE2F934D5900452128 /* CasualContacts */;
+			targetProxy = 66EB560F2F9412E300452128 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		66EB55E82F934D5B00452128 /* Debug */ = {
@@ -293,7 +368,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.6;
 			};
 			name = Debug;
@@ -341,8 +416,53 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.6;
+			};
+			name = Release;
+		};
+		66EB56112F9412E300452128 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 44PZZMMX3N;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stacksdubeurre.CasualContactsUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CasualContacts;
+			};
+			name = Debug;
+		};
+		66EB56122F9412E300452128 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 44PZZMMX3N;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stacksdubeurre.CasualContactsUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CasualContacts;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -363,6 +483,15 @@
 			buildConfigurations = (
 				66EB55EB2F934D5B00452128 /* Debug */,
 				66EB55EC2F934D5B00452128 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		66EB56132F9412E300452128 /* Build configuration list for PBXNativeTarget "CasualContactsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				66EB56112F9412E300452128 /* Debug */,
+				66EB56122F9412E300452128 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
