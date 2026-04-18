@@ -159,6 +159,12 @@ Alphabetical guilloche patterns are built with two complementary Illustrator tec
 - Source filename convention: `A_C_0.svg` = Letter **A**, Shape **C**ircle, Position/Spline **0**. Preserve the letter/shape/index naming end-to-end; rendering picks the right triplet from the record's initial + card size + state.
 - In the app this is `GuillocheBlendLayer`. Generated Swift files land in `Packages/Sources/Visuals/Guilloche/Generated/` (gitignored); regenerate via `./Tools/regenerate-svg.sh`.
 
+**Exported assets (guilloche):**
+- **Rotation sources (§1.2)** — `design-assets/Rotation/{A–Z}_Rotation.svg` (26 files). Stroke CSS lives inline on each path; the rotation pipeline multiplies these by ~72 to build the rosette.
+- **Blend per-line layers (§1.3, deep-dive source)** — `design-assets/Blended/{A,B,C}/Circle/{Letter}_C_{0–16}.svg`, `…/Square/{Letter}_S_{0–16}.svg`, `…/Polygon/{Letter}_P_{0–16}.svg`, `…/Circle_for_Preview_Section/{Letter}_Pre_{0–8}.svg`. Only **A, B, C** are exported per-line ("3 letters for test" in the PDF). Each indexed file is one transition line; stack them on the same 100% artboard to drive deep-dive translation.
+- **Blend flat composites (all 26 letters)** — `design-assets/Blended_export/SVG/{A–Z}_{Circle,Square,Polygon}.svg` (78) + `{A–Z}_Preview.svg` (26, Recommended Section variant). Each SVG is the full stack already merged — no deep-dive motion, but usable as a static fallback or for the Recommended small card.
+- **Source (master)** — `design-assets/Blended_Letters.ai` (Adobe Illustrator) is the designer's working file; regenerate per-line and composite SVGs from it if the full A–Z per-line set is ever needed.
+
 ## Holograms (`Holograms` frame `51:6377`)
 
 | Hologram | Node ID |
@@ -189,6 +195,16 @@ Three on-card elements use the hologram treatment: **Title/Name**, **Location**,
 
 **Reduce Transparency fallback** — `@Environment(\.accessibilityReduceTransparency)` collapses all three stacks to a solid-white single layer (no blend modes, no motion), as required by Plan 3.1 T11.
 
+**Exported assets:**
+- `design-assets/Holograms/Neon_1.jpg` (1300×866, JPEG) — pulled from Figma symbol `Neon/1` `72:3159`.
+- `design-assets/Holograms/Neon_2.jpg` (800×533, JPEG) — from `Neon/2` `72:3161`.
+- `design-assets/Holograms/Neon_3.png` (338×338, PNG RGBA) — from `Neon/3` `72:3378`.
+- `design-assets/Holograms/Neon_4.png` (626×416, PNG RGBA) — from `Neon/4` `72:3386`.
+
+**How these are used** — the Neon assets are the **background / base layer** that sits *under* the Title, Location, and Zodiac text. The blend-mode stack (`lighten` / `luminosity` / `color` for each object) composes the foreground text *onto* the hologram — the iridescent sheen you see through the letter shapes is the Neon image showing through via the blend. Each of the three objects (Title, Location, Zodiac) has its own Neon tile; Figma pairs `Neon/1–4` roughly one per object plus a spare, but the code decides which Neon variant to use per card.
+
+**Swift rendering note** — the PDF's blend stacks (`lighten` bottom + `luminosity` top for Title, `blur` + translate for Location, single-image translate for Zodiac) are authored as *Figma blend modes over raster bitmaps*. SwiftUI's `.blendMode(.lighten)` / `.luminosity` / `.color` match the Core Graphics names, but achieving the exact Figma composite may require: isolating the stack with `.compositingGroup()` so blends don't leak into the card background, masking to the glyph with `.mask(Text(...))`, and in some cases falling back to `Canvas` with explicit `GraphicsContext.BlendMode` for the `color` mode on photo cards (which behaves differently than Figma's `color` for images that contain transparency). **If a blend result doesn't match the Figma screenshot, stop and ask** — do not substitute a `LinearGradient` or hand-tinted overlay for an actual blend-mode composite. The designer's explicit note ("maybe you can find more efficient ways") grants freedom on *how*, not on *whether the end pixels match*.
+
 ## Moon phases (`Moon` frame `11:477`)
 
 All eight phases live as symbols under this frame, in order:
@@ -204,6 +220,17 @@ All eight phases live as symbols under this frame, in order:
 
 **Designer's notes (moon)** — from `docs/CC Design Specifications.pdf` §4: phase is computed from the record's `createdAt` timestamp and rendered as a light-on-dark symbol beside the zodiac info on the card. The preserved double-n `Crescennt` spelling is a source-filename quirk; `MoonPhase` enum uses correct spelling and `MoonPhaseLayer.assetName(for:)` maps between them.
 
+**Exported assets:** `design-assets/Moon_Phases/` —
+- `New_Moon.svg`
+- `Waxing_Crescennt.svg` *(sic)*
+- `First_Quarter.svg`
+- `Waxing_Gibbous.svg`
+- `Full_Moon.svg`
+- `Waning_Gibbous.svg`
+- `Third_Quarter.svg`
+- `Waning_Crescennt.svg` *(sic)*
+- `Moon_Background.svg` — horizontally-barred backdrop the phase glyph sits on (matches the zodiac symbol block treatment).
+
 ## Zodiac (`Zodiac signs` frame `15:4297`)
 
 Symbol + Stars pair for each of the 12 signs. Use `Stars/<Sign>` for the constellation layer and `Symbol/<Sign>` for the glyph.
@@ -213,21 +240,27 @@ Symbol + Stars pair for each of the 12 signs. Use `Stars/<Sign>` for the constel
 - The symbol's horizontal bars are what the hologram zodiac layer uses as its "screen" — the hologram translation gives the symbol an animated scan-line look.
 - Cyrillic-folder quirk: `design-assets/Zodiac/Сonstellations/` starts with Cyrillic С (not Latin C). Copied into a normalized `Zodiac.xcassets` at build time so the leak doesn't reach the app bundle.
 
+**Exported assets:**
+- **Constellations (line drawings)** — `design-assets/Zodiac/Сonstellations/<Sign>.svg` (note the Cyrillic С): `Aquarius.svg`, `Aries.svg`, `Cancer.svg`, `Capricorn.svg`, `Gemini.svg`, `Leo.svg`, `Libra.svg`, `Pisces.svg`, `Sagittarius.svg`, `Scorpio.svg`, `Taurus.svg`, `Virgo.svg`.
+- **Symbols (barred blocks — "screen" for hologram zodiac)** — `design-assets/Zodiac/Signs/<Sign>.svg`, same 12 names. Plus `design-assets/Zodiac/Signs/Background_Lines.svg` — the shared horizontal-bar backdrop the symbol sits on.
+
 ## Source: designer's PDF
 
 The full, illustrated originals for every "Designer's notes" box above live in `docs/CC Design Specifications.pdf` (12 pages, last updated Jan 18, 2021). Open the PDF when a note is ambiguous or when you need the visual reference the designer drew — it shows the Illustrator construction for the rotation guilloche, the full `A/B/I/S` shape set, transfusion at 0% / 50% / 100% opacity, the hologram blend-mode breakdown, and all eight moon phases and twelve zodiac pairs.
 
 Section map (for quick lookup):
 
-| PDF section | Covers | Inlined under |
-|---|---|---|
-| §1 Alphabetical guilloche patterns | Rotation + Blend tool ("Path to") techniques | **Guilloche patterns** |
-| §2 Gradients | Seven time-of-day gradients + Transfusion | **Gradients** |
-| §3 Zodiac signs | 12 constellation + symbol pairs | **Zodiac** |
-| §4 Moon phases | 8 phases | **Moon phases** |
-| §5 Holograms & Photo color models | Title/Name, Location, Zodiac hologram stacks + photo luminosity/color blend | **Holograms**, **Card variants** |
-| §6 Style guide & UI kit | Maps back to the `Components` Figma page | **Components** (Figma map) |
-| §7 App icon | Small filled vs large line-work variants | **App assets** |
+| PDF section | Covers | Inlined under | Exported assets on disk |
+|---|---|---|---|
+| §1.2 Rotation | Background guilloche construction | **Guilloche patterns** | `design-assets/Rotation/` (26 SVGs) |
+| §1.3 Blend "Path to" | Letter-to-shape morph | **Guilloche patterns** | `design-assets/Blended/{A,B,C}/…` (per-line, 3 letters) + `design-assets/Blended_export/SVG/` (composites, 26 letters) + `design-assets/Blended_Letters.ai` |
+| §2 Gradients | 7 time-of-day gradients + Transfusion | **Gradients** | `design-assets/Gradients/*.png` (7) |
+| §3 Zodiac signs | 12 constellation + symbol pairs | **Zodiac** | `design-assets/Zodiac/Сonstellations/*.svg` (12) + `design-assets/Zodiac/Signs/*.svg` (12 + `Background_Lines.svg`) |
+| §4 Moon phases | 8 phases | **Moon phases** | `design-assets/Moon_Phases/*.svg` (8 + `Moon_Background.svg`) |
+| §5 Holograms | Neon base layers + Title/Name, Location, Zodiac stacks | **Holograms** | `design-assets/Holograms/Neon_{1,2,3,4}.{jpg,png}` (4) |
+| §5 Photo color models | Photo luminosity/color blend treatments | **Card variants** | User-supplied photos, runtime composite — no designer exports |
+| §6 Style guide & UI kit | Maps back to the `Components` Figma page | **Components** (Figma map) | Figma-only for UI chrome; fonts at `design-assets/fonts/*.ttf` |
+| §7 App icon | Small filled vs large line-work variants | **App assets** | `CasualContacts/…/Assets.xcassets/AppIcon.appiconset/` + `LaunchLogo.imageset/` |
 
 ## Gaps / open questions
 
@@ -235,3 +268,4 @@ Section map (for quick lookup):
 - **Permission primers** (location, photos/camera) — no frames found.
 - **Delete confirmation / error / toast** — no frames found.
 - **About screen** — `D_Context_Menu` has an "About developers" row but no standalone About frame.
+- **Hologram Neon base layer not yet wired into Swift views.** `HolographicText.swift`, `HolographicLocation.swift`, and `HolographicZodiac.swift` all blend plain `.white` foregrounds with no iridescent base underneath — so the rainbow sheen the PDF §5 specifies is currently absent. The assets now exist at `design-assets/Holograms/Neon_{1,2,3,4}.{jpg,png}`; next implementation task must place a Neon image as the bottom layer of each holographic object (inside a `.compositingGroup()`), mask it to the glyph, then apply `.blendMode(.lighten)` / `.luminosity` / `.color` per the PDF. Pick the Neon variant per object (Title, Location, Zodiac) — Figma places `Neon/1–4` one-per-object with one spare; confirm the exact mapping against the Figma card frames before wiring. **If a SwiftUI composite can't match the Figma pixels, stop and ask** — a substitute `LinearGradient` or hand-tinted overlay is not acceptable.
