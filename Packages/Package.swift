@@ -104,7 +104,11 @@ let package = Package(
                 "Storage",
                 "Services",
                 "DesignSystem",
-                "Visuals"
+                "Visuals",
+                "FeatureList",
+                "FeatureCreate",
+                "FeatureDetail",
+                "FeatureSettings"
             ],
             path: "Sources/AppFeature"
         ),
