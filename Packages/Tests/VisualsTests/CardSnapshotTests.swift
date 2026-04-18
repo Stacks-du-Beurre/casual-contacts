@@ -7,7 +7,7 @@ import Foundation
 import CoreModels
 @testable import Visuals
 
-@Suite struct CardSnapshotTests {
+@Suite @MainActor struct CardSnapshotTests {
 
     private func makeRecord(
         id: UUID = UUID(uuidString: "550E8400-E29B-41D4-A716-446655440000")!,
