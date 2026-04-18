@@ -200,11 +200,14 @@ Light symbols: frame `Light_Nav_Symbols` `9:115`. Dark symbols: frame `Dark_Nav_
 | Midnight | `343:30` |
 
 **Designer's notes (gradients)** — from `docs/CC Design Specifications.pdf` §2:
-- Seven backgrounds cover the full day: Dawn, Sunrise, Midday, Sunset, Dusk, Night, Midnight. Each has enough contrast to carry white text directly on it.
-- **Transfusion effect** (parallax on gyroscope): stack **two identical gradient layers**. Hold the bottom fully opaque; animate the **top layer's opacity from 0 → 100%** based on the device's gyroscope / attitude. The result reads as a liquid, metallic shift as the phone tilts.
-- The reduce-motion adapter (`Packages/Sources/AppFeature/ReducedMotionAdapter.swift`) zeroes the attitude input, which collapses transfusion to a static single-gradient look — matches the PDF's "default" state (top opacity fixed at 50%).
+- Seven backgrounds cover the full day: Dawn, Sunrise, Midday, Sunset, Dusk, Night, Midnight. Each is a hand-authored **painterly bitmap** (not a procedural linear ramp), with enough contrast to carry white text directly on it.
+- **Transfusion effect** (parallax on gyroscope): stack **two identical gradient bitmaps**. Hold the bottom fully opaque; animate the **top layer's opacity from 0 → 100%** based on the device's gyroscope / attitude. The result reads as a liquid, metallic shift as the phone tilts — because the top and bottom are the same image, the shift reveals internal color regions of the bitmap rather than just dimming.
+- **Resting / reduced-motion state:** `GradientLayer.transfusionOpacity` computes `(attitude.roll + 1) / 2`. With `attitude.roll = 0` (phone level *or* the `ReducedMotionAdapter` zeroing the input), top opacity lands at **0.5** — both bitmaps render stacked at 50%, matching the PDF's `Default_50%` demonstration frame. It is not a "single-gradient look" — both layers are visibly blended.
+- **Reduce Transparency:** `GradientLayer` observes `@Environment(\.accessibilityReduceTransparency)`. When on, the top layer is omitted entirely and the bottom bitmap renders alone (no translucent overlay).
 
-**Exported assets:** `design-assets/Gradients/` — one PNG per time-of-day band: `Dawn.png`, `Sunrise.png`, `Midday.png`, `Sunset.png`, `Dusk.png`, `Night.png`, `Midnight.png`. Used as the bitmap source for transfusion's two stacked layers.
+**Exported assets:**
+- **Source PNGs:** `design-assets/Gradients/{Dawn,Sunrise,Midday,Sunset,Dusk,Night,Midnight}.png` (7 files, 689×416 each).
+- **Shipped catalog:** `Packages/Sources/DesignSystem/Resources/Gradients.xcassets/` — 7 imagesets wrapping the same PNGs. Resolved at runtime via `Bundle.module` through `CCDesign.GradientBackdrop`; `CCDesign.Gradients.view(for: TimeOfDay)` dispatches to the right bitmap.
 
 ## Guilloche patterns (`Guilloche_Patterns` frame `15:30`)
 
