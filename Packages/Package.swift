@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "FeatureList", targets: ["FeatureList"]),
         .library(name: "FeatureCreate", targets: ["FeatureCreate"]),
         .library(name: "FeatureDetail", targets: ["FeatureDetail"]),
+        .library(name: "FeatureSettings", targets: ["FeatureSettings"]),
         .library(name: "AppFeature", targets: ["AppFeature"])
     ],
     dependencies: [
@@ -85,6 +86,16 @@ let package = Package(
             name: "FeatureDetailTests",
             dependencies: ["FeatureDetail", "CoreModels", "Visuals"],
             path: "Tests/FeatureDetailTests"
+        ),
+        .target(
+            name: "FeatureSettings",
+            dependencies: ["CoreModels", "DesignSystem"],
+            path: "Sources/FeatureSettings"
+        ),
+        .testTarget(
+            name: "FeatureSettingsTests",
+            dependencies: ["FeatureSettings"],
+            path: "Tests/FeatureSettingsTests"
         ),
         .target(
             name: "AppFeature",
