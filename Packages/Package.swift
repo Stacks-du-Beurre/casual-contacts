@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "Visuals", targets: ["Visuals"]),
         .library(name: "FeatureList", targets: ["FeatureList"]),
+        .library(name: "FeatureCreate", targets: ["FeatureCreate"]),
         .library(name: "AppFeature", targets: ["AppFeature"])
     ],
     dependencies: [
@@ -63,6 +64,16 @@ let package = Package(
             name: "FeatureListTests",
             dependencies: ["FeatureList", "CoreModels", "StorageTestSupport", "ServicesTestSupport"],
             path: "Tests/FeatureListTests"
+        ),
+        .target(
+            name: "FeatureCreate",
+            dependencies: ["CoreModels", "DesignSystem", "Visuals"],
+            path: "Sources/FeatureCreate"
+        ),
+        .testTarget(
+            name: "FeatureCreateTests",
+            dependencies: ["FeatureCreate", "CoreModels"],
+            path: "Tests/FeatureCreateTests"
         ),
         .target(
             name: "AppFeature",
