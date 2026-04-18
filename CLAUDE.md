@@ -6,11 +6,40 @@ iOS app for quickly recording people you've just met in casual settings — caf�
 
 ## Canonical docs
 
+- **Design reference (screen → Figma map + designer techniques):** `docs/DESIGN.md` — Figma layer + node ID for every screen, component, token, gradient, guilloche, hologram, moon phase, zodiac sign, plus the designer's PDF notes inlined per category. Load on-demand when touching visuals. **Design fidelity directives are below** — read them every session.
 - **Design spec:** `docs/superpowers/specs/2026-04-17-casual-contacts-design.md` — architecture, data model, screens, visual system, testing strategy, accessibility. If anything here conflicts, the spec wins.
 - **Design specifications PDF:** `docs/CC Design Specifications.pdf` — designer-authored, explains guilloche techniques (rotation + blend), holographic blend-mode stacks, photo treatments.
 - **Original proposal:** `docs/proposal/Casual_Contacts_App_Proposal.pdf` — 2020-era pitch; functional requirements are still valid, aesthetic direction was superseded by the Figma designs.
 - **Figma file:** aesthetic source of truth. Pages + node IDs in `docs/casual-contacts-figma.md`. Figma MCP is authenticated for `hello@therealadammork.com`; both Stacks du Beurre and Beonest teams give Expert access.
 - **Plans:** `docs/superpowers/plans/` — each plan is a TDD-driven task list. Read the relevant plan before starting a task.
+
+## Design fidelity directives
+
+Figma is the source of truth for every visible screen, component, and asset. These rules apply to **all** UI work. Detailed Figma layer/node map + designer techniques live in `docs/DESIGN.md` — load it on-demand when implementing visuals.
+
+1. **Figma is canonical.** If the code disagrees with Figma, the code is wrong. Update the code. Don't "adapt" Figma to match what's already built.
+
+2. **Do not cut corners to save effort.** Do not ship a visual that differs from Figma because the "close enough" asset was easier. Examples to refuse:
+   - Rendering the app-icon composite when Figma specifies only the glyph.
+   - Hand-editing an existing SVG instead of fetching the canonical layer.
+   - Picking a hex value from memory instead of reading the current Figma token.
+   - Copy-pasting a prior screen's layout because it "looks similar" without checking the new Figma node.
+
+3. **Reuse primitives, don't rebuild them.** We maintain a shared UI library (`DesignSystem`, `Visuals`, shared Feature components). If a fundamental primitive — button, text field, card, list row, sheet chrome, typography style — already exists and can be configured to match the Figma spec through reasonable parameters (color, size, padding, variant, typography token), **reuse it and style it.** Creating parallel primitives per screen causes drift and violates the design system. The test is: *can this primitive reach the Figma spec by changing documented style inputs?* If yes, reuse. If no (genuinely new behavior, geometry, or composition), build a new primitive and add it to the shared library so the next screen can reuse it too.
+
+4. **Reuse ≠ skipping Figma.** Even when reusing a component, still fetch the Figma node for the screen you're building. You need it to know which variant/props to set and to verify the final composition.
+
+5. **Fetch fresh every time.** Figma asset URLs expire (7 days). Re-run `get_design_context` for the specific node at the start of each task; don't rely on previously-downloaded renders.
+
+6. **Render the exact layer.** If Figma calls out a specific named layer (e.g. `imgVector` inside a parent frame), export *that* layer, not the parent composite. Confirm via `get_metadata` before rasterizing.
+
+7. **Flexible layout, fixed design.** Reproduce Figma's proportions, hierarchy, spacing, and visual stack faithfully. Layout should breathe across device sizes (relative sizing, safe areas, Dynamic Type) — but the *design* doesn't change across devices.
+
+8. **Tokens over raw values.** When Figma exposes a named variable (e.g. `Dark/D4`), prefer the token name in code/comments over a raw hex so token changes propagate.
+
+9. **Verify visually.** After implementing, screenshot the simulator and compare side-by-side against the Figma screenshot. Do not report "matches Figma" without this check.
+
+10. **Ambiguity is a stop sign.** Missing states (pressed, disabled, error, empty, loading)? Surface the gap and ask. Do not invent.
 
 ## Architecture at a glance
 
