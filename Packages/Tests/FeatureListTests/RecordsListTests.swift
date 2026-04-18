@@ -2,8 +2,14 @@ import Testing
 import SwiftUI
 import Foundation
 import CoreModels
+import Visuals
 import StorageTestSupport
 @testable import FeatureList
+
+struct NoopCardPathProvider: CardPathProvider {
+    func rotationPaths(for letter: Character) -> [Path] { [] }
+    func blendPaths(for letter: Character, shape: GuillocheShape, density: CCVisuals.Guilloche.LineDensity) -> [Path] { [] }
+}
 
 @MainActor
 @Suite struct RecordsListTests {
@@ -27,6 +33,6 @@ import StorageTestSupport
     }
 
     @Test func emptyStateViewInstantiates() {
-        _ = EmptyStateView().body
+        _ = EmptyStateView(paths: NoopCardPathProvider()).body
     }
 }

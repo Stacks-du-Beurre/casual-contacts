@@ -18,7 +18,7 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         let app = launch()
         let emptyTitle = app.staticTexts["emptyStateTitle"]
         XCTAssertTrue(emptyTitle.waitForExistence(timeout: 5))
-        XCTAssertEqual(emptyTitle.label, "No one here yet")
+        XCTAssertEqual(emptyTitle.label, "add the first person")
     }
 
     func testCreateRecordAppearsInList() {

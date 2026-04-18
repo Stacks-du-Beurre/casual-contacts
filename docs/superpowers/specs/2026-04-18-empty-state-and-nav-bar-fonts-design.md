@@ -58,18 +58,26 @@ The sorting toggle (left-side up/down-arrow glyph) visible in Figma's populated 
 
 ### Pill background implementation
 
-The luminosity-blended backdrop blur from Figma is approximated in SwiftUI with `.background(.ultraThinMaterial.opacity(0.56))` plus `Color.white.opacity(0.56)` overlay. We apply it only behind the text, not the full width — matching the "text-width pill" look in Figma. Concrete structure:
+Figma specifies the pill as a 56% white solid fill + a 27 px `backdrop-blur` layer with `mix-blend-luminosity` at 35% opacity, with black text on top. The design-spec PDF (section 5) only prescribes the two-layer lighten/luminosity hologram treatment for *card titles* (animated), not for the empty-state pill — so the pill is **static**, no gyroscope response.
+
+**Chosen approach (option 1): SwiftUI `.ultraThinMaterial` + white tint.**
 
 ```swift
 Text("add the first person")
     .font(CCDesign.Typography.title)
     .foregroundStyle(.black)
     .padding(.horizontal, 6)
-    .padding(.vertical, 0)
-    .background(Color.white.opacity(0.56))
-    .overlay(Color.white.opacity(0.1).blendMode(.luminosity))
+    .background(.ultraThinMaterial)
+    .overlay(Color.white.opacity(0.2).allowsHitTesting(false))
     .accessibilityIdentifier("emptyStateTitle")
 ```
+
+`.ultraThinMaterial` provides a real backdrop blur + tint natively on iOS, matching the "frosted translucent bar" look. It won't match Figma's exact 27 px blur radius or luminosity blend pixel-for-pixel, but reads as the same visual language.
+
+**Fallback options if option 1 looks wrong:**
+
+- **Option 2 — `UIViewRepresentable` wrapping `UIVisualEffectView`.** Gives us access to `UIBlurEffect.Style.systemUltraThinMaterial`, `.systemMaterial`, etc. Still can't set an arbitrary blur radius without private APIs. Worth trying if `.ultraThinMaterial` reads too opaque or too clear.
+- **Option 3 — Metal shader via `.colorEffect` / `.visualEffect` (iOS 17+).** Pixel-exact luminosity blend + controlled blur radius. Significant code, ongoing maintenance. Last-resort if the pill is a focal visual and options 1–2 can't match Figma.
 
 Positioning: place the pill with a top padding of ~390 pt from the top of the safe area (using a `VStack` + `Spacer` combo scaled to screen height avoids hardcoding). We will match the Figma y-coordinate proportionally by using a layout like:
 
