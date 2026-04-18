@@ -22,6 +22,9 @@ xcuserdata/
 Packages/.build/
 Packages/.swiftpm/
 Packages/Package.resolved
+Tools/*/.build/
+Tools/*/.swiftpm/
+Tools/*/Package.resolved
 
 # Generated SVG→Swift files (rebuilt by build tool)
 Packages/Sources/Visuals/Guilloche/Generated/
