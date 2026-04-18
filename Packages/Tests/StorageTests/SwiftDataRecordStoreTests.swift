@@ -92,4 +92,35 @@ import CoreModels
             try await store.update(missing)
         }
     }
+
+    @Test func searchWithEmptyQueryReturnsAllRecords() async throws {
+        let store = try makeStore()
+        _ = try await store.create(RecordDraft(name: "Jane"), metadata: sampleMetadata)
+        _ = try await store.create(RecordDraft(name: "John"), metadata: sampleMetadata)
+
+        let results = store.search("")
+
+        #expect(results.count == 2)
+    }
+
+    @Test func searchFiltersByNameCaseInsensitive() async throws {
+        let store = try makeStore()
+        _ = try await store.create(RecordDraft(name: "Jane"), metadata: sampleMetadata)
+        _ = try await store.create(RecordDraft(name: "John"), metadata: sampleMetadata)
+        _ = try await store.create(RecordDraft(name: "Janet"), metadata: sampleMetadata)
+
+        let results = store.search("jan")
+
+        #expect(results.count == 2)
+        #expect(Set(results.map(\.name)) == ["Jane", "Janet"])
+    }
+
+    @Test func searchTrimsWhitespace() async throws {
+        let store = try makeStore()
+        _ = try await store.create(RecordDraft(name: "Jane"), metadata: sampleMetadata)
+
+        let results = store.search("   Jane   ")
+
+        #expect(results.count == 1)
+    }
 }
