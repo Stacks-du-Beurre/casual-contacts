@@ -15,6 +15,7 @@ public enum FontRegistration {
             "CormorantSC-Bold",
             "CormorantSC-SemiBold",
             "CormorantInfant-Variable",
+            "CormorantInfant-SemiBold",
             "IBMPlexMono-Regular"
         ]
 
@@ -48,10 +49,11 @@ public enum FontRegistration {
     /// Map our filename to the actual PostScript font name SwiftUI expects.
     private static func postScriptName(for filename: String) -> String {
         switch filename {
-        case "CormorantSC-Bold":        return "CormorantSC-Bold"
-        case "CormorantSC-SemiBold":    return "CormorantSC-SemiBold"
+        case "CormorantSC-Bold":         return "CormorantSC-Bold"
+        case "CormorantSC-SemiBold":     return "CormorantSC-SemiBold"
         case "CormorantInfant-Variable": return "CormorantInfant"
-        case "IBMPlexMono-Regular":     return "IBMPlexMono-Regular"
+        case "CormorantInfant-SemiBold": return "CormorantInfant-SemiBold"
+        case "IBMPlexMono-Regular":      return "IBMPlexMono-Regular"
         default:                         return filename
         }
     }

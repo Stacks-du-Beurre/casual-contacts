@@ -31,7 +31,10 @@ public struct CardView: View {
 
     public var body: some View {
         let accoutrements = record.accoutrements
-        let density: CCVisuals.Guilloche.LineDensity = size == .small ? .preview : .cards
+        // Per DESIGN.md §1.3: list-row, medium, and large cards all use .cards (3 shapes +
+        // 15 lines). .preview (1 shape + 7 lines) is reserved for the Recommended Section
+        // (deferred to v1.1+), which will have its own component.
+        let density: CCVisuals.Guilloche.LineDensity = .cards
 
         return GeometryReader { geo in
             ZStack {

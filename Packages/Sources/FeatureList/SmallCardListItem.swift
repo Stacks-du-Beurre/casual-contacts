@@ -18,8 +18,8 @@ public struct SmallCardListItem: View {
         ZStack {
             CardView(record: record, size: .small, attitude: attitude, paths: paths)
                 .accessibilityHidden(true)
-                .frame(height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(height: 211)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 4)
         }

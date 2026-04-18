@@ -13,6 +13,8 @@ public struct RecordsListScene: View {
     public let onTapSettings: () -> Void
 
     @State private var searchText: String = ""
+    @State private var sortOption: SortOption = .alphabetical
+    @State private var isSortingSheetPresented: Bool = false
     @Environment(\.colorScheme) private var colorScheme
 
     public init(
@@ -33,10 +35,28 @@ public struct RecordsListScene: View {
 
     @MainActor
     private var visibleRecords: [Record] {
-        if searchText.isEmpty {
-            return store.records
+        let base = searchText.isEmpty ? store.records : store.search(searchText)
+        return Self.sorted(base, by: sortOption)
+    }
+
+    static func sorted(_ records: [Record], by option: SortOption) -> [Record] {
+        switch option {
+        case .alphabetical:
+            return records.sorted { lhs, rhs in
+                lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
+        case .dateCreated:
+            return records.sorted { $0.createdAt > $1.createdAt }
+        case .timeCreated:
+            let cal = Calendar.current
+            return records.sorted { lhs, rhs in
+                let lc = cal.dateComponents([.hour, .minute, .second], from: lhs.createdAt)
+                let rc = cal.dateComponents([.hour, .minute, .second], from: rhs.createdAt)
+                let lSeconds = (lc.hour ?? 0) * 3600 + (lc.minute ?? 0) * 60 + (lc.second ?? 0)
+                let rSeconds = (rc.hour ?? 0) * 3600 + (rc.minute ?? 0) * 60 + (rc.second ?? 0)
+                return lSeconds < rSeconds
+            }
         }
-        return store.search(searchText)
     }
 
     @MainActor
@@ -55,23 +75,42 @@ public struct RecordsListScene: View {
     }
 
     /// Populated-list background. Empty state draws its own sunset gradient
-    /// which covers this in the empty case.
+    /// which covers this in the empty case. Matches Figma `L_Collection_View`
+    /// (L2 = #E9EAF1) and `D_Collection_View` (D3 = #282A30).
     private var populatedBackground: Color {
-        colorScheme == .dark ? CCDesign.Colors.D4 : CCDesign.Colors.L2
+        colorScheme == .dark ? CCDesign.Colors.D3 : CCDesign.Colors.L2
+    }
+
+    /// Bottom hairline of the nav bar — Figma `Line 60` inside
+    /// `L_Collection_View` / `D_Collection_View`. 0.5pt stroke.
+    private var navBarBottomLineColor: Color {
+        colorScheme == .dark ? CCDesign.Colors.D0 : CCDesign.Colors.L3
     }
 
     public var body: some View {
-        NavigationStack {
-            listContent
-                .background(populatedBackground.ignoresSafeArea())
-                .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
-                #if os(iOS)
-                .toolbar(.hidden, for: .navigationBar)
-                #endif
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    customNavBar
-                }
+        ZStack {
+            NavigationStack {
+                listContent
+                    .background(populatedBackground.ignoresSafeArea())
+                    .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
+                    #if os(iOS)
+                    .toolbar(.hidden, for: .navigationBar)
+                    #endif
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        customNavBar
+                    }
+            }
+
+            if isSortingSheetPresented {
+                DefaultSortingSheet(
+                    selected: $sortOption,
+                    onAdvanced: { isSortingSheetPresented = false },
+                    onDismiss: { isSortingSheetPresented = false }
+                )
+                .zIndex(1)
+            }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
     }
 
     private var customNavBar: some View {
@@ -85,6 +124,14 @@ public struct RecordsListScene: View {
                 .foregroundStyle(titleColor)
 
             HStack {
+                if !isEmpty {
+                    SortingButton(
+                        action: { isSortingSheetPresented = true },
+                        glyph: chromePrimary
+                    )
+                    .accessibilityLabel("Sorting")
+                    .padding(.leading, 10)
+                }
                 Spacer()
                 ViewControllerButton(
                     action: onTapSettings,
@@ -97,6 +144,18 @@ public struct RecordsListScene: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 44)
+        .background {
+            if !isEmpty {
+                populatedBackground.ignoresSafeArea(edges: .top)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if !isEmpty {
+                Rectangle()
+                    .fill(navBarBottomLineColor)
+                    .frame(height: 0.5)
+            }
+        }
     }
 
     @ViewBuilder
@@ -122,7 +181,7 @@ public struct RecordsListScene: View {
                 glyph: chromeAccent
             )
             .padding(.trailing, 24)
-            .padding(.bottom, 16)
+            .padding(.bottom, 32)
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
         }
@@ -141,3 +200,4 @@ private struct ConditionalSearchable: ViewModifier {
         }
     }
 }
+
