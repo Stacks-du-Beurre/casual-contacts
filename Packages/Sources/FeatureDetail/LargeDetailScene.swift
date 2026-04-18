@@ -32,6 +32,8 @@ public struct LargeDetailScene: View {
         NavigationStack {
             CardView(record: record, size: .large, attitude: attitude, paths: paths)
                 .ignoresSafeArea()
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Self.accessibilityLabel(for: record))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
@@ -67,5 +69,12 @@ public struct LargeDetailScene: View {
                     #endif
                 }
         }
+    }
+
+    public static func accessibilityLabel(for record: Record) -> String {
+        var parts: [String] = [record.name]
+        if !record.description.isEmpty { parts.append(record.description) }
+        if let label = record.location?.label { parts.append(label) }
+        return parts.joined(separator: ". ")
     }
 }

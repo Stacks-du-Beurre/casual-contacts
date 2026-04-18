@@ -35,6 +35,14 @@ public struct MediumDetailSheet: View {
         VStack(spacing: 0) {
             CardView(record: record, size: .medium, attitude: attitude, paths: paths)
                 .aspectRatio(16.0/10.0, contentMode: .fit)
+                .accessibilityHidden(true)
+
+            Text(Self.accessibilityLabel(for: record))
+                .font(.body)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .accessibilityAddTraits(.isHeader)
 
             HStack(spacing: 16) {
                 Button("Expand", action: onExpand)
@@ -50,5 +58,12 @@ public struct MediumDetailSheet: View {
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
         #endif
+    }
+
+    public static func accessibilityLabel(for record: Record) -> String {
+        var parts: [String] = [record.name]
+        if !record.description.isEmpty { parts.append(record.description) }
+        if let label = record.location?.label { parts.append(label) }
+        return parts.joined(separator: ". ")
     }
 }
