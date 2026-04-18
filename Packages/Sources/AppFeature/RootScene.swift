@@ -5,6 +5,9 @@ import FeatureList
 import FeatureCreate
 import FeatureDetail
 import FeatureSettings
+#if os(iOS)
+import UIKit
+#endif
 
 /// The root SwiftUI `Scene` that composes every feature module in the app.
 ///
@@ -17,6 +20,7 @@ public struct RootScene: Scene {
     @State private var environment: AppEnvironment
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
+    @State private var reduceMotionEnabled = false
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
     /// app target, or `.testing()` in previews/tests). Registering bundled fonts
@@ -55,9 +59,19 @@ public struct RootScene: Scene {
             }
         )
         .task {
+            reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
-            for await attitude in environment.motionService.attitude {
-                currentAttitude = attitude
+            for await raw in environment.motionService.attitude {
+                currentAttitude = ReducedMotionAdapter.attitude(
+                    raw: raw,
+                    reduceMotionEnabled: reduceMotionEnabled
+                )
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
+            reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
+            if reduceMotionEnabled {
+                currentAttitude = .zero
             }
         }
         .sheet(isPresented: $router.showingCreate) {
