@@ -136,10 +136,7 @@ public struct RootScene: Scene {
             )
         }
         .sheet(isPresented: $router.showingSettings) {
-            SettingsSheet(
-                onAbout: { router.showingAbout = true },
-                onDismiss: { router.showingSettings = false }
-            )
+            SettingsSheet(onAbout: { router.showingAbout = true })
         }
         .sheet(isPresented: $router.showingAbout) {
             NavigationStack {

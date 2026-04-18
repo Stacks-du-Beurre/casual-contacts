@@ -6,7 +6,7 @@ import SwiftUI
 @Suite struct SettingsTests {
 
     @Test func settingsSheetInstantiates() {
-        _ = SettingsSheet(onAbout: {}, onDismiss: {}).body
+        _ = SettingsSheet(onAbout: {}).body
     }
 
     @Test func aboutViewInstantiates() {
