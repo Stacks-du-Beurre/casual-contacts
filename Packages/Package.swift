@@ -69,7 +69,9 @@ let package = Package(
             dependencies: [
                 "AppFeature",
                 "CoreModels",
-                "Visuals"
+                "Visuals",
+                "StorageTestSupport",
+                "ServicesTestSupport"
             ],
             path: "Tests/AppFeatureTests"
         )
