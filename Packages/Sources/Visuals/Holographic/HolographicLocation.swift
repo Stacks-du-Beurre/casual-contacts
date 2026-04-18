@@ -20,11 +20,15 @@ public struct HolographicLocation: View {
                 .blendMode(.lighten)
                 .blur(radius: 2)
                 .offset(x: CGFloat(attitude.roll) * 8, y: CGFloat(attitude.pitch) * 8)
+                .minimumScaleFactor(0.7)
+                .lineLimit(2)
 
             Text(address)
                 .font(CCDesign.Typography.caption1)
                 .foregroundStyle(.white)
                 .blendMode(.luminosity)
+                .minimumScaleFactor(0.7)
+                .lineLimit(2)
         }
     }
 }

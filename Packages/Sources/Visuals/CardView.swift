@@ -98,6 +98,8 @@ struct CardTextLayer: View {
                 Text(record.description)
                     .font(CCDesign.Typography.descriptionSmall)
                     .foregroundStyle(.white)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(2)
             }
             Spacer()
             if let location = record.location?.label {
