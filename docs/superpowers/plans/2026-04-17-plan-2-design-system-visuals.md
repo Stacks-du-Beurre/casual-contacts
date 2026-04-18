@@ -214,11 +214,17 @@ EOF
 - Create: `Packages/Sources/DesignSystem/Colors.swift`
 - Create: `Packages/Tests/DesignSystemTests/ColorsTests.swift`
 
-Ten colors per the design spec's Components page:
-- Light palette: `L0`, `L1`, `L2`, `L3`, `L4`
-- Dark palette: `D0`, `D1`, `D2`, `D3`, `D4`
+Ten colors per the design spec's Components page, **exact values extracted from Figma** (node `277:11175` via MCP):
 
-**Known hex values (Figma extraction pending):** The design spec's §10 style guide and Components page expose 10 named color tokens. Exact hex values need to be extracted from Figma (or color-picked from the PDF on page 10). For this task, use the following placeholder values that are reasonable approximations from the PDF's visible swatches. Refine later if Figma MCP becomes available.
+| Token | Hex | Token | Hex |
+|---|---|---|---|
+| L0 | `#FFFFFF` (pure white) | D0 | `#5F6068` |
+| L1 | `#F4F5FA` | D1 | `#4A4C54` |
+| L2 | `#E9EAF1` | D2 | `#383B43` |
+| L3 | `#D0D1DA` | D3 | `#282A30` |
+| L4 | `#B0B2BC` | D4 | `#141415` (darkest ink) |
+
+Note the direction: `L0` is lightest (pure white), `L4` is the darkest light-palette tone; `D0` is the lightest dark-palette tone, `D4` is the darkest. This matches Figma's L→darker-numbered, D→darker-numbered convention.
 
 - [ ] **Step 1: Write failing tests**
 
@@ -241,8 +247,7 @@ import SwiftUI
     }
 
     @Test func lightPaletteGoesLightestToDarkest() {
-        // Each subsequent tone should be darker. Compare via Color components on UIColor/NSColor bridge.
-        // We just smoke-test that the API is accessible; visual verification is via snapshot tests.
+        // L0 is pure white, L4 is darkest light-palette tone. Verified via Figma node 277:11175.
         let palette = CCDesign.Colors.light
         #expect(palette[0] != palette[4])
     }
@@ -271,20 +276,19 @@ import SwiftUI
 
 public extension CCDesign {
     enum Colors {
-        // Light palette — L0 darkest, L4 lightest warm neutrals extracted from the style guide.
-        // Exact hex values should be refined against Figma when MCP access is available.
-        public static let L0 = Color(red: 0.14, green: 0.14, blue: 0.16)   // deepest ink
-        public static let L1 = Color(red: 0.35, green: 0.35, blue: 0.38)   // warm graphite
-        public static let L2 = Color(red: 0.68, green: 0.67, blue: 0.70)   // medium grey
-        public static let L3 = Color(red: 0.88, green: 0.87, blue: 0.90)   // pale lavender-grey
-        public static let L4 = Color(red: 0.96, green: 0.95, blue: 0.97)   // near-white
+        // Light palette — L0 lightest (pure white) → L4 darkest. Extracted from Figma node 277:11175.
+        public static let L0 = Color(red: 1.00, green: 1.00, blue: 1.00)   // #FFFFFF
+        public static let L1 = Color(red: 0.957, green: 0.961, blue: 0.980) // #F4F5FA
+        public static let L2 = Color(red: 0.914, green: 0.918, blue: 0.945) // #E9EAF1
+        public static let L3 = Color(red: 0.816, green: 0.820, blue: 0.855) // #D0D1DA
+        public static let L4 = Color(red: 0.690, green: 0.698, blue: 0.737) // #B0B2BC
 
-        // Dark palette — D0 near-black, D4 lightest cool neutrals.
-        public static let D0 = Color(red: 0.08, green: 0.08, blue: 0.09)
-        public static let D1 = Color(red: 0.18, green: 0.18, blue: 0.20)
-        public static let D2 = Color(red: 0.32, green: 0.32, blue: 0.35)
-        public static let D3 = Color(red: 0.55, green: 0.55, blue: 0.58)
-        public static let D4 = Color(red: 0.78, green: 0.77, blue: 0.80)
+        // Dark palette — D0 lightest dark → D4 darkest. Extracted from Figma node 277:11175.
+        public static let D0 = Color(red: 0.373, green: 0.376, blue: 0.408) // #5F6068
+        public static let D1 = Color(red: 0.290, green: 0.298, blue: 0.329) // #4A4C54
+        public static let D2 = Color(red: 0.220, green: 0.231, blue: 0.263) // #383B43
+        public static let D3 = Color(red: 0.157, green: 0.165, blue: 0.188) // #282A30
+        public static let D4 = Color(red: 0.078, green: 0.078, blue: 0.082) // #141415
 
         public static var light: [Color] { [L0, L1, L2, L3, L4] }
         public static var dark: [Color] { [D0, D1, D2, D3, D4] }
@@ -304,8 +308,7 @@ git add Packages/Sources/DesignSystem/Colors.swift Packages/Tests/DesignSystemTe
 git commit -m "$(cat <<'EOF'
 feat(design-system): add L0–L4 and D0–D4 color palettes
 
-Hex values are reasonable approximations from the style-guide PDF;
-refine against Figma when MCP access is available.
+Hex values sourced directly from Figma via MCP (node 277:11175).
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -322,36 +325,31 @@ EOF
 - Create: `Packages/Tests/DesignSystemTests/TypographyTests.swift`
 - Modify: `Packages/Package.swift` (DesignSystem target needs `resources:` for fonts)
 
-**Font files to add (ship as resources):** Cormorant SC (Bold + SemiBold), Cormorant Infant (Regular + SemiBold), IBM Plex Mono (Regular). All three families are SIL OFL-licensed and available via Google Fonts. Download the TTFs and drop them in `Packages/Sources/DesignSystem/Resources/Fonts/`. Also include the OFL license text for each family in a `LICENSES/` subfolder.
+**Font files:** already staged in the repo at `/Users/adam/Projects/cc/design-assets/fonts/` (downloaded from Google Fonts during planning). This task copies them into the package resources.
 
-- [ ] **Step 1: Download fonts**
-
-This is a manual step — the agent should instruct the user (or do it via curl if the user confirms it's OK).
-
-Commands (can be run by agent):
-```bash
-cd /tmp
-curl -L -o cormorant-sc.zip 'https://fonts.google.com/download?family=Cormorant%20SC'
-curl -L -o cormorant-infant.zip 'https://fonts.google.com/download?family=Cormorant%20Infant'
-curl -L -o ibm-plex-mono.zip 'https://fonts.google.com/download?family=IBM%20Plex%20Mono'
-```
-
-If the Google Fonts endpoint requires JavaScript (likely), fall back to: `curl` the GitHub repos directly:
-- Cormorant SC: https://github.com/CatharsisFonts/Cormorant/tree/master/3.-Cormorant%20SC%20%5BOFL%5D/TTF
-- Cormorant Infant: https://github.com/CatharsisFonts/Cormorant/tree/master/4.-Cormorant%20Infant%20%5BOFL%5D/TTF
-- IBM Plex Mono: https://github.com/IBM/plex/tree/master/IBM-Plex-Mono/fonts/complete/ttf
-
-Place the following files in `Packages/Sources/DesignSystem/Resources/Fonts/`:
+Files available in `design-assets/fonts/`:
 - `CormorantSC-Bold.ttf`
 - `CormorantSC-SemiBold.ttf`
-- `CormorantInfant-Regular.ttf`
-- `CormorantInfant-SemiBold.ttf`
+- `CormorantInfant-Variable.ttf` (variable font, covers Regular 400 + SemiBold 600 via `.fontWeight()` modifier)
 - `IBMPlexMono-Regular.ttf`
+- `LICENSES/OFL-CormorantSC.txt`
+- `LICENSES/OFL-CormorantInfant.txt`
+- `LICENSES/OFL-IBMPlexMono.txt`
 
-Place license files in `Packages/Sources/DesignSystem/Resources/Fonts/LICENSES/`:
-- `CormorantSC-OFL.txt`, `CormorantInfant-OFL.txt`, `IBMPlexMono-OFL.txt`
+**Note on Cormorant Infant:** Google Fonts ships this family as a single variable-axis font file. To get different weights we set `.fontWeight(.semibold)` on SwiftUI `Text` views after applying the base `Font.custom(...)`. The PostScript font name is `CormorantInfant` (no weight suffix).
 
-If font download is blocked, **report NEEDS_CONTEXT** so the user can provide the files manually. Do not ship placeholder fonts or skip this step.
+- [ ] **Step 1: Copy fonts into package resources**
+
+```bash
+mkdir -p /Users/adam/Projects/cc/Packages/Sources/DesignSystem/Resources/Fonts/LICENSES
+cp /Users/adam/Projects/cc/design-assets/fonts/*.ttf \
+   /Users/adam/Projects/cc/Packages/Sources/DesignSystem/Resources/Fonts/
+cp /Users/adam/Projects/cc/design-assets/fonts/LICENSES/*.txt \
+   /Users/adam/Projects/cc/Packages/Sources/DesignSystem/Resources/Fonts/LICENSES/
+ls /Users/adam/Projects/cc/Packages/Sources/DesignSystem/Resources/Fonts/
+```
+
+Expected: 4 `.ttf` files + a `LICENSES/` folder with 3 `.txt` files.
 
 - [ ] **Step 2: Update Package.swift**
 
@@ -392,13 +390,12 @@ import SwiftUI
 
     @Test func fontNamesAreRegisteredBundleResources() {
         // Smoke: font files are in the bundle.
-        // This only asserts bundle presence; actual font registration happens at app launch
-        // via CTFontManager (hooked up in AppFeature in Plan 3).
+        // Actual font registration happens at app launch via CTFontManager (hooked up in AppFeature in Plan 3).
         let bundle = Bundle.module
-        let cormorantSCBold = bundle.url(forResource: "CormorantSC-Bold", withExtension: "ttf")
-        let plexMonoRegular = bundle.url(forResource: "IBMPlexMono-Regular", withExtension: "ttf")
-        #expect(cormorantSCBold != nil)
-        #expect(plexMonoRegular != nil)
+        #expect(bundle.url(forResource: "CormorantSC-Bold", withExtension: "ttf") != nil)
+        #expect(bundle.url(forResource: "CormorantSC-SemiBold", withExtension: "ttf") != nil)
+        #expect(bundle.url(forResource: "CormorantInfant-Variable", withExtension: "ttf") != nil)
+        #expect(bundle.url(forResource: "IBMPlexMono-Regular", withExtension: "ttf") != nil)
     }
 }
 ```
@@ -426,8 +423,9 @@ public extension CCDesign {
         // Sizes respect Dynamic Type when used with `.font(...)` modifier. Values are base sizes.
         public static let title = Font.custom("CormorantSC-SemiBold", size: 33, relativeTo: .largeTitle)
         public static let headline = Font.custom("CormorantSC-Bold", size: 16, relativeTo: .headline)
-        public static let description = Font.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body)
-        public static let descriptionSmall = Font.custom("CormorantInfant-Regular", size: 13, relativeTo: .footnote)
+        // CormorantInfant is a variable font — apply .fontWeight(.semibold) on Text for SemiBold.
+        public static let description = Font.custom("CormorantInfant", size: 18, relativeTo: .body)
+        public static let descriptionSmall = Font.custom("CormorantInfant", size: 13, relativeTo: .footnote)
         public static let caption1 = Font.custom("CormorantSC-Bold", size: 12, relativeTo: .caption)
         public static let caption2 = Font.custom("IBMPlexMono-Regular", size: 11, relativeTo: .caption2)
 
@@ -488,19 +486,19 @@ EOF
 - Create: `Packages/Sources/DesignSystem/Gradients.swift`
 - Create: `Packages/Tests/DesignSystemTests/GradientsTests.swift`
 
-Seven linear-gradient definitions — one per `TimeOfDay`. Stops should be extracted from Figma when MCP access is available; for now sample approximate values from the PNGs in `design-assets/Gradients/` (the files are in the repo — open them in Preview.app, color-pick 2–3 stops per gradient).
+Seven linear-gradient definitions — one per `TimeOfDay`. Figma stores these as flattened PNGs (verified via MCP on nodes 9:116, 10:3, etc.), so the canonical stops live in `design-assets/Gradients/*.png`. The values below were sampled at TL / Center / BR with ImageMagick and are the **authoritative** 3-stop approximations for the SwiftUI `LinearGradient`:
 
-**Placeholder stops** (refine in a follow-up pass once the values are verified):
+| Gradient | TL (start) | C (mid) | BR (end) |
+|---|---|---|---|
+| Dawn | `#98B5C7` | `#959495` | `#ECC8BC` |
+| Sunrise | `#47A9A2` | `#58AAA0` | `#FDECE2` |
+| Midday | `#7CC6D5` | `#61A1BB` | `#85CBB2` |
+| Sunset | `#D3D9E0` | `#8A839A` | `#A48D9F` |
+| Dusk | `#889095` | `#3D4448` | `#FAE0D2` |
+| Night | `#5B637E` | `#394164` | `#F2F1F7` |
+| Midnight | `#4F4F65` | `#1E202C` | `#ABAFB2` |
 
-| Gradient | Top-left → Bottom-right (approx) |
-|---|---|
-| Dawn | `#B8A29A` → `#D6B89C` → `#F0D4B0` (warm peach) |
-| Sunrise | `#6FB5A3` → `#9DC9B0` → `#E8D9A3` (teal-to-honey) |
-| Midday | `#95BEDE` → `#B3D1E8` → `#D9C3D5` (sky blue-to-lavender) |
-| Sunset | `#6E6788` → `#B08CA3` → `#E5A8A3` (violet-to-coral) |
-| Dusk | `#4A5366` → `#7A6D5E` → `#E3A66F` (slate-to-amber) |
-| Night | `#1F2B4D` → `#3A3F5F` → `#6B5A8C` (navy-to-plum) |
-| Midnight | `#0B0F1A` → `#12182B` → `#1A2238` (near-black-to-navy) |
+Note: several gradients have a lighter "highlight" in the BR corner (especially Dusk, Night, Sunrise). That's a baked-in sheen effect from the designer's originals. SwiftUI `LinearGradient` with diagonal direction approximates the overall feel well; the sheen is slightly flatter than the PNG but still legible.
 
 - [ ] **Step 1: Failing tests**
 
@@ -589,52 +587,55 @@ import SwiftUI
 public extension CCDesign {
     enum Gradients {
 
+        // All stops sampled from design-assets/Gradients/*.png (see plan Task 4 table).
+        // Stops are TL → center → BR; SwiftUI interpolates linearly along .topLeading→.bottomTrailing.
+
         public static let dawn = LinearGradient(
-            colors: [Color(red: 0.72, green: 0.64, blue: 0.60),
-                     Color(red: 0.84, green: 0.72, blue: 0.61),
-                     Color(red: 0.94, green: 0.83, blue: 0.69)],
+            colors: [Color(red: 0.596, green: 0.710, blue: 0.780),   // #98B5C7
+                     Color(red: 0.584, green: 0.580, blue: 0.584),   // #959495
+                     Color(red: 0.925, green: 0.784, blue: 0.737)],  // #ECC8BC
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let sunrise = LinearGradient(
-            colors: [Color(red: 0.44, green: 0.71, blue: 0.64),
-                     Color(red: 0.62, green: 0.79, blue: 0.69),
-                     Color(red: 0.91, green: 0.85, blue: 0.64)],
+            colors: [Color(red: 0.278, green: 0.663, blue: 0.635),   // #47A9A2
+                     Color(red: 0.345, green: 0.667, blue: 0.627),   // #58AAA0
+                     Color(red: 0.992, green: 0.925, blue: 0.886)],  // #FDECE2
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let midday = LinearGradient(
-            colors: [Color(red: 0.58, green: 0.75, blue: 0.87),
-                     Color(red: 0.70, green: 0.82, blue: 0.91),
-                     Color(red: 0.85, green: 0.76, blue: 0.84)],
+            colors: [Color(red: 0.486, green: 0.776, blue: 0.835),   // #7CC6D5
+                     Color(red: 0.380, green: 0.631, blue: 0.733),   // #61A1BB
+                     Color(red: 0.522, green: 0.796, blue: 0.698)],  // #85CBB2
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let sunset = LinearGradient(
-            colors: [Color(red: 0.43, green: 0.40, blue: 0.53),
-                     Color(red: 0.69, green: 0.55, blue: 0.64),
-                     Color(red: 0.90, green: 0.66, blue: 0.64)],
+            colors: [Color(red: 0.827, green: 0.851, blue: 0.878),   // #D3D9E0
+                     Color(red: 0.541, green: 0.514, blue: 0.604),   // #8A839A
+                     Color(red: 0.643, green: 0.553, blue: 0.624)],  // #A48D9F
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let dusk = LinearGradient(
-            colors: [Color(red: 0.29, green: 0.33, blue: 0.40),
-                     Color(red: 0.48, green: 0.43, blue: 0.37),
-                     Color(red: 0.89, green: 0.65, blue: 0.43)],
+            colors: [Color(red: 0.533, green: 0.565, blue: 0.584),   // #889095
+                     Color(red: 0.239, green: 0.267, blue: 0.282),   // #3D4448
+                     Color(red: 0.980, green: 0.878, blue: 0.824)],  // #FAE0D2
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let night = LinearGradient(
-            colors: [Color(red: 0.12, green: 0.17, blue: 0.30),
-                     Color(red: 0.23, green: 0.25, blue: 0.37),
-                     Color(red: 0.42, green: 0.35, blue: 0.55)],
+            colors: [Color(red: 0.357, green: 0.388, blue: 0.494),   // #5B637E
+                     Color(red: 0.224, green: 0.255, blue: 0.392),   // #394164
+                     Color(red: 0.949, green: 0.945, blue: 0.969)],  // #F2F1F7
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
         public static let midnight = LinearGradient(
-            colors: [Color(red: 0.04, green: 0.06, blue: 0.10),
-                     Color(red: 0.07, green: 0.09, blue: 0.17),
-                     Color(red: 0.10, green: 0.13, blue: 0.22)],
+            colors: [Color(red: 0.310, green: 0.310, blue: 0.396),   // #4F4F65
+                     Color(red: 0.118, green: 0.125, blue: 0.173),   // #1E202C
+                     Color(red: 0.671, green: 0.686, blue: 0.698)],  // #ABAFB2
             startPoint: .topLeading, endPoint: .bottomTrailing
         )
 
@@ -657,8 +658,9 @@ git add Packages/Sources/DesignSystem/Gradients.swift Packages/Tests/DesignSyste
 git commit -m "$(cat <<'EOF'
 feat(design-system): add seven time-of-day LinearGradients
 
-Color stops are first-pass approximations sampled against the style-guide
-PNGs; refine against Figma when MCP access is available.
+Three-stop approximations sampled from design-assets/Gradients/*.png
+(the designer's flattened PNGs — Figma stores them as raster, not
+gradient paints, verified via MCP).
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -2472,4 +2474,4 @@ All 15 tasks deliver tests; the full suite should exceed 100 passing tests by th
 - Concrete `CardPathProvider` implementation that reads from `Generated/` (wired into `AppFeature`)
 - Font registration via `CTFontManager` at app launch
 - Snapshot tests for iPhone 13 baseline device at various Dynamic Type sizes
-- Gradient color stops refined against Figma when MCP access is available
+- Gradient refinement: the 3-stop LinearGradient is a simplification of the PNGs' sheen — consider RadialGradient or multi-stop approximation if visual QA finds it too flat
