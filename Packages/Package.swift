@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.iOS(.v18), .macOS(.v14)],
     products: [
         .library(name: "CoreModels", targets: ["CoreModels"]),
-        .library(name: "Storage", targets: ["Storage"])
+        .library(name: "Storage", targets: ["Storage"]),
+        .library(name: "StorageTestSupport", targets: ["StorageTestSupport"]),
     ],
     targets: [
         .target(
@@ -27,7 +28,17 @@ let package = Package(
             name: "StorageTests",
             dependencies: ["Storage", "CoreModels"],
             path: "Tests/StorageTests"
-        )
+        ),
+        .target(
+            name: "StorageTestSupport",
+            dependencies: ["CoreModels"],
+            path: "Sources/StorageTestSupport"
+        ),
+        .testTarget(
+            name: "StorageTestSupportTests",
+            dependencies: ["StorageTestSupport", "CoreModels"],
+            path: "Tests/StorageTestSupportTests"
+        ),
     ],
     swiftLanguageModes: [.v6]
 )
