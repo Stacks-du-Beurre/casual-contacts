@@ -14,9 +14,39 @@ public struct EmptyStateView: View {
     }
 
     public var body: some View {
+        GeometryReader { sceneGeo in
+            ZStack {
+                backdrop
+                    .frame(width: sceneGeo.size.width, height: sceneGeo.size.height)
+
+                Button(action: onTap) {
+                    HologramPill(
+                        hologram: .neon3,
+                        backdropSize: sceneGeo.size,
+                        coordinateSpaceName: Self.sceneCoordinateSpace,
+                        backdrop: { backdrop },
+                        content: {
+                            HologramText("add the first person", font: CCDesign.Typography.title)
+                                .padding(.horizontal, 6)
+                        }
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("emptyStateTitle")
+                .accessibilityLabel("add the first person")
+                .accessibilityHint("Opens the new contact form")
+            }
+            .coordinateSpace(.named(Self.sceneCoordinateSpace))
+        }
+        .ignoresSafeArea()
+    }
+
+    private static let sceneCoordinateSpace = "EmptyStateScene"
+
+    @ViewBuilder
+    private var backdrop: some View {
         ZStack {
             CCDesign.Gradients.sunset
-                .ignoresSafeArea()
 
             GuillocheRotationLayer(
                 paths: Self.swirlPaths(from: paths.rotationPaths(for: "A")),
@@ -34,23 +64,6 @@ public struct EmptyStateView: View {
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)
-
-            Button(action: onTap) {
-                Text("add the first person")
-                    .font(CCDesign.Typography.title)
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 6)
-                    .background {
-                        ZStack {
-                            Rectangle().fill(.ultraThinMaterial)
-                            Color.white.opacity(0.05)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("emptyStateTitle")
-            .accessibilityLabel("add the first person")
-            .accessibilityHint("Opens the new contact form")
         }
     }
 
