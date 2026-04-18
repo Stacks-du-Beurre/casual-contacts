@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "ServicesTestSupport", targets: ["ServicesTestSupport"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "Visuals", targets: ["Visuals"]),
+        .library(name: "FeatureList", targets: ["FeatureList"]),
         .library(name: "AppFeature", targets: ["AppFeature"])
     ],
     dependencies: [
@@ -52,6 +53,16 @@ let package = Package(
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
             ],
             path: "Tests/VisualsTests"
+        ),
+        .target(
+            name: "FeatureList",
+            dependencies: ["CoreModels", "DesignSystem", "Visuals"],
+            path: "Sources/FeatureList"
+        ),
+        .testTarget(
+            name: "FeatureListTests",
+            dependencies: ["FeatureList", "CoreModels", "StorageTestSupport", "ServicesTestSupport"],
+            path: "Tests/FeatureListTests"
         ),
         .target(
             name: "AppFeature",
