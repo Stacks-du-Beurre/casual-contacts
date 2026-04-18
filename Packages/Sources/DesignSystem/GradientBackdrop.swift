@@ -6,7 +6,7 @@ public extension CCDesign {
     /// Per `docs/CC Design Specifications.pdf §2`, gradients are hand-authored
     /// paintings, not procedural ramps — this view guarantees the canonical source.
     struct GradientBackdrop: View, Equatable, Hashable, Sendable {
-        public let assetName: String
+        nonisolated public let assetName: String
 
         nonisolated public init(assetName: String) {
             self.assetName = assetName
