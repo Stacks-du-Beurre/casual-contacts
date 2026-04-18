@@ -25,6 +25,8 @@ public enum SwiftEmitter {
     }
 
     /// Emit a full Swift file for multiple named paths inside a namespace.
+    /// Appends a `static let all: [Path]` convenience array listing every emitted
+    /// path in declaration order, so callers can iterate without reflection.
     public static func emitFile(
         namespace: String,
         paths: [(name: String, commands: [PathCommand])],
@@ -37,6 +39,13 @@ public enum SwiftEmitter {
         output += "\npublic extension \(namespace) {\n"
         for (name, commands) in paths {
             output += emit(pathCommands: commands, constantName: name) + "\n\n"
+        }
+        // Append convenience `all` array so callers can enumerate without reflection.
+        let allEntries = paths.map { "        \($0.name)" }.joined(separator: ",\n")
+        if paths.isEmpty {
+            output += "    static let all: [Path] = []\n"
+        } else {
+            output += "    static let all: [Path] = [\n\(allEntries)\n    ]\n"
         }
         output += "}\n"
         return output

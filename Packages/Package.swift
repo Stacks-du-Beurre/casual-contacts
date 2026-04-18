@@ -11,7 +11,8 @@ let package = Package(
         .library(name: "Services", targets: ["Services"]),
         .library(name: "ServicesTestSupport", targets: ["ServicesTestSupport"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
-        .library(name: "Visuals", targets: ["Visuals"])
+        .library(name: "Visuals", targets: ["Visuals"]),
+        .library(name: "AppFeature", targets: ["AppFeature"])
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0")
@@ -51,6 +52,26 @@ let package = Package(
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
             ],
             path: "Tests/VisualsTests"
+        ),
+        .target(
+            name: "AppFeature",
+            dependencies: [
+                "CoreModels",
+                "Storage",
+                "Services",
+                "DesignSystem",
+                "Visuals"
+            ],
+            path: "Sources/AppFeature"
+        ),
+        .testTarget(
+            name: "AppFeatureTests",
+            dependencies: [
+                "AppFeature",
+                "CoreModels",
+                "Visuals"
+            ],
+            path: "Tests/AppFeatureTests"
         )
     ],
     swiftLanguageModes: [.v6]
