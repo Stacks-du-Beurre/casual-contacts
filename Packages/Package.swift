@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "Storage", targets: ["Storage"]),
         .library(name: "StorageTestSupport", targets: ["StorageTestSupport"]),
         .library(name: "Services", targets: ["Services"]),
+        .library(name: "ServicesTestSupport", targets: ["ServicesTestSupport"]),
     ],
     targets: [
         .target(
@@ -49,6 +50,16 @@ let package = Package(
             name: "ServicesTests",
             dependencies: ["Services", "CoreModels"],
             path: "Tests/ServicesTests"
+        ),
+        .target(
+            name: "ServicesTestSupport",
+            dependencies: ["CoreModels"],
+            path: "Sources/ServicesTestSupport"
+        ),
+        .testTarget(
+            name: "ServicesTestSupportTests",
+            dependencies: ["ServicesTestSupport", "CoreModels"],
+            path: "Tests/ServicesTestSupportTests"
         ),
     ],
     swiftLanguageModes: [.v6]
