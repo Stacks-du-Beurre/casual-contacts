@@ -16,13 +16,13 @@
 
 ```
 /Users/adam/Projects/cc/
-├── CasualContacts.xcodeproj/        # created manually in Task 1, committed to git
-├── CasualContacts/                   # app target sources (minimal in this plan)
-│   ├── CasualContactsApp.swift       # stub @main, replaced in Plan 3
-│   ├── Info.plist
-│   ├── CasualContacts.entitlements
-│   └── Assets.xcassets/              # app icon placeholder
-├── Packages/
+├── CasualContacts/                        # Xcode wrapper folder (created manually in Task 1)
+│   ├── CasualContacts.xcodeproj/          # the Xcode project
+│   └── CasualContacts/                    # app target sources (minimal in this plan)
+│       ├── CasualContactsApp.swift        # stub @main, replaced in Plan 3
+│       ├── Info.plist                     # auto-managed by Xcode in 2026 — may be implicit
+│       └── Assets.xcassets/               # app icon placeholder
+├── Packages/                              # sibling to the Xcode wrapper
 │   ├── Package.swift                 # declares every module + test target
 │   └── Sources/
 │       ├── CoreModels/
@@ -147,7 +147,7 @@ import PackageDescription
 
 let package = Package(
     name: "CasualContactsPackages",
-    platforms: [.iOS(.v18)],
+    platforms: [.iOS(.v18), .macOS(.v14)],
     products: [],
     targets: []
 )
@@ -234,7 +234,7 @@ import PackageDescription
 
 let package = Package(
     name: "CasualContactsPackages",
-    platforms: [.iOS(.v18)],
+    platforms: [.iOS(.v18), .macOS(.v14)],
     products: [
         .library(name: "CoreModels", targets: ["CoreModels"])
     ],
@@ -953,7 +953,7 @@ import PackageDescription
 
 let package = Package(
     name: "CasualContactsPackages",
-    platforms: [.iOS(.v18)],
+    platforms: [.iOS(.v18), .macOS(.v14)],
     products: [
         .library(name: "CoreModels", targets: ["CoreModels"]),
         .library(name: "Storage", targets: ["Storage"])
