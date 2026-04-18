@@ -34,6 +34,7 @@ let package = Package(
         .testTarget(name: "ServicesTestSupportTests", dependencies: ["ServicesTestSupport", "CoreModels"], path: "Tests/ServicesTestSupportTests"),
         .target(
             name: "DesignSystem",
+            dependencies: ["CoreModels"],
             path: "Sources/DesignSystem",
             resources: [.process("Resources")]
         ),
