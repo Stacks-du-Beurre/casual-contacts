@@ -22,4 +22,10 @@ import CoreModels
         let expected = (attitude.roll + 1) / 2
         #expect(out == expected)
     }
+
+    @Test func holographicViewsInstantiateInBothTransparencyModes() {
+        _ = HolographicText(text: "Jane", attitude: .zero).body
+        _ = HolographicLocation(address: "SF", attitude: .zero).body
+        _ = HolographicZodiac(sign: .virgo, attitude: .zero).body
+    }
 }
