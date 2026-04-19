@@ -3,17 +3,16 @@ import CoreModels
 import Visuals
 
 /// Holographic zodiac figure for the create flow. 35×32 total: a
-/// `Moon_Background` hologram frame with a 22×22 chromatic-stack glyph
-/// centered inside. The chromatic stack (two neon-texture layers blended
-/// `.lighten` + `.luminosity` over a translucent white fill) is masked
-/// by the zodiac figure shape and uses `HologramTuning.shared` so it
-/// tracks the same calibration as the card's `HologramText` title.
+/// `Moon_Background` hologram frame with a 22×22 chromatic-glyph centered
+/// inside. Chromatic fill is a single neon texture, rotated by device roll,
+/// masked by the zodiac figure shape — mirrors `HolographicZodiac` on the
+/// card and tracks `ZodiacHologramTuning.shared`.
 struct CreateZodiacSymbolBadge: View {
     let sign: ZodiacSign
     let attitude: DeviceAttitude
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Bindable private var tuning = HologramTuning.shared
+    @Bindable private var tuning = ZodiacHologramTuning.shared
 
     private static let textureOverscan: CGFloat = 1.3
 
@@ -33,12 +32,11 @@ struct CreateZodiacSymbolBadge: View {
     @ViewBuilder
     private var chromaticGlyph: some View {
         if reduceTransparency {
-            // Reduce Transparency: fall back to a solid silhouette.
             Image(Self.assetName(for: sign), bundle: CCVisuals.bundle)
                 .resizable()
                 .scaledToFit()
         } else {
-            chromaticStack
+            chromaticFill
                 .mask {
                     Image(Self.assetName(for: sign), bundle: CCVisuals.bundle)
                         .resizable()
@@ -47,35 +45,19 @@ struct CreateZodiacSymbolBadge: View {
         }
     }
 
-    private var chromaticStack: some View {
+    private var chromaticFill: some View {
         GeometryReader { geo in
             let overscanW = geo.size.width * Self.textureOverscan
             let overscanH = geo.size.height * Self.textureOverscan
 
-            ZStack {
-                Color.white.opacity(tuning.whiteFillOpacity)
-
-                Image("Neon_3", bundle: CCVisuals.bundle)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: overscanW, height: overscanH)
-                    .offset(
-                        x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
-                        y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
-                    )
-                    .opacity(tuning.lightenOpacity)
-                    .blendMode(.lighten)
-
-                Image("Neon_3", bundle: CCVisuals.bundle)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: overscanW, height: overscanH)
-                    .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
-                    .opacity(tuning.luminosityOpacity)
-                    .blendMode(.luminosity)
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .clipped()
+            Image("Neon_3", bundle: CCVisuals.bundle)
+                .resizable()
+                .scaledToFill()
+                .frame(width: overscanW, height: overscanH)
+                .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+                .allowsHitTesting(false)
         }
     }
 
