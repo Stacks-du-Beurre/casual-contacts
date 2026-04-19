@@ -20,11 +20,14 @@ import CoreModels
         #expect(out.roll > 0.0 && out.roll < 1.0)
     }
 
-    @Test func smoothedValueClampsToRange() {
+    @Test func smoothedValuePassesThroughOutOfRangeInput() {
+        // AttitudeLowPass is a pure low-pass — it no longer clamps.
+        // Clamping belongs to callers (or to the CoreMotion callback)
+        // because baseline-relative attitudes naturally exceed ±1.
         let smoother = AttitudeLowPass(alpha: 0.5)
         let out = smoother.smooth(DeviceAttitude(pitch: 10.0, roll: -10.0))
-        #expect(out.pitch == 1.0)
-        #expect(out.roll == -1.0)
+        #expect(out.pitch == 10.0)
+        #expect(out.roll == -10.0)
     }
 
     @Test func repeatedSamplesConvergeToTarget() {
