@@ -11,11 +11,10 @@ import CoreModels
 ///      card-view behavior; the empty-state CTA opts out because the PDF §5
 ///      BERNARD sample shows no frosted base and on a bright pastel scene the
 ///      blur washes the `.lighten` hologram toward white.
-///   2. Holographic texture, `.lighten` blend — rotates with `attitude`.
+///   2. Holographic texture, `.lighten` blend — translates on (x,y) with `attitude`.
 ///      Replaces the flat 56% white fill the Figma node stores (Figma is wrong
 ///      per the designer's PDF — two hologram bitmap fills, not a white fill).
-///   3. Holographic texture, `.luminosity` blend @ 35% — translates on (x,y)
-///      with `attitude`.
+///   3. Holographic texture, `.luminosity` blend @ 35% — rotates with `attitude`.
 ///   4. Text, black fill, `.overlay` blend.
 ///   5. Text, 20% black fill, normal blend.
 ///
@@ -115,7 +114,10 @@ public struct HologramText<Backdrop: View>: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: overscanW, height: overscanH)
-                    .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
+                    .offset(
+                        x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
+                        y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
+                    )
                     .opacity(tuning.lightenOpacity)
                     .blendMode(.lighten)
                     .allowsHitTesting(false)
@@ -124,10 +126,7 @@ public struct HologramText<Backdrop: View>: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: overscanW, height: overscanH)
-                    .offset(
-                        x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
-                        y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
-                    )
+                    .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
                     .opacity(tuning.luminosityOpacity)
                     .blendMode(.luminosity)
                     .allowsHitTesting(false)

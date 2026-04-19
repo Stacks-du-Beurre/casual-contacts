@@ -16,10 +16,10 @@ import CoreModels
         #expect(expected == actual)
     }
 
-    @Test func gradientLayerTransfusionOpacityMatchesLegacyFormula() {
-        let attitude = DeviceAttitude(pitch: 0.2, roll: 0.5)
+    @Test func gradientLayerTransfusionOpacityMatchesFormula() {
+        let attitude = DeviceAttitude(pitch: 0.2, roll: -0.5)
         let out = GradientLayer.transfusionOpacity(for: attitude, reduceTransparency: false)
-        let expected = (attitude.roll + 1) / 2
+        let expected = abs(attitude.roll)
         #expect(out == expected)
     }
 

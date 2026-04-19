@@ -14,6 +14,7 @@ struct SaveButton: View {
     var body: some View {
         ZStack {
             GradientLayer(timeOfDay: timeOfDay, attitude: attitude)
+                .rotationEffect(.degrees(180))
 
             Text("SAVE")
                 .font(CCDesign.Typography.headline)

@@ -12,10 +12,12 @@ import DesignSystem
         }
     }
 
-    @Test func transfusionOpacityMapsRollToZeroOne() {
-        // roll = -1 → opacity 0, roll = 0 → opacity 0.5, roll = +1 → opacity 1
-        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: -1)) == 0.0)
-        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: 0)) == 0.5)
+    @Test func transfusionOpacityMapsAbsRollToZeroOne() {
+        // |roll| = 0 → 0, |roll| = 0.5 → 0.5, |roll| = 1 → 1 (symmetric around 0)
+        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: 0)) == 0.0)
+        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: -0.5)) == 0.5)
+        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: 0.5)) == 0.5)
+        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: -1)) == 1.0)
         #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: 1)) == 1.0)
     }
 
@@ -23,6 +25,6 @@ import DesignSystem
         // DeviceAttitude is clamped at construction, so anything >1 / <-1 should be clamped before arriving.
         // But the mapping function should also be defensive.
         #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: 2).clamped()) == 1.0)
-        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: -2).clamped()) == 0.0)
+        #expect(GradientLayer.transfusionOpacity(for: DeviceAttitude(pitch: 0, roll: -2).clamped()) == 1.0)
     }
 }

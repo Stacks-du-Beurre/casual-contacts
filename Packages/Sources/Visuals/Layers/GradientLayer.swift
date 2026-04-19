@@ -46,19 +46,19 @@ public struct GradientLayer: View {
         }
     }
 
-    /// Spec §2 "Transfusion": top-layer opacity tracks `attitude.roll` ∈ [-1, 1] → [0, 1].
-    /// At roll = 0 (resting / Reduce Motion) the result is 0.5 — the spec's "Default_50%" state.
-    /// Reduce Transparency forces 0, collapsing to the bottom layer only.
-    /// `sensitivity` scales roll before the [-1,1]→[0,1] mapping; > 1 flips the
-    /// transfusion faster around roll = 0, `0` pins it at 50%. Result is clamped
-    /// to [0, 1] so high sensitivity saturates rather than overshoots.
+    /// Top-layer opacity tracks `|attitude.roll|` ∈ [0, 1] → [0, 1].
+    /// At roll = 0 (resting / Reduce Motion) opacity is 0 — only the bottom
+    /// gradient is visible at 100%. Tilting in either direction brings the
+    /// rotated top layer up (50/50 at |roll| = 0.5, full swap at |roll| = 1).
+    /// Reduce Transparency forces 0. `sensitivity` scales roll before the abs
+    /// mapping; result is clamped to [0, 1].
     static func transfusionOpacity(
         for attitude: DeviceAttitude,
         reduceTransparency: Bool,
         sensitivity: Double = 1.0
     ) -> Double {
         guard !reduceTransparency else { return 0 }
-        let scaled = (attitude.roll * sensitivity + 1) / 2
+        let scaled = abs(attitude.roll * sensitivity)
         return max(0, min(1, scaled))
     }
 
