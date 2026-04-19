@@ -12,6 +12,9 @@ public struct CreateRecordScene: View {
     public let onSave: (RecordDraft) -> Void
 
     @State private var model: CreateRecordModel
+    @FocusState private var nameFocused: Bool
+
+    private static let coordSpace = "createScene"
 
     public init(
         attitude: DeviceAttitude,
@@ -34,69 +37,83 @@ public struct CreateRecordScene: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            PersonTopNav(onCancel: onCancel)
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                // Backdrop fills the entire sheet, including behind the top nav.
+                backdropLayer(size: geo.size)
+                    .ignoresSafeArea()
 
-            cardArea
-                .frame(height: 467)
+                // Foreground: top nav + form stack.
+                VStack(spacing: 0) {
+                    PersonTopNav(onCancel: onCancel)
 
-            LocationTimeStrip(
-                location: model.location,
-                createdAt: model.createdAt,
-                timeOfDay: model.metadata.timeOfDay
-            )
+                    // Form content + zodiac bundle, anchored top.
+                    ZStack(alignment: .topLeading) {
+                        CreateFormOverlay(
+                            model: model,
+                            nameFocused: $nameFocused,
+                            attitude: attitude,
+                            backdropSize: geo.size,
+                            coordinateSpaceName: Self.coordSpace,
+                            backdrop: { backdropLayer(size: geo.size) }
+                        )
 
-            SaveButton(
-                isEnabled: model.isSaveable,
-                timeOfDay: model.metadata.timeOfDay,
-                attitude: attitude,
-                action: { onSave(model.draft) }
-            )
+                        zodiacBundle
+                            .padding(.top, 259)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.trailing, 0)
+                    }
 
-            Spacer(minLength: 0)
+                    Spacer(minLength: 0)
+                }
+            }
+            .coordinateSpace(.named(Self.coordSpace))
+            .onAppear { nameFocused = true }
         }
-        .frame(maxWidth: .infinity)
-        .background(CCDesign.Colors.L2)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                LocationTimeStrip(
+                    location: model.location,
+                    createdAt: model.createdAt,
+                    timeOfDay: model.metadata.timeOfDay
+                )
+
+                SaveButton(
+                    isEnabled: model.isSaveable,
+                    timeOfDay: model.metadata.timeOfDay,
+                    attitude: attitude,
+                    action: { onSave(model.draft) }
+                )
+            }
+        }
     }
 
     @ViewBuilder
-    private var cardArea: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .topLeading) {
-                CardBackdrop(
-                    record: model.previewRecord,
-                    attitude: attitude,
-                    paths: paths,
-                    photo: photoImage
-                )
+    private func backdropLayer(size: CGSize) -> some View {
+        CardBackdrop(
+            record: model.previewRecord,
+            attitude: attitude,
+            paths: paths,
+            photo: photoImage
+        )
+        .frame(width: size.width, height: size.height)
+    }
 
-                // Right-edge zodiac bundle — anchored top-trailing within the
-                // card, with Figma's 259pt top inset.
-                ZStack(alignment: .topLeading) {
-                    CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
-                        .frame(width: 100, height: 90)
+    @ViewBuilder
+    private var zodiacBundle: some View {
+        ZStack(alignment: .topLeading) {
+            CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
+                .frame(width: 100, height: 90)
 
-                    CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
-                        .frame(width: 35, height: 32)
-                        .offset(x: 52, y: 70)
+            CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
+                .frame(width: 35, height: 32)
+                .offset(x: 52, y: 70)
 
-                    CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
-                        .frame(width: 35, height: 56)
-                        .offset(x: 57, y: 71)
-                }
-                .frame(width: 100, height: 127)
-                .padding(.top, 259)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-
-                // Editable form layer — anchored top-leading via an explicit
-                // origin so it can't inherit the ZStack's cross-sibling
-                // alignment negotiation.
-                CreateFormOverlay(model: model)
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
-            }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
-            .clipped()
+            CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
+                .frame(width: 35, height: 56)
+                .offset(x: 57, y: 71)
         }
+        .frame(width: 100, height: 127)
     }
 
     private var photoImage: Image? {
