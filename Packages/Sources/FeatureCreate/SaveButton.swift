@@ -21,13 +21,14 @@ struct SaveButton: View {
                     .tracking(CCDesign.Typography.Tracking.headline)
                     .foregroundStyle(CCDesign.Colors.L0)
             }
-            .frame(height: 50)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .opacity(isEnabled ? 1 : 0.35)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
+        .frame(height: 50)
+        .frame(maxWidth: .infinity)
         .accessibilityIdentifier("saveRecordButton")
     }
 }
