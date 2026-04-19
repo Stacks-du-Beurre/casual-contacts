@@ -88,39 +88,44 @@ public struct RecordsListScene: View {
     }
 
     public var body: some View {
-        ZStack {
-            NavigationStack {
-                listContent
-                    .background(populatedBackground.ignoresSafeArea())
-                    .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
-                    #if os(iOS)
-                    .toolbar(.hidden, for: .navigationBar)
-                    #endif
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        customNavBar
-                    }
-            }
+        GeometryReader { proxy in
+            // Same anchor as EmptyStateView: 375pt iPhone 11 Pro canvas, floor
+            // at Figma size, cap at 1.3× so iPad widths don't overshoot.
+            let canvasScale = min(max(proxy.size.width / 375, 1.0), 1.3)
+            ZStack {
+                NavigationStack {
+                    listContent
+                        .background(populatedBackground.ignoresSafeArea())
+                        .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
+                        #if os(iOS)
+                        .toolbar(.hidden, for: .navigationBar)
+                        #endif
+                        .safeAreaInset(edge: .top, spacing: 0) {
+                            customNavBar(scale: canvasScale)
+                        }
+                }
 
-            if isSortingSheetPresented {
-                DefaultSortingSheet(
-                    selected: $sortOption,
-                    onAdvanced: { isSortingSheetPresented = false },
-                    onDismiss: { isSortingSheetPresented = false }
-                )
-                .zIndex(1)
+                if isSortingSheetPresented {
+                    DefaultSortingSheet(
+                        selected: $sortOption,
+                        onAdvanced: { isSortingSheetPresented = false },
+                        onDismiss: { isSortingSheetPresented = false }
+                    )
+                    .zIndex(1)
+                }
             }
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
     }
 
-    private var customNavBar: some View {
+    private func customNavBar(scale: CGFloat) -> some View {
         // Empty state sits on the sunset gradient in both modes, so the
         // title stays L2; only the populated-list title inverts.
         let titleColor: Color = isEmpty ? CCDesign.Colors.L2 : chromePrimary
         return ZStack {
             Text("MY CONTACTS")
-                .font(CCDesign.Typography.headline)
-                .tracking(CCDesign.Typography.Tracking.headline)
+                .font(.custom("CormorantSC-Bold", size: 17 * scale, relativeTo: .headline))
+                .tracking(CCDesign.Typography.Tracking.headline * scale)
                 .foregroundStyle(titleColor)
 
             HStack {
@@ -136,14 +141,17 @@ public struct RecordsListScene: View {
                 ViewControllerButton(
                     action: onTapSettings,
                     fill: chromePrimary,
-                    glyph: chromeAccent
+                    glyph: chromeAccent,
+                    scale: scale
                 )
                 .accessibilityLabel("Settings")
                 .padding(.trailing, 10)
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 44)
+        // Bar height scales with the same factor so the scaled button sits
+        // inside the chrome instead of overflowing it.
+        .frame(height: 44 * scale)
         .background {
             if !isEmpty {
                 populatedBackground.ignoresSafeArea(edges: .top)
