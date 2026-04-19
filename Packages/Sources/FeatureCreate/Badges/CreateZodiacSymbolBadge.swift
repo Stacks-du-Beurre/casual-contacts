@@ -2,10 +2,10 @@ import SwiftUI
 import CoreModels
 import Visuals
 
-/// Holographic zodiac figure for the create flow. 35×32, decorative-only.
-/// Loads the `{sign}_figure` asset directly from the shared Visuals bundle
-/// and applies a luminosity blend mode for the "hologram" feel. Parallels
-/// `HolographicZodiac` in Visuals but sized/positioned for this screen.
+/// Holographic zodiac figure for the create flow. 35×32 total: a
+/// `Moon_Background` hologram frame with a 22×22 zodiac figure centered
+/// inside. Matches the create-flow composition where the moon and zodiac
+/// symbol share the same frame chrome.
 struct CreateZodiacSymbolBadge: View {
     let sign: ZodiacSign
     let attitude: DeviceAttitude
@@ -13,17 +13,28 @@ struct CreateZodiacSymbolBadge: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        let image = Image(Self.assetName(for: sign), bundle: CCVisuals.bundle)
+        Image("Moon_Background", bundle: CCVisuals.bundle)
             .resizable()
-            .scaledToFit()
+            .scaledToFill()
             .frame(width: 35, height: 32)
-            .offset(Self.translation(for: attitude))
+            .clipped()
+            .overlay(alignment: .center) {
+                figureImage
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                    .offset(Self.translation(for: attitude))
+            }
             .accessibilityHidden(true)
+    }
 
+    @ViewBuilder
+    private var figureImage: some View {
+        let image = Image(Self.assetName(for: sign), bundle: CCVisuals.bundle)
         if reduceTransparency {
             image
         } else {
-            image.blendMode(.luminosity)
+            image.renderingMode(.original)
         }
     }
 
