@@ -5,7 +5,6 @@ import DesignSystem
 struct CreateFormFields: View {
 
     @Bindable var model: CreateRecordModel
-    @Binding var isZodiacPickerShowing: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -18,17 +17,6 @@ struct CreateFormFields: View {
                 .font(CCDesign.Typography.descriptionSmall)
                 .lineLimit(3, reservesSpace: true)
                 .textFieldStyle(.roundedBorder)
-
-            HStack {
-                Text("Zodiac:")
-                    .font(CCDesign.Typography.caption1)
-                Button {
-                    isZodiacPickerShowing = true
-                } label: {
-                    Text(model.zodiacSign?.rawValue.capitalized ?? "Add")
-                        .font(CCDesign.Typography.caption1)
-                }
-            }
 
             if let label = model.location?.label {
                 Text("Location: \(label)")
