@@ -19,13 +19,12 @@ struct CreateFormOverlay: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             addPhotoButton
-
             NamePill(model: model)
-
             DescriptionPill(model: model)
         }
         .padding(.leading, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(.top, 130)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     @ViewBuilder
