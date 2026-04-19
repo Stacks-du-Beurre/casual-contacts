@@ -53,7 +53,6 @@ public struct CreateRecordScene: View {
                 backdropLayer(size: geo.size)
                     .allowsHitTesting(false)
 
-                // Foreground VStack: top nav + centered form + bottom location strip.
                 VStack(spacing: 0) {
                     PersonTopNav(onCancel: onCancel)
                         .padding(.top, 18)
@@ -71,6 +70,10 @@ public struct CreateRecordScene: View {
 
                     Spacer(minLength: 0)
 
+                    // Zodiac bundle — right-aligned, sits above the location strip.
+                    zodiacBundle
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
                     LocationTimeStrip(
                         location: model.location,
                         createdAt: model.createdAt,
@@ -83,11 +86,6 @@ public struct CreateRecordScene: View {
                         action: { onSave(model.draft) }
                     )
                 }
-
-                // Zodiac bundle pinned to the bottom-right, above the location strip.
-                zodiacBundle
-                    .padding(.bottom, 40 + 20) // location strip (40pt) + gap above
-                    .padding(.trailing, 0)
             }
             .coordinateSpace(.named(Self.coordSpace))
         }
