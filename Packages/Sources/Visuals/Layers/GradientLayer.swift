@@ -19,6 +19,7 @@ public struct GradientLayer: View {
             Self.backdrop(for: timeOfDay)
             if !reduceTransparency {
                 Self.backdrop(for: timeOfDay)
+                    .rotationEffect(.degrees(180))
                     .opacity(Self.transfusionOpacity(for: attitude, reduceTransparency: false))
             }
         }
