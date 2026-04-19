@@ -62,6 +62,7 @@ public struct CreateRecordScene: View {
 
                     zodiacBundle
                         .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.bottom, 8)
 
                     LocationTimeStrip(
                         location: model.location,
