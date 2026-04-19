@@ -30,23 +30,17 @@ public struct CardView: View {
     }
 
     public var body: some View {
-        let accoutrements = record.accoutrements
-        // Per DESIGN.md §1.3: list-row, medium, and large cards all use .cards (3 shapes +
-        // 15 lines). .preview (1 shape + 7 lines) is reserved for the Recommended Section
-        // (deferred to v1.1+), which will have its own component.
-        let density: CCVisuals.Guilloche.LineDensity = .cards
-
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
             ZStack {
-                backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                backdrop()
 
                 CardTextLayer(
                     record: record,
                     attitude: attitude,
                     layout: layout,
                     coordinateSpaceName: Self.cardCoordinateSpace,
-                    backdrop: { backdrop(accoutrements: accoutrements, density: density, layout: layout) }
+                    backdrop: { backdrop() }
                 )
             }
             // Pin to the geometry reader's bounds so ideal-size propagation from
@@ -63,11 +57,7 @@ public struct CardView: View {
     private static let cardCoordinateSpace = "CardScene"
 
     @ViewBuilder
-    private func backdrop(
-        accoutrements _: VisualAccoutrements,
-        density _: CCVisuals.Guilloche.LineDensity,
-        layout _: CardLayout
-    ) -> some View {
+    private func backdrop() -> some View {
         ZStack {
             CardBackdrop(record: record, attitude: attitude, paths: paths, photo: photo)
 
