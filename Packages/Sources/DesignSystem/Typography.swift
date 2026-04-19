@@ -5,7 +5,7 @@ public extension CCDesign {
 
         // Sizes respect Dynamic Type when used with `.font(...)` modifier. Values are base sizes.
         public static let title = Font.custom("CormorantSC-SemiBold", size: 33, relativeTo: .largeTitle)
-        public static let headline = Font.custom("CormorantSC-Bold", size: 16, relativeTo: .headline)
+        public static let headline = Font.custom("CormorantSC-Bold", size: 17, relativeTo: .headline)
         // CormorantInfant is a variable font — apply .fontWeight(.semibold) on Text for SemiBold.
         public static let description = Font.custom("CormorantInfant", size: 18, relativeTo: .body)
         public static let descriptionSmall = Font.custom("CormorantInfant", size: 13, relativeTo: .footnote)
