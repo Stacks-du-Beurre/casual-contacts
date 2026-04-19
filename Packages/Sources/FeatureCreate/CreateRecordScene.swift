@@ -46,6 +46,7 @@ public struct CreateRecordScene: View {
                 // Foreground: top nav + form stack.
                 VStack(spacing: 0) {
                     PersonTopNav(onCancel: onCancel)
+                        .padding(.top, 18)
 
                     // Form content + zodiac bundle, anchored top.
                     ZStack(alignment: .topLeading) {
