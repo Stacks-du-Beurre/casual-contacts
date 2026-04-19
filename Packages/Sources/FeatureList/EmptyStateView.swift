@@ -61,7 +61,9 @@ public struct EmptyStateView: View {
             EmptyStateGradientBackdrop(attitude: attitude)
 
             GuillocheRotationLayer(
-                paths: Self.swirlPaths(from: paths.rotationPaths(for: "A")),
+                paths: GuillocheRotationLayer.swirlPaths(
+                    from: paths.rotationPaths(for: "A").first
+                ),
                 opacity: 0.2,
                 tint: .white
             )
@@ -85,21 +87,4 @@ public struct EmptyStateView: View {
         }
     }
 
-    // Per design-spec page 2: the A/Background filigree is the single A outline
-    // rotated 5° at a time around the center of the 380×380 viewBox for a full
-    // 72-step turn. The generated `rotationPaths` only contain one path; this
-    // helper produces the full rotated stack for the empty-state swirl.
-    private static func swirlPaths(from base: [Path]) -> [Path] {
-        guard let single = base.first else { return [] }
-        let center = CGPoint(x: 190, y: 190)
-        let stepDegrees = 5.0
-        let stepCount = Int(360.0 / stepDegrees)
-        return (0..<stepCount).map { i in
-            let radians = Double(i) * stepDegrees * .pi / 180.0
-            let t = CGAffineTransform(translationX: center.x, y: center.y)
-                .rotated(by: radians)
-                .translatedBy(x: -center.x, y: -center.y)
-            return single.applying(t)
-        }
-    }
 }

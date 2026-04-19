@@ -67,8 +67,8 @@ struct DescriptionPills: View {
     @ViewBuilder
     private func pill(_ segment: Segment) -> some View {
         let base = Text(segment.text)
-            .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
-            .tracking(-0.05)
+            .font(CCDesign.Typography.description)
+            .tracking(CCDesign.Typography.Tracking.description)
             .foregroundStyle(.white)
             .lineLimit(1)
 
