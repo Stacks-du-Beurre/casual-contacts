@@ -14,13 +14,12 @@ struct CreateMoonPhaseBadge: View {
         Image("Moon_Background", bundle: CCVisuals.bundle)
             .resizable()
             .scaledToFill()
-            .frame(width: 34, height: 56)
+            .frame(width: 35, height: 32)
             .clipped()
-            .overlay(alignment: .top) {
+            .overlay(alignment: .center) {
                 Image(Self.assetName(for: phase), bundle: CCVisuals.bundle)
                     .resizable()
                     .frame(width: 20, height: 20)
-                    .padding(.top, 7)
             }
             .accessibilityHidden(true)
     }
