@@ -38,35 +38,27 @@ public struct CreateRecordScene: View {
 
     public var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .topLeading) {
-                // Backdrop fills the entire sheet, including behind the top nav.
-                backdropLayer(size: geo.size)
-                    .ignoresSafeArea()
+            VStack(spacing: 0) {
+                PersonTopNav(onCancel: onCancel)
+                    .padding(.top, 18)
 
-                // Foreground: top nav + form stack.
-                VStack(spacing: 0) {
-                    PersonTopNav(onCancel: onCancel)
-                        .padding(.top, 18)
+                // Form content + zodiac bundle, anchored top.
+                ZStack(alignment: .topLeading) {
+                    CreateFormOverlay(
+                        model: model,
+                        nameFocused: $nameFocused,
+                        attitude: attitude,
+                        backdropSize: geo.size,
+                        coordinateSpaceName: Self.coordSpace,
+                        backdrop: { backdropLayer(size: geo.size) }
+                    )
 
-                    // Form content + zodiac bundle, anchored top.
-                    ZStack(alignment: .topLeading) {
-                        CreateFormOverlay(
-                            model: model,
-                            nameFocused: $nameFocused,
-                            attitude: attitude,
-                            backdropSize: geo.size,
-                            coordinateSpaceName: Self.coordSpace,
-                            backdrop: { backdropLayer(size: geo.size) }
-                        )
-
-                        zodiacBundle
-                            .padding(.top, 259)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.trailing, 0)
-                    }
-
-                    Spacer(minLength: 0)
+                    zodiacBundle
+                        .padding(.top, 259)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
+
+                Spacer(minLength: 0)
             }
             .coordinateSpace(.named(Self.coordSpace))
             .onAppear { nameFocused = true }
@@ -86,6 +78,13 @@ public struct CreateRecordScene: View {
                     action: { onSave(model.draft) }
                 )
             }
+        }
+        .background {
+            GeometryReader { geo in
+                backdropLayer(size: geo.size)
+                    .allowsHitTesting(false)
+            }
+            .ignoresSafeArea()
         }
     }
 

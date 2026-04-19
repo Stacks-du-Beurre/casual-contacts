@@ -8,6 +8,8 @@ import DesignSystem
 struct PersonTopNav: View {
     let onCancel: () -> Void
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         ZStack {
             // Heading — centered. 20% larger than Figma base 17pt.
@@ -19,10 +21,18 @@ struct PersonTopNav: View {
 
             HStack {
                 // Cancel — 20% larger than Figma base 18pt.
-                Button("Cancel", action: onCancel)
-                    .font(.custom("CormorantInfant-SemiBold", size: 21.6))
-                    .foregroundStyle(CCDesign.Colors.L0)
-                    .accessibilityIdentifier("cancelCreateButton")
+                Button {
+                    onCancel()
+                    dismiss()
+                } label: {
+                    Text("Cancel")
+                        .font(.custom("CormorantInfant-SemiBold", size: 21.6))
+                        .foregroundStyle(CCDesign.Colors.L0)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("cancelCreateButton")
 
                 Spacer()
 
