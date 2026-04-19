@@ -6,10 +6,16 @@ import Visuals
 public struct EmptyStateView: View {
 
     public let paths: any CardPathProvider
+    public let attitude: DeviceAttitude
     public let onTap: () -> Void
 
-    public init(paths: any CardPathProvider, onTap: @escaping () -> Void = {}) {
+    public init(
+        paths: any CardPathProvider,
+        attitude: DeviceAttitude = .zero,
+        onTap: @escaping () -> Void = {}
+    ) {
         self.paths = paths
+        self.attitude = attitude
         self.onTap = onTap
     }
 
@@ -20,15 +26,13 @@ public struct EmptyStateView: View {
                     .frame(width: sceneGeo.size.width, height: sceneGeo.size.height)
 
                 Button(action: onTap) {
-                    HologramPill(
-                        hologram: .neon3,
+                    HologramText(
+                        "add the first person",
+                        font: CCDesign.Typography.title,
+                        attitude: attitude,
                         backdropSize: sceneGeo.size,
                         coordinateSpaceName: Self.sceneCoordinateSpace,
-                        backdrop: { backdrop },
-                        content: {
-                            HologramText("add the first person", font: CCDesign.Typography.title)
-                                .padding(.horizontal, 6)
-                        }
+                        backdrop: { backdrop }
                     )
                 }
                 .buttonStyle(.plain)
@@ -56,11 +60,16 @@ public struct EmptyStateView: View {
             .frame(width: 380, height: 380)
             .accessibilityHidden(true)
 
+            // Per design spec §"How to get the deep-dive effect": each of the
+            // blend paths is a separate exported line; offset each by (x, y)
+            // driven by the gyroscope attitude — `GuillocheBlendLayer` does
+            // the per-index depth-scaled offset internally.
             GuillocheBlendLayer(
                 paths: paths.blendPaths(for: "A", shape: .polygon, density: .cards),
                 density: .cards,
-                attitude: .zero,
-                tint: .white
+                attitude: attitude,
+                tint: .white,
+                depthScale: 1.0
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)

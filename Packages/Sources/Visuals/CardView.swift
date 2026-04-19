@@ -43,6 +43,7 @@ public struct CardView: View {
                 CardTextLayer(
                     record: record,
                     size: size,
+                    attitude: attitude,
                     backdropSize: geo.size,
                     coordinateSpaceName: Self.cardCoordinateSpace,
                     backdrop: { backdrop(accoutrements: accoutrements, density: density) }
@@ -104,6 +105,7 @@ public struct CardView: View {
 struct CardTextLayer<Backdrop: View>: View {
     let record: Record
     let size: CardSize
+    let attitude: DeviceAttitude
     let backdropSize: CGSize
     let coordinateSpaceName: String
     @ViewBuilder let backdrop: () -> Backdrop
@@ -111,14 +113,14 @@ struct CardTextLayer<Backdrop: View>: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                HologramPill(
+                HologramText(
+                    record.name,
+                    font: CCDesign.Typography.title,
+                    attitude: attitude,
                     backdropSize: backdropSize,
                     coordinateSpaceName: coordinateSpaceName,
                     backdrop: backdrop
-                ) {
-                    HologramText(record.name, font: CCDesign.Typography.title)
-                        .padding(.horizontal, 6)
-                }
+                )
                 Spacer(minLength: 0)
             }
 

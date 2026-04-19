@@ -1,27 +1,78 @@
 import SwiftUI
+import CoreModels
 
-/// Text with the two-fill treatment from Figma: a 100%-opacity black OVERLAY
-/// base fill stacked beneath a 20%-opacity black NORMAL fill. Order matches
-/// Figma's `fills` array (index 0 = bottom), so the OVERLAY blends with the
-/// pill contents below the text, and the 20% black paints flat over the
-/// result — used for the empty-state title and any static "name" label that
-/// sits on top of a `HologramPill`.
+/// Animated holographic title per PDF §5 "Title/Name":
+/// a frosted pill whose chromatic fill transfuses with the device's gyroscope
+/// and two stacked black text layers that mask it into letter-forms.
 ///
-/// This is NOT the animated title-name hologram from the design-spec PDF
-/// section 5 (lighten + luminosity + gyroscope-driven transfusion); that
-/// treatment belongs to populated card names and is implemented in
-/// `HolographicText`.
-public struct HologramText: View {
+/// Stack (bottom → top), clipped to the pill's text-sized bounds:
+///   1. Blurred duplicate of the scene behind the pill (Figma `BACKGROUND_BLUR`).
+///   2. Holographic texture, `.lighten` blend — translates on (x,y) with `attitude`.
+///      Replaces the flat 56% white fill from the earlier static pill.
+///   3. Holographic texture, `.luminosity` blend @ 35% — rotates with `attitude`.
+///   4. Text, black fill, `.overlay` blend.
+///   5. Text, 20% black fill, normal blend.
+///
+/// The two hologram layers use the same source image; sliding/rotating one
+/// against the other produces the chromatic transfusion the spec calls out
+/// ("BERNARD" sample on PDF p.8). The text stack on top is a grayscale mask
+/// that carves letter shapes out of that moving color field.
+///
+/// Used on the empty-state "add the first person" button and on populated
+/// card names. Callers always pass real `attitude` — use `.zero` for static
+/// previews / snapshot baselines.
+public struct HologramText<Backdrop: View>: View {
 
     public let text: String
     public let font: Font
+    public let attitude: DeviceAttitude
+    public let hologram: HologramTexture
+    public let blurRadius: CGFloat
+    public let lightenOpacity: Double
+    public let luminosityOpacity: Double
+    public let backdropSize: CGSize
+    public let coordinateSpaceName: String
+    private let backdrop: Backdrop
 
-    public init(_ text: String, font: Font) {
+    /// Defaults below are tuneable. Bottom (`.lighten`) translates on roll/pitch,
+    /// top (`.luminosity`) rotates on roll. Overscan keeps the textures covering
+    /// the pill at full tilt / full rotation.
+    public static var translationScaleX: CGFloat { 12 }
+    public static var translationScaleY: CGFloat { 8 }
+    public static var rotationDegrees: Double { 6 }
+    public static var textureOverscan: CGFloat { 1.3 }
+
+    public init(
+        _ text: String,
+        font: Font,
+        attitude: DeviceAttitude,
+        hologram: HologramTexture = .neon3,
+        blurRadius: CGFloat = 54.365,
+        lightenOpacity: Double = 0.56,
+        luminosityOpacity: Double = 0.35,
+        backdropSize: CGSize,
+        coordinateSpaceName: String,
+        @ViewBuilder backdrop: () -> Backdrop
+    ) {
         self.text = text
         self.font = font
+        self.attitude = attitude
+        self.hologram = hologram
+        self.blurRadius = blurRadius
+        self.lightenOpacity = lightenOpacity
+        self.luminosityOpacity = luminosityOpacity
+        self.backdropSize = backdropSize
+        self.coordinateSpaceName = coordinateSpaceName
+        self.backdrop = backdrop()
     }
 
     public var body: some View {
+        textStack
+            .padding(.horizontal, 6)
+            .background(alignment: .topLeading) { chromaticStack }
+    }
+
+    private var textStack: some View {
         ZStack {
             Text(text)
                 .font(font)
@@ -31,6 +82,45 @@ public struct HologramText: View {
             Text(text)
                 .font(font)
                 .foregroundStyle(Color.black.opacity(0.2))
+        }
+    }
+
+    private var chromaticStack: some View {
+        GeometryReader { geo in
+            let frame = geo.frame(in: .named(coordinateSpaceName))
+            let overscanW = geo.size.width * Self.textureOverscan
+            let overscanH = geo.size.height * Self.textureOverscan
+
+            ZStack {
+                backdrop
+                    .frame(width: backdropSize.width, height: backdropSize.height)
+                    .offset(x: -frame.minX, y: -frame.minY)
+                    .blur(radius: blurRadius)
+
+                Image(hologram.rawValue, bundle: .module)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: overscanW, height: overscanH)
+                    .offset(
+                        x: CGFloat(attitude.roll) * Self.translationScaleX,
+                        y: CGFloat(attitude.pitch) * Self.translationScaleY
+                    )
+                    .opacity(lightenOpacity)
+                    .blendMode(.lighten)
+                    .allowsHitTesting(false)
+
+                Image(hologram.rawValue, bundle: .module)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: overscanW, height: overscanH)
+                    .rotationEffect(.degrees(attitude.roll * Self.rotationDegrees))
+                    .opacity(luminosityOpacity)
+                    .blendMode(.luminosity)
+                    .allowsHitTesting(false)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
+            .accessibilityHidden(true)
         }
     }
 }
