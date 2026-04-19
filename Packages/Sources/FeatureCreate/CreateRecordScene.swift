@@ -102,19 +102,19 @@ public struct CreateRecordScene: View {
     }
 
     private var zodiacBundle: some View {
-        ZStack(alignment: .topLeading) {
+        VStack(alignment: .trailing, spacing: 0) {
             CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
                 .frame(width: 100, height: 90)
 
-            CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
-                .frame(width: 35, height: 32)
-                .offset(x: 52, y: 70)
+            HStack(spacing: 5) {
+                CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
+                    .frame(width: 35, height: 32)
 
-            CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
-                .frame(width: 35, height: 56)
-                .offset(x: 57, y: 71)
+                CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
+                    .frame(width: 35, height: 56)
+            }
         }
-        .frame(width: 100, height: 127)
+        .padding(.bottom, 8)
         .allowsHitTesting(false)
     }
 
