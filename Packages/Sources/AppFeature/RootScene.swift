@@ -75,17 +75,22 @@ public struct RootScene: Scene {
             }
         }
         .sheet(isPresented: $router.showingCreate) {
+            let createdAt = Date()
+            let metadata = environment.metadataGenerator.metadata(at: createdAt, location: nil)
             CreateRecordScene(
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
+                createdAt: createdAt,
+                metadata: metadata,
+                location: nil,
                 onCancel: { router.showingCreate = false },
                 onSave: { draft in
                     Task {
-                        let metadata = environment.metadataGenerator.metadata(
+                        let saveMetadata = environment.metadataGenerator.metadata(
                             at: Date(),
                             location: draft.location
                         )
-                        _ = try? await environment.recordStore.create(draft, metadata: metadata)
+                        _ = try? await environment.recordStore.create(draft, metadata: saveMetadata)
                         router.showingCreate = false
                     }
                 }
