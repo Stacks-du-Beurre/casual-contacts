@@ -18,13 +18,31 @@ import CoreModels
         return model
     }
 
+    /// Harness that provides a real `@FocusState` binding so `CreateFormOverlay`
+    /// can be constructed inside a `View` context.
+    private struct Harness: View {
+        @Bindable var model: CreateRecordModel
+        @FocusState var focused: Bool
+
+        var body: some View {
+            CreateFormOverlay(
+                model: model,
+                nameFocused: $focused,
+                attitude: .zero,
+                backdropSize: CGSize(width: 400, height: 800),
+                coordinateSpaceName: "test",
+                backdrop: { Color.clear }
+            )
+        }
+    }
+
     @Test func instantiatesEmpty() {
         let model = makeModel()
-        _ = CreateFormOverlay(model: model).body
+        _ = Harness(model: model).body
     }
 
     @Test func instantiatesPopulated() {
         let model = makeModel(name: "Adam", description: "Met at midday")
-        _ = CreateFormOverlay(model: model).body
+        _ = Harness(model: model).body
     }
 }

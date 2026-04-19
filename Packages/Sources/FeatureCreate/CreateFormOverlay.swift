@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 import DesignSystem
 import Visuals
 #if os(iOS)
@@ -6,11 +7,15 @@ import PhotosUI
 #endif
 
 /// Editable form layer painted over the card backdrop: `+ Add Photo` button,
-/// name `TextField` pill, description `TextField` pill. All three left-aligned
-/// at 8pt from the card edge, stacked vertically.
-struct CreateFormOverlay: View {
+/// name pill (editable HologramText), description pill.
+struct CreateFormOverlay<Backdrop: View>: View {
 
     @Bindable var model: CreateRecordModel
+    var nameFocused: FocusState<Bool>.Binding
+    let attitude: DeviceAttitude
+    let backdropSize: CGSize
+    let coordinateSpaceName: String
+    @ViewBuilder let backdrop: () -> Backdrop
 
     #if os(iOS)
     @State private var photoItem: PhotosPickerItem?
@@ -19,12 +24,21 @@ struct CreateFormOverlay: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             addPhotoButton
-            NamePill(model: model)
+
+            NamePill(
+                model: model,
+                focused: nameFocused,
+                attitude: attitude,
+                backdropSize: backdropSize,
+                coordinateSpaceName: coordinateSpaceName,
+                backdrop: backdrop
+            )
+
             DescriptionPill(model: model)
         }
         .padding(.leading, 8)
         .padding(.top, 130)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -52,27 +66,52 @@ struct CreateFormOverlay: View {
     }
 }
 
-/// White/luminosity-blend pill carrying the name `TextField`. Cormorant SC
-/// SemiBold 48. Placeholder uses SwiftUI's default secondary color — the
-/// luminosity blend behind the pill produces the muted look Figma shows.
-private struct NamePill: View {
+/// Holographic editable name pill. Stacks an invisible TextField over a
+/// HologramText view — TextField owns input/focus/cursor, HologramText
+/// owns the visual. Both bound to `model.name`; HologramText shows "Name"
+/// when the model is empty, acting as a visible placeholder.
+private struct NamePill<Backdrop: View>: View {
     @Bindable var model: CreateRecordModel
+    var focused: FocusState<Bool>.Binding
+    let attitude: DeviceAttitude
+    let backdropSize: CGSize
+    let coordinateSpaceName: String
+    @ViewBuilder let backdrop: () -> Backdrop
+
+    private static var nameFont: Font { .custom("CormorantSC-SemiBold", size: 48) }
 
     var body: some View {
-        TextField("Name", text: $model.name)
-            .font(.custom("CormorantSC-SemiBold", size: 48))
-            .foregroundStyle(.black)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 16)
-            .frame(height: 60)
-            .background(Color.white.opacity(0.56))
-            .accessibilityIdentifier("nameField")
-            .fixedSize(horizontal: true, vertical: false)
+        ZStack(alignment: .leading) {
+            // Visual layer — the holographic rendering.
+            HologramText(
+                displayName,
+                font: Self.nameFont,
+                attitude: attitude,
+                backdropSize: backdropSize,
+                coordinateSpaceName: coordinateSpaceName,
+                backdrop: backdrop
+            )
+
+            // Input layer — invisible TextField overlaid exactly on top.
+            TextField("Name", text: $model.name)
+                .font(Self.nameFont)
+                .foregroundStyle(.clear)
+                .tint(.black)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 6)
+                .focused(focused)
+                .accessibilityIdentifier("nameField")
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var displayName: String {
+        model.name.isEmpty ? "Name" : model.name
     }
 }
 
 /// Glass-blur pill carrying the description `TextField`. Cormorant Infant
-/// SemiBold 18.
+/// SemiBold 18. Plain TextField (no hologram treatment on description).
 private struct DescriptionPill: View {
     @Bindable var model: CreateRecordModel
 
@@ -81,6 +120,7 @@ private struct DescriptionPill: View {
             .font(CCDesign.Typography.description)
             .tracking(CCDesign.Typography.Tracking.description)
             .foregroundStyle(CCDesign.Colors.L0)
+            .tint(CCDesign.Colors.L0)
             .textFieldStyle(.plain)
             .padding(.horizontal, 16)
             .padding(.vertical, 9)
