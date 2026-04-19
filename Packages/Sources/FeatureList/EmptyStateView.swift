@@ -69,7 +69,8 @@ public struct EmptyStateView: View {
                 density: .cards,
                 attitude: attitude,
                 tint: .white,
-                depthScale: 1.0
+                depthScale: 10.0,
+                reversed: true
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)
