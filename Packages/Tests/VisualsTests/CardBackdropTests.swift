@@ -12,12 +12,12 @@ import CoreModels
         func blendPaths(for letter: Character, shape: GuillocheShape, density: CCVisuals.Guilloche.LineDensity) -> [Path] { [] }
     }
 
-    private func record(photoID: PhotoID? = nil) -> Record {
+    private func record() -> Record {
         Record(
             id: UUID(),
             name: "Jane",
             description: "",
-            photoID: photoID,
+            photoID: nil,
             location: nil,
             zodiacSign: .virgo,
             createdAt: Date(),
@@ -37,7 +37,7 @@ import CoreModels
 
     @Test func backdropInstantiatesWithPhoto() {
         _ = CardBackdrop(
-            record: record(photoID: PhotoID(filename: "test.jpg")),
+            record: record(),
             attitude: .zero,
             paths: StubPaths(),
             photo: Image(systemName: "photo")

@@ -29,12 +29,6 @@ public struct CardView: View {
     }
 
     public var body: some View {
-        let accoutrements = record.accoutrements
-        // Per DESIGN.md §1.3: list-row, medium, and large cards all use .cards (3 shapes +
-        // 15 lines). .preview (1 shape + 7 lines) is reserved for the Recommended Section
-        // (deferred to v1.1+), which will have its own component.
-        let density: CCVisuals.Guilloche.LineDensity = .cards
-
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
             ZStack {
@@ -42,7 +36,7 @@ public struct CardView: View {
                 // backdrop from both the rendered card and the text layer's
                 // sample closure — useful for isolating chrome/text work.
                 if !blendTuning.hideBackdrop {
-                    backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                    backdrop()
                 }
 
                 // Figural ornaments — rendered above the sampled backdrop so the
@@ -59,7 +53,7 @@ public struct CardView: View {
                         if blendTuning.hideBackdrop {
                             Color.clear
                         } else {
-                            backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                            backdrop()
                         }
                     }
                 )
@@ -77,11 +71,8 @@ public struct CardView: View {
 
     private static let cardCoordinateSpace = "CardScene"
 
-    private func backdrop(
-        accoutrements _: VisualAccoutrements,
-        density _: CCVisuals.Guilloche.LineDensity,
-        layout _: CardLayout
-    ) -> some View {
+    @ViewBuilder
+    private func backdrop() -> some View {
         ZStack {
             CardBackdrop(record: record, attitude: attitude, paths: paths, photo: photo)
 
