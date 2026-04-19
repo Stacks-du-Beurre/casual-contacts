@@ -24,6 +24,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             addPhotoButton
+                .padding(.bottom, 4)
 
             NamePill(
                 model: model,
