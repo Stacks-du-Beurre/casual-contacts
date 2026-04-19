@@ -16,6 +16,12 @@ public struct GuillocheRotationLayer: View {
 
     public var body: some View {
         Canvas { context, size in
+            // SVG viewBox is 380×380 centered at (190, 190). Translate so the
+            // viewBox center lands at the canvas center, regardless of the
+            // canvas's actual size. Matches BBackgroundSilhouetteLayer.
+            let dx = size.width / 2 - 190
+            let dy = size.height / 2 - 190
+            context.translateBy(x: dx, y: dy)
             for path in paths {
                 context.stroke(path, with: .color(tint.opacity(opacity)), lineWidth: 0.5)
             }
