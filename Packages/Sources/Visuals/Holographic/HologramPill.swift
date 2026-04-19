@@ -19,7 +19,7 @@ import SwiftUI
 public struct HologramPill<Backdrop: View, Content: View>: View {
 
     public let hologram: HologramTexture
-    public let whiteFill: Double
+    public let baseFill: Color
     public let blurRadius: CGFloat
     public let hologramOpacity: Double
     public let backdropSize: CGSize
@@ -29,12 +29,16 @@ public struct HologramPill<Backdrop: View, Content: View>: View {
 
     /// - Parameters:
     ///   - hologram: Which holographic texture to use as fill 2. Default `.neon3`.
-    ///   - whiteFill: Opacity of the translucent white fill 1. Default `0.56`.
+    ///   - baseFill: Translucent fill 1 painted over the blurred backdrop. Default
+    ///     `Color.white.opacity(0.56)` — the Figma empty-state name-pill fill.
+    ///     Location pills use `rgba(40,60,85,0.1)` instead; supply via this
+    ///     parameter to tint without rebuilding the whole stack.
     ///   - blurRadius: Background-blur radius applied to the duplicated backdrop.
     ///     Default `54.365` — the stored Figma `BACKGROUND_BLUR.radius` for the
     ///     empty-state `name` layer.
     ///   - hologramOpacity: Opacity of the luminosity-blended hologram fill.
-    ///     Default `0.35` per Figma.
+    ///     Default `0.35` per Figma. Set to `0` to suppress the hologram texture
+    ///     (e.g. location pills, which have backdrop-blur + tint only).
     ///   - backdropSize: The full size of the scene the pill lives in. The pill
     ///     renders its duplicate of `backdrop` at this size, so the portion
     ///     visible inside the pill's clip region matches what would be behind
@@ -48,7 +52,7 @@ public struct HologramPill<Backdrop: View, Content: View>: View {
     ///     styled `Text`.
     public init(
         hologram: HologramTexture = .neon3,
-        whiteFill: Double = 0.56,
+        baseFill: Color = Color.white.opacity(0.56),
         blurRadius: CGFloat = 54.365,
         hologramOpacity: Double = 0.35,
         backdropSize: CGSize,
@@ -57,7 +61,7 @@ public struct HologramPill<Backdrop: View, Content: View>: View {
         @ViewBuilder content: () -> Content
     ) {
         self.hologram = hologram
-        self.whiteFill = whiteFill
+        self.baseFill = baseFill
         self.blurRadius = blurRadius
         self.hologramOpacity = hologramOpacity
         self.backdropSize = backdropSize
@@ -77,19 +81,18 @@ public struct HologramPill<Backdrop: View, Content: View>: View {
                             .offset(x: -frame.minX, y: -frame.minY)
                             .blur(radius: blurRadius)
 
-                        Color.white.opacity(whiteFill)
+                        baseFill
 
-                        // Hologram texture sized to COVER the pill: preserves
-                        // aspect ratio, scales up to fully fill the pill region,
-                        // then crops the overflow.
-                        Image(hologram.rawValue, bundle: .module)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                            .opacity(hologramOpacity)
-                            .blendMode(.luminosity)
-                            .allowsHitTesting(false)
+                        if hologramOpacity > 0 {
+                            Image(hologram.rawValue, bundle: .module)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipped()
+                                .opacity(hologramOpacity)
+                                .blendMode(.luminosity)
+                                .allowsHitTesting(false)
+                        }
                     }
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()

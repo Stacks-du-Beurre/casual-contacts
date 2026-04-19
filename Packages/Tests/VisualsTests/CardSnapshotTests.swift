@@ -58,8 +58,8 @@ import CoreModels
             attitude: .zero,
             paths: StubCardPathProvider()
         )
-        let controller = UIHostingController(rootView: view.frame(width: 335, height: 120).background(.black))
-        assertSnapshot(of: controller, as: .image(size: CGSize(width: 335, height: 120)))
+        let controller = UIHostingController(rootView: view.frame(width: 335, height: 211).background(.black))
+        assertSnapshot(of: controller, as: .image(size: CGSize(width: 335, height: 211)))
     }
 
     @Test func mediumCardTiltedAttitude() {

@@ -6,9 +6,11 @@ public extension CCDesign {
         // Sizes respect Dynamic Type when used with `.font(...)` modifier. Values are base sizes.
         public static let title = Font.custom("CormorantSC-SemiBold", size: 33, relativeTo: .largeTitle)
         public static let headline = Font.custom("CormorantSC-Bold", size: 16, relativeTo: .headline)
-        // CormorantInfant is a variable font — apply .fontWeight(.semibold) on Text for SemiBold.
-        public static let description = Font.custom("CormorantInfant", size: 18, relativeTo: .body)
-        public static let descriptionSmall = Font.custom("CormorantInfant", size: 13, relativeTo: .footnote)
+        // SwiftUI's `.fontWeight(.semibold)` doesn't drive variable-axis weights on
+        // `Font.custom("CormorantInfant", ...)` — resolve SemiBold via the named
+        // PostScript instance instead so the token actually ships its design weight.
+        public static let description = Font.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body)
+        public static let descriptionSmall = Font.custom("CormorantInfant-SemiBold", size: 13, relativeTo: .footnote)
         public static let caption1 = Font.custom("CormorantSC-Bold", size: 12, relativeTo: .caption)
         public static let caption2 = Font.custom("IBMPlexMono-Regular", size: 11, relativeTo: .caption2)
 

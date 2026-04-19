@@ -111,7 +111,7 @@ struct DefaultSortingSheet: View {
     private func rowContent(title: String, isSelected: Bool) -> some View {
         ZStack {
             Text(title)
-                .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
+                .font(CCDesign.Typography.description)
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(rowLabelColor)
                 .frame(maxWidth: .infinity)
