@@ -2,13 +2,18 @@ import SwiftUI
 import CoreModels
 
 /// Animated holographic title per PDF §5 "Title/Name":
-/// a frosted pill whose chromatic fill transfuses with the device's gyroscope
-/// and two stacked black text layers that mask it into letter-forms.
+/// two stacked hologram bitmap layers whose chromatic transfusion tracks the
+/// device's gyroscope, masked to letter-forms by a two-layer black text stack.
 ///
 /// Stack (bottom → top), clipped to the pill's text-sized bounds:
-///   1. Blurred duplicate of the scene behind the pill (Figma `BACKGROUND_BLUR`).
+///   1. *(optional, `showsBackdropBlur`)* Blurred duplicate of the scene behind
+///      the pill (Figma `BACKGROUND_BLUR`). Default `true` to preserve existing
+///      card-view behavior; the empty-state CTA opts out because the PDF §5
+///      BERNARD sample shows no frosted base and on a bright pastel scene the
+///      blur washes the `.lighten` hologram toward white.
 ///   2. Holographic texture, `.lighten` blend — translates on (x,y) with `attitude`.
-///      Replaces the flat 56% white fill from the earlier static pill.
+///      Replaces the flat 56% white fill the Figma node stores (Figma is wrong
+///      per the designer's PDF — two hologram bitmap fills, not a white fill).
 ///   3. Holographic texture, `.luminosity` blend @ 35% — rotates with `attitude`.
 ///   4. Text, black fill, `.overlay` blend.
 ///   5. Text, 20% black fill, normal blend.
@@ -27,6 +32,7 @@ public struct HologramText<Backdrop: View>: View {
     public let font: Font
     public let attitude: DeviceAttitude
     public let hologram: HologramTexture
+    public let showsBackdropBlur: Bool
     public let blurRadius: CGFloat
     public let lightenOpacity: Double
     public let luminosityOpacity: Double
@@ -47,6 +53,7 @@ public struct HologramText<Backdrop: View>: View {
         font: Font,
         attitude: DeviceAttitude,
         hologram: HologramTexture = .neon3,
+        showsBackdropBlur: Bool = true,
         blurRadius: CGFloat = 54.365,
         lightenOpacity: Double = 0.56,
         luminosityOpacity: Double = 0.35,
@@ -58,6 +65,7 @@ public struct HologramText<Backdrop: View>: View {
         self.font = font
         self.attitude = attitude
         self.hologram = hologram
+        self.showsBackdropBlur = showsBackdropBlur
         self.blurRadius = blurRadius
         self.lightenOpacity = lightenOpacity
         self.luminosityOpacity = luminosityOpacity
@@ -92,10 +100,12 @@ public struct HologramText<Backdrop: View>: View {
             let overscanH = geo.size.height * Self.textureOverscan
 
             ZStack {
-                backdrop
-                    .frame(width: backdropSize.width, height: backdropSize.height)
-                    .offset(x: -frame.minX, y: -frame.minY)
-                    .blur(radius: blurRadius)
+                if showsBackdropBlur {
+                    backdrop
+                        .frame(width: backdropSize.width, height: backdropSize.height)
+                        .offset(x: -frame.minX, y: -frame.minY)
+                        .blur(radius: blurRadius)
+                }
 
                 Image(hologram.rawValue, bundle: .module)
                     .resizable()

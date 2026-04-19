@@ -30,6 +30,7 @@ public struct EmptyStateView: View {
                         "add the first person",
                         font: CCDesign.Typography.title,
                         attitude: attitude,
+                        showsBackdropBlur: false,
                         backdropSize: sceneGeo.size,
                         coordinateSpaceName: Self.sceneCoordinateSpace,
                         backdrop: { backdrop }
