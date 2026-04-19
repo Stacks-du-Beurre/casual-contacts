@@ -114,7 +114,7 @@ public struct CreateRecordScene: View {
                     .frame(width: 35, height: 56)
             }
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, 20)
         .allowsHitTesting(false)
     }
 
