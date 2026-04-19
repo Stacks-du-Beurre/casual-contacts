@@ -58,7 +58,7 @@ public struct EmptyStateView: View {
     @ViewBuilder
     private var backdrop: some View {
         ZStack {
-            CCDesign.Gradients.sunset
+            EmptyStateGradientBackdrop(attitude: attitude)
 
             GuillocheRotationLayer(
                 paths: Self.swirlPaths(from: paths.rotationPaths(for: "A")),

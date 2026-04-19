@@ -7,6 +7,7 @@ struct DeveloperSettingsPanel: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
     @Bindable private var tuning = HologramTuning.shared
+    @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,6 +16,7 @@ struct DeveloperSettingsPanel: View {
                 VStack(spacing: 24) {
                     opacityGroup
                     motionGroup
+                    gradientGroup
                     resetGroup
                 }
                 .padding(.top, 8)
@@ -110,9 +112,23 @@ struct DeveloperSettingsPanel: View {
         }
     }
 
+    private var gradientGroup: some View {
+        SettingsGroup {
+            SliderRow(
+                label: "Empty-state edge reach",
+                value: $gradientTuning.edgeReach,
+                range: 0...1,
+                format: .percent
+            )
+        }
+    }
+
     private var resetGroup: some View {
         SettingsGroup {
-            SettingsRow(label: "Reset to defaults", onTap: { tuning.reset() }) {
+            SettingsRow(label: "Reset to defaults", onTap: {
+                tuning.reset()
+                gradientTuning.reset()
+            }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))
                     .frame(width: 44, height: 43)
