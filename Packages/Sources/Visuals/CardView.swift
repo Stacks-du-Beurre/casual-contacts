@@ -15,8 +15,6 @@ public struct CardView: View {
     public let paths: any CardPathProvider
     public let photo: Image?
 
-    @Bindable private var blendTuning = CardBlendTuning.shared
-
     public init(
         record: Record,
         size: CardSize,
@@ -66,49 +64,14 @@ public struct CardView: View {
 
     @ViewBuilder
     private func backdrop(
-        accoutrements: VisualAccoutrements,
-        density: CCVisuals.Guilloche.LineDensity,
-        layout: CardLayout
+        accoutrements _: VisualAccoutrements,
+        density _: CCVisuals.Guilloche.LineDensity,
+        layout _: CardLayout
     ) -> some View {
         ZStack {
-            GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
-
-            GuillocheRotationLayer(paths: paths.rotationPaths(for: accoutrements.letter))
-
-            // Letter-shaped background silhouette — the single letter outline
-            // rotated in 5° steps. Sits between the ambient rotation filigree
-            // and the foreground blend letter to create depth.
-            BBackgroundSilhouetteLayer(
-                paths: GuillocheRotationLayer.swirlPaths(
-                    from: paths.rotationPaths(for: accoutrements.letter).first
-                )
-            )
-
-            if let photo {
-                PhotoLayer(image: photo, style: .card)
-            } else {
-                // Frame = SVG viewBox (184×160) so the paths draw inside a
-                // bounded box that the enclosing ZStack centers on the card.
-                // Without it, paths draw from the ZStack's top-left and the
-                // letter drifts off-center.
-                GuillocheBlendLayer(
-                    paths: paths.blendPaths(
-                        for: accoutrements.letter,
-                        shape: accoutrements.guillocheShape,
-                        density: density
-                    ),
-                    density: density,
-                    attitude: attitude,
-                    tint: .white,
-                    depthScale: blendTuning.depthScale,
-                    reversed: true
-                )
-                .frame(width: 184, height: 160)
-                .opacity(0.55) // Figma `BPattern` container opacity.
-            }
+            CardBackdrop(record: record, attitude: attitude, paths: paths, photo: photo)
 
             // Zodiac stars (constellation): 100×90 at right-edge, vertically centered.
-            // Figma `Cards/Full` right-column composition — the stars frame the symbol.
             if let sign = record.zodiacSign {
                 ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation)
                     .frame(width: 100, height: 90)
@@ -116,8 +79,7 @@ public struct CardView: View {
                     .accessibilityHidden(true)
             }
 
-            // Zodiac symbol (figure) with holographic luminosity: 35×32 at
-            // right:57 bottom:72 — sits inside the stars frame.
+            // Zodiac symbol (figure) with holographic luminosity: 35×32.
             if let sign = record.zodiacSign {
                 HolographicZodiac(sign: sign, attitude: attitude)
                     .frame(width: 35, height: 32)
@@ -125,7 +87,7 @@ public struct CardView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
 
-            // Moon phase frame: 34×56, bottom-trailing with 8pt bottom / 54pt trailing insets.
+            // Moon phase frame: 34×56, bottom-trailing.
             MoonPhaseLayer(phase: record.metadata.moonPhase)
                 .padding(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 54))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
