@@ -95,6 +95,7 @@ public struct RootScene: Scene {
                     }
                 }
             )
+            .presentationCornerRadius(12)
         }
         .sheet(item: $router.selectedRecordForMediumDetail) { record in
             MediumDetailSheet(
