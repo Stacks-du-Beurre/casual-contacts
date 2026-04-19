@@ -173,12 +173,21 @@ public struct RecordsListScene: View {
                 EmptyStateView(paths: paths, attitude: attitude, onTap: onTapCreate)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 0) {
+                    LazyVStack(spacing: 8) {
                         ForEach(visibleRecords) { record in
-                            SmallCardListItem(record: record, attitude: attitude, paths: paths)
-                                .onTapGesture { onTapRecord(record) }
+                            CardView(
+                                record: displayRecord(for: record),
+                                size: .small,
+                                attitude: attitude,
+                                paths: paths
+                            )
+                            .frame(height: 211)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .accessibilityAddTraits(.isButton)
+                            .onTapGesture { onTapRecord(record) }
                         }
                     }
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
             }
@@ -193,6 +202,46 @@ public struct RecordsListScene: View {
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
         }
+    }
+
+    /// Debug-only display shim: fills in location + zodiac sign when missing so
+    /// every list card exercises the full composition during visual iteration.
+    /// Deterministic per-record via the UUID byte sum, so the mocked values
+    /// stay stable across re-renders within a session.
+    private func displayRecord(for record: Record) -> Record {
+        #if DEBUG
+        var copy = record
+        let uuid = record.id.uuid
+        let seed = Int(uuid.0) &+ Int(uuid.1) &+ Int(uuid.2) &+ Int(uuid.3)
+            &+ Int(uuid.4) &+ Int(uuid.5) &+ Int(uuid.6) &+ Int(uuid.7)
+
+        if copy.location == nil {
+            let samples = [
+                "1200 Treat Ave, San Francisco",
+                "Dolores Park",
+                "Blue Bottle Coffee",
+                "Zuni Café",
+                "The Mission",
+                "Ferry Building",
+                "Ocean Beach",
+                "Twin Peaks"
+            ]
+            copy.location = LocationInfo(
+                latitude: 37.77,
+                longitude: -122.41,
+                label: samples[seed % samples.count]
+            )
+        }
+
+        if copy.zodiacSign == nil {
+            let signs = ZodiacSign.allCases
+            copy.zodiacSign = signs[seed % signs.count]
+        }
+
+        return copy
+        #else
+        return record
+        #endif
     }
 }
 

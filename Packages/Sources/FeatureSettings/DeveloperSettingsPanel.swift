@@ -9,15 +9,20 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var tuning = HologramTuning.shared
     @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
     @Bindable private var cardBlendTuning = CardBlendTuning.shared
+    @Bindable private var zodiacTuning = ZodiacHologramTuning.shared
+    @Bindable private var gradientLayerTuning = GradientLayerTuning.shared
+    @Bindable private var rotationTuning = GuillocheRotationTuning.shared
 
     var body: some View {
         VStack(spacing: 0) {
             header
             ScrollView {
                 VStack(spacing: 24) {
+                    toggleGroup
                     opacityGroup
                     motionGroup
                     gradientGroup
+                    zodiacGroup
                     resetGroup
                 }
                 .padding(.top, 8)
@@ -54,6 +59,15 @@ struct DeveloperSettingsPanel: View {
             }
         }
         .frame(height: 56)
+    }
+
+    private var toggleGroup: some View {
+        SettingsGroup {
+            ToggleRow(
+                label: "Hide card backdrop",
+                isOn: $cardBlendTuning.hideBackdrop
+            )
+        }
     }
 
     private var opacityGroup: some View {
@@ -107,7 +121,7 @@ struct DeveloperSettingsPanel: View {
             SliderRow(
                 label: "Rotation (degrees)",
                 value: $tuning.rotationDegrees,
-                range: 0...60,
+                range: 0...360,
                 format: .decimal
             )
             SettingsDivider()
@@ -128,6 +142,38 @@ struct DeveloperSettingsPanel: View {
                 range: 0...1,
                 format: .percent
             )
+            SettingsDivider()
+            SliderRow(
+                label: "Gradient motion response",
+                value: $gradientLayerTuning.motionSensitivity,
+                range: 0...5,
+                format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Empty-state filigree spin (degrees)",
+                value: $rotationTuning.emptyStateRotationDegrees,
+                range: 0...360,
+                format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Card filigree spin (degrees)",
+                value: $rotationTuning.cardRotationDegrees,
+                range: 0...360,
+                format: .decimal
+            )
+        }
+    }
+
+    private var zodiacGroup: some View {
+        SettingsGroup {
+            SliderRow(
+                label: "Zodiac rotation (degrees)",
+                value: $zodiacTuning.rotationDegrees,
+                range: 0...360,
+                format: .decimal
+            )
         }
     }
 
@@ -137,6 +183,9 @@ struct DeveloperSettingsPanel: View {
                 tuning.reset()
                 gradientTuning.reset()
                 cardBlendTuning.reset()
+                zodiacTuning.reset()
+                gradientLayerTuning.reset()
+                rotationTuning.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))
@@ -144,6 +193,25 @@ struct DeveloperSettingsPanel: View {
                     .accessibilityHidden(true)
             }
         }
+    }
+}
+
+struct ToggleRow: View {
+
+    @Environment(\.colorScheme) private var scheme
+    let label: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(label)
+                .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
+                .tracking(CCDesign.Typography.Tracking.description)
+                .foregroundStyle(SettingsPalette.label(scheme))
+        }
+        .tint(SettingsPalette.label(scheme))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 }
 

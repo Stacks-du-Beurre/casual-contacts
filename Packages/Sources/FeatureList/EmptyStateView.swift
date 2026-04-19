@@ -65,7 +65,9 @@ public struct EmptyStateView: View {
                     from: paths.rotationPaths(for: "A").first
                 ),
                 opacity: 0.2,
-                tint: .white
+                tint: .white,
+                attitude: attitude,
+                usage: .emptyState
             )
             .frame(width: 380, height: 380)
             .accessibilityHidden(true)

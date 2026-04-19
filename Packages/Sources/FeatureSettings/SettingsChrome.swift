@@ -51,6 +51,28 @@ struct SettingsRow<Trailing: View>: View {
     }
 }
 
+/// Settings row with a trailing toggle. Uses SwiftUI's native `Toggle`-with-label
+/// composition so the entire row area is tappable (vs. `SettingsRow` holding a
+/// `Toggle` in its trailing slot, which only responds to hits on the knob).
+struct SettingsToggleRow: View {
+    @Environment(\.colorScheme) private var scheme
+    let label: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            Text(label)
+                .font(CCDesign.Typography.description)
+                .tracking(CCDesign.Typography.Tracking.description)
+                .foregroundStyle(SettingsPalette.label(scheme))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .tint(SettingsPalette.label(scheme))
+        .padding(.horizontal, 16)
+        .frame(minHeight: 43)
+    }
+}
+
 struct SettingsGroup<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder let content: () -> Content

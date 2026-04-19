@@ -14,7 +14,7 @@ struct NoopCardPathProvider: CardPathProvider {
 @MainActor
 @Suite struct RecordsListTests {
 
-    @Test func smallCardAccessibilityLabelComposesRecordFields() {
+    @Test func cardAccessibilityLabelComposesRecordFields() {
         let record = Record(
             id: UUID(),
             name: "Jane",
@@ -26,7 +26,7 @@ struct NoopCardPathProvider: CardPathProvider {
             updatedAt: Date(),
             metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .fullMoon)
         )
-        let label = SmallCardListItem.accessibilityLabel(for: record)
+        let label = CardView.accessibilityLabel(for: record)
         #expect(label.contains("Jane"))
         #expect(label.contains("Met at cafe"))
         #expect(label.contains("Mission St"))

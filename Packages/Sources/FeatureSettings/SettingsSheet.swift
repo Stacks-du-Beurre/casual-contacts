@@ -62,13 +62,9 @@ public struct SettingsSheet: View {
     private var groups: some View {
         VStack(spacing: 24) {
             SettingsGroup {
-                SettingsRow(label: "Sync data with iCloud", onTap: nil) {
-                    Toggle("", isOn: $syncEnabled).labelsHidden()
-                }
+                SettingsToggleRow(label: "Sync data with iCloud", isOn: $syncEnabled)
                 SettingsDivider()
-                SettingsRow(label: "Turn on advanced card stack", onTap: nil) {
-                    Toggle("", isOn: $advancedCardStackEnabled).labelsHidden()
-                }
+                SettingsToggleRow(label: "Turn on advanced card stack", isOn: $advancedCardStackEnabled)
             }
 
             SettingsGroup {

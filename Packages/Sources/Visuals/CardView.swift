@@ -1,6 +1,6 @@
-import SwiftUI
 import CoreModels
 import DesignSystem
+import SwiftUI
 
 public protocol CardPathProvider: Sendable {
     func rotationPaths(for letter: Character) -> [Path]
@@ -8,7 +8,6 @@ public protocol CardPathProvider: Sendable {
 }
 
 public struct CardView: View {
-
     public let record: Record
     public let size: CardSize
     public let attitude: DeviceAttitude
@@ -41,14 +40,30 @@ public struct CardView: View {
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
             ZStack {
-                backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                // Developer toggle (`CardBlendTuning.hideBackdrop`) omits the
+                // backdrop from both the rendered card and the text layer's
+                // sample closure — useful for isolating chrome/text work.
+                if !blendTuning.hideBackdrop {
+                    backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                }
+
+                // Figural ornaments — rendered above the sampled backdrop so the
+                // hologram text and frosted location pill don't blur the moon,
+                // constellation, or zodiac figure into their chrome.
+                ornaments()
 
                 CardTextLayer(
                     record: record,
                     attitude: attitude,
                     layout: layout,
                     coordinateSpaceName: Self.cardCoordinateSpace,
-                    backdrop: { backdrop(accoutrements: accoutrements, density: density, layout: layout) }
+                    backdrop: {
+                        if blendTuning.hideBackdrop {
+                            Color.clear
+                        } else {
+                            backdrop(accoutrements: accoutrements, density: density, layout: layout)
+                        }
+                    }
                 )
             }
             // Pin to the geometry reader's bounds so ideal-size propagation from
@@ -64,24 +79,19 @@ public struct CardView: View {
 
     private static let cardCoordinateSpace = "CardScene"
 
-    @ViewBuilder
     private func backdrop(
         accoutrements: VisualAccoutrements,
         density: CCVisuals.Guilloche.LineDensity,
-        layout: CardLayout
+        layout _: CardLayout
     ) -> some View {
         ZStack {
             GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
 
-            GuillocheRotationLayer(paths: paths.rotationPaths(for: accoutrements.letter))
-
-            // Letter-shaped background silhouette — the single letter outline
-            // rotated in 5° steps. Sits between the ambient rotation filigree
-            // and the foreground blend letter to create depth.
-            BBackgroundSilhouetteLayer(
+            GuillocheRotationLayer(
                 paths: GuillocheRotationLayer.swirlPaths(
-                    from: paths.rotationPaths(for: accoutrements.letter).first
-                )
+                    from: paths.rotationPaths(for: "A").first
+                ),
+                attitude: attitude
             )
 
             if let photo {
@@ -107,29 +117,40 @@ public struct CardView: View {
                 .opacity(0.55) // Figma `BPattern` container opacity.
             }
 
-            // Zodiac stars (constellation): 100×90 at right-edge, vertically centered.
-            // Figma `Cards/Full` right-column composition — the stars frame the symbol.
+            // Zodiac stars (constellation): 100×90 pinned to the right edge,
+            // top inset 37pt. Part of the backdrop so hologram text / frosted
+            // pills sample it through the blur.
             if let sign = record.zodiacSign {
                 ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation)
                     .frame(width: 100, height: 90)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                    .padding(.top, 37)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .accessibilityHidden(true)
             }
-
-            // Zodiac symbol (figure) with holographic luminosity: 35×32 at
-            // right:57 bottom:72 — sits inside the stars frame.
-            if let sign = record.zodiacSign {
-                HolographicZodiac(sign: sign, attitude: attitude)
-                    .frame(width: 35, height: 32)
-                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 72, trailing: 57))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            }
-
-            // Moon phase frame: 34×56, bottom-trailing with 8pt bottom / 54pt trailing insets.
-            MoonPhaseLayer(phase: record.metadata.moonPhase)
-                .padding(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 54))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         }
+    }
+
+    private func ornaments() -> some View {
+        // `Color.clear` is flex-flex, so it reliably fills the parent ZStack's
+        // bounds — overlays then anchor to known edges without relying on
+        // `.padding + .frame(maxWidth/Height: .infinity, alignment:)` proposal
+        // propagation, which can silently collapse inside nested ZStacks.
+        Color.clear
+            .overlay(alignment: .bottomTrailing) {
+                // Zodiac figure frame — 35×32 (intrinsic to `HolographicZodiac`),
+                // sitting 9pt above the top of the moon phase frame below.
+                // Moon top = 14 (bottom) + 56 (height) = 70; zodiac bottom = 70 + 9 = 79.
+                // Trailing 54 stacks it directly above the moon column.
+                if let sign = record.zodiacSign {
+                    HolographicZodiac(sign: sign, attitude: attitude)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 79, trailing: 54))
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                // Moon phase frame: 34×56, bottom-trailing.
+                MoonPhaseLayer(phase: record.metadata.moonPhase)
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 54))
+            }
     }
 
     public static func accessibilityLabel(for record: Record) -> String {
@@ -156,78 +177,73 @@ struct CardTextLayer<Backdrop: View>: View {
     @ViewBuilder let backdrop: () -> Backdrop
 
     var body: some View {
-        ZStack {
-            // Top-left: location pill (backdrop-blur + tint) with location glyph +
-            // uppercase label. Capped to ~45% of card width so a long street
-            // address doesn't collide with the date/time block at top-right.
-            if let label = record.location?.label, !label.isEmpty {
-                LocationPill(
-                    label: label,
-                    maxWidth: layout.size.width * 0.45,
-                    backdropSize: layout.size,
-                    coordinateSpaceName: coordinateSpaceName,
-                    backdrop: backdrop
-                )
-                .padding(EdgeInsets(top: 8, leading: 5, bottom: 0, trailing: 0))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-
-            // Top-right: date + time-of-day label, right-aligned two-line block.
-            // Figma spec: top:8 right:8 with tight leading-12. SwiftUI Text adds
-            // extra above-cap-height leading, so we pad a few pts more to land
-            // the glyphs where Figma visually shows them.
-            DateTimeBlock(record: record)
-                .padding(EdgeInsets(top: 14, leading: 0, bottom: 0, trailing: 8))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-
-            // Bottom-left: name hologram stacked above the description pills.
-            // Description hugs the bottom edge with 8pt inset; name sits 8pt above
-            // the top of the description block.
-            VStack(alignment: .leading, spacing: 8) {
-                HologramText(
-                    record.name,
-                    font: CCDesign.Typography.title,
-                    attitude: attitude,
-                    backdropSize: layout.size,
-                    coordinateSpaceName: coordinateSpaceName,
-                    backdrop: backdrop
-                )
-                .fixedSize()
-
-                if !record.description.isEmpty {
-                    DescriptionPills(
-                        text: record.description,
-                        maxPillWidth: max(0, layout.size.width - 32 - 60)
+        // `Color.clear` fills the parent ZStack; overlays anchor to its known
+        // bounds so padding reliably pushes content away from each edge.
+        Color.clear
+            .overlay(alignment: .topLeading) {
+                // Top-left: location pill with location glyph + uppercase label.
+                // Capped to ~45% of card width so a long address doesn't collide
+                // with the date/time block at top-right.
+                if let label = record.location?.label, !label.isEmpty {
+                    LocationPill(
+                        label: label,
+                        maxWidth: layout.size.width * 0.45,
+                        backdropSize: layout.size,
+                        coordinateSpaceName: coordinateSpaceName,
+                        backdrop: backdrop
                     )
+                    .padding(EdgeInsets(top: 14, leading: 5, bottom: 0, trailing: 0))
                 }
             }
-            .padding(EdgeInsets(top: 0, leading: 8, bottom: 14, trailing: 0))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-
-            // Right-column zodiac label, anchored below the stars frame.
-            // Figma places it at right:8 bottom:82 translate-y-full (i.e. bottom:82
-            // minus its own height ≈ 12pt line-height → effective bottom ≈ 70pt).
-            if let sign = record.zodiacSign {
-                ZodiacLabel(sign: sign)
-                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 70, trailing: 8))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .overlay(alignment: .topTrailing) {
+                // Top-right: date + time-of-day label, right-aligned two-line block.
+                DateTimeBlock(record: record)
+                    .padding(EdgeInsets(top: 14, leading: 0, bottom: 0, trailing: 8))
             }
+            .overlay(alignment: .bottomLeading) {
+                // Bottom-left: name hologram stacked above the description pills.
+                VStack(alignment: .leading, spacing: 8) {
+                    HologramText(
+                        record.name,
+                        font: CCDesign.Typography.title,
+                        attitude: attitude,
+                        backdropSize: layout.size,
+                        coordinateSpaceName: coordinateSpaceName,
+                        backdrop: backdrop
+                    )
+                    .fixedSize()
 
-            // Right-bottom: moon phase label, two lines right-aligned, with a
-            // 1pt dot floating 4pt above the label's right edge.
-            VStack(alignment: .trailing, spacing: 4) {
-                Rectangle()
-                    .fill(Color.white)
-                    .frame(width: 1, height: 1)
-                MoonLabel(phase: record.metadata.moonPhase)
+                    if !record.description.isEmpty {
+                        DescriptionPills(
+                            text: record.description,
+                            maxPillWidth: max(0, layout.size.width - 32 - 60)
+                        )
+                    }
+                }
+                .padding(EdgeInsets(top: 0, leading: 8, bottom: 14, trailing: 0))
             }
-            .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 8))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-
-            // Right-edge decorative hairlines — Figma Line 1 (horizontal) + Line 2 (rotated).
-            // Exact opacity not yet pinned from Figma; using 0.5 as a visible placeholder.
-            RightEdgeHairlines()
-        }
+            .overlay(alignment: .bottomTrailing) {
+                // Zodiac label sits just above the top of the moon phase frame.
+                if let sign = record.zodiacSign {
+                    ZodiacLabel(sign: sign)
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 77, trailing: 8))
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                // Right-bottom: moon phase label, two lines right-aligned, with a
+                // 1pt dot floating 4pt above the label's right edge.
+                VStack(alignment: .trailing, spacing: 4) {
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(width: 1, height: 1)
+                    MoonLabel(phase: record.metadata.moonPhase)
+                }
+                .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 8))
+            }
+            .overlay {
+                // Right-edge decorative hairlines — fill the bounds directly.
+                RightEdgeHairlines()
+            }
     }
 }
 
@@ -242,7 +258,7 @@ private struct LocationPill<Backdrop: View>: View {
 
     var body: some View {
         BackdropBlurPill(
-            fill: Color(red: 40/255, green: 60/255, blue: 85/255).opacity(0.1),
+            fill: Color(red: 40 / 255, green: 60 / 255, blue: 85 / 255).opacity(0.1),
             backdropSize: backdropSize,
             coordinateSpaceName: coordinateSpaceName,
             backdrop: backdrop
@@ -310,17 +326,17 @@ private struct MoonLabel: View {
         .multilineTextAlignment(.trailing)
     }
 
-    // Two-word split for a two-line right-aligned caption matching Figma `Cards/Full`.
+    /// Two-word split for a two-line right-aligned caption matching Figma `Cards/Full`.
     private var displayWords: [String] {
         switch phase {
-        case .newMoon:         return ["New", "Moon"]
-        case .waxingCrescent:  return ["Waxing", "Crescent"]
-        case .firstQuarter:    return ["First", "Quarter"]
-        case .waxingGibbous:   return ["Waxing", "Gibbous"]
-        case .fullMoon:        return ["Full", "Moon"]
-        case .waningGibbous:   return ["Waning", "Gibbous"]
-        case .thirdQuarter:    return ["Third", "Quarter"]
-        case .waningCrescent:  return ["Waning", "Crescent"]
+        case .newMoon: return ["New", "Moon"]
+        case .waxingCrescent: return ["Waxing", "Crescent"]
+        case .firstQuarter: return ["First", "Quarter"]
+        case .waxingGibbous: return ["Waxing", "Gibbous"]
+        case .fullMoon: return ["Full", "Moon"]
+        case .waningGibbous: return ["Waning", "Gibbous"]
+        case .thirdQuarter: return ["Third", "Quarter"]
+        case .waningCrescent: return ["Waning", "Crescent"]
         }
     }
 }
@@ -337,21 +353,21 @@ private struct ZodiacLabel: View {
 
 private struct RightEdgeHairlines: View {
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(width: 6, height: 1)
-                .padding(EdgeInsets(top: 0, leading: 0, bottom: 62, trailing: 8))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(width: 6, height: 1)
-                .rotationEffect(.degrees(45))
-                .padding(EdgeInsets(top: 0, leading: 0, bottom: 34, trailing: 8))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-        }
-        .accessibilityHidden(true)
+        Color.clear
+            .overlay(alignment: .bottomTrailing) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(width: 6, height: 1)
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 62, trailing: 8))
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(width: 6, height: 1)
+                    .rotationEffect(.degrees(45))
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 34, trailing: 8))
+            }
+            .accessibilityHidden(true)
     }
 }
 
@@ -359,90 +375,95 @@ private struct RightEdgeHairlines: View {
 
 #if DEBUG
 
-private struct PreviewPathProvider: CardPathProvider {
-    func rotationPaths(for letter: Character) -> [Path] { [] }
-    func blendPaths(
-        for letter: Character,
-        shape: GuillocheShape,
-        density: CCVisuals.Guilloche.LineDensity
-    ) -> [Path] { [] }
-}
+    private struct PreviewPathProvider: CardPathProvider {
+        func rotationPaths(for _: Character) -> [Path] {
+            []
+        }
 
-private func previewRecord(
-    name: String = "Alona",
-    description: String = "Met her at my office last year",
-    zodiac: ZodiacSign? = .sagittarius,
-    timeOfDay: TimeOfDay = .midday,
-    moonPhase: MoonPhase = .fullMoon,
-    location: String? = "1200 Treat Ave, San Francisco"
-) -> Record {
-    Record(
-        id: UUID(),
-        name: name,
-        description: description,
-        photoID: nil,
-        location: location.map {
-            LocationInfo(latitude: 37.77, longitude: -122.41, label: $0)
-        },
-        zodiacSign: zodiac,
-        createdAt: Date(),
-        updatedAt: Date(),
-        metadata: RecordMetadata(timeOfDay: timeOfDay, moonPhase: moonPhase)
-    )
-}
+        func blendPaths(
+            for _: Character,
+            shape _: GuillocheShape,
+            density _: CCVisuals.Guilloche.LineDensity
+        ) -> [Path] {
+            []
+        }
+    }
 
-#Preview("Card — full") {
-    CardView(
-        record: previewRecord(),
-        size: .medium,
-        attitude: .zero,
-        paths: PreviewPathProvider()
-    )
-    .frame(width: 343, height: 211)
-    .padding()
-    .background(Color.black)
-}
+    private func previewRecord(
+        name: String = "Alona",
+        description: String = "Met her at my office last year",
+        zodiac: ZodiacSign? = .sagittarius,
+        timeOfDay: TimeOfDay = .midday,
+        moonPhase: MoonPhase = .fullMoon,
+        location: String? = "1200 Treat Ave, San Francisco"
+    ) -> Record {
+        Record(
+            id: UUID(),
+            name: name,
+            description: description,
+            photoID: nil,
+            location: location.map {
+                LocationInfo(latitude: 37.77, longitude: -122.41, label: $0)
+            },
+            zodiacSign: zodiac,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: timeOfDay, moonPhase: moonPhase)
+        )
+    }
 
-#Preview("Card — no location, no description") {
-    CardView(
-        record: previewRecord(description: "", location: nil),
-        size: .medium,
-        attitude: .zero,
-        paths: PreviewPathProvider()
-    )
-    .frame(width: 343, height: 211)
-    .padding()
-    .background(Color.black)
-}
+    #Preview("Card — full") {
+        CardView(
+            record: previewRecord(),
+            size: .medium,
+            attitude: .zero,
+            paths: PreviewPathProvider()
+        )
+        .frame(width: 343, height: 211)
+        .padding()
+        .background(Color.black)
+    }
 
-#Preview("Card — long description") {
-    CardView(
-        record: previewRecord(
-            description: "Met her at an opening in the mission, we talked for hours about jazz"
-        ),
-        size: .medium,
-        attitude: .zero,
-        paths: PreviewPathProvider()
-    )
-    .frame(width: 343, height: 211)
-    .padding()
-    .background(Color.black)
-}
+    #Preview("Card — no location, no description") {
+        CardView(
+            record: previewRecord(description: "", location: nil),
+            size: .medium,
+            attitude: .zero,
+            paths: PreviewPathProvider()
+        )
+        .frame(width: 343, height: 211)
+        .padding()
+        .background(Color.black)
+    }
 
-#Preview("Card — night, new moon") {
-    CardView(
-        record: previewRecord(
-            zodiac: .leo,
-            timeOfDay: .night,
-            moonPhase: .newMoon
-        ),
-        size: .medium,
-        attitude: .zero,
-        paths: PreviewPathProvider()
-    )
-    .frame(width: 343, height: 211)
-    .padding()
-    .background(Color.black)
-}
+    #Preview("Card — long description") {
+        CardView(
+            record: previewRecord(
+                description: "Met her at an opening in the mission, we talked for hours about jazz"
+            ),
+            size: .medium,
+            attitude: .zero,
+            paths: PreviewPathProvider()
+        )
+        .frame(width: 343, height: 211)
+        .padding()
+        .background(Color.black)
+    }
+
+    #Preview("Card — night, new moon") {
+        CardView(
+            record: previewRecord(
+                zodiac: .leo,
+                timeOfDay: .night,
+                moonPhase: .newMoon
+            ),
+            size: .medium,
+            attitude: .zero,
+            paths: PreviewPathProvider()
+        )
+        .frame(width: 343, height: 211)
+        .padding()
+        .background(Color.black)
+    }
 
 #endif
