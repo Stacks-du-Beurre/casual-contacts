@@ -14,8 +14,6 @@ public struct CardView: View {
     public let paths: any CardPathProvider
     public let photo: Image?
 
-    @Bindable private var blendTuning = CardBlendTuning.shared
-
     public init(
         record: Record,
         size: CardSize,
@@ -80,42 +78,12 @@ public struct CardView: View {
     private static let cardCoordinateSpace = "CardScene"
 
     private func backdrop(
-        accoutrements: VisualAccoutrements,
-        density: CCVisuals.Guilloche.LineDensity,
+        accoutrements _: VisualAccoutrements,
+        density _: CCVisuals.Guilloche.LineDensity,
         layout _: CardLayout
     ) -> some View {
         ZStack {
-            GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
-
-            GuillocheRotationLayer(
-                paths: GuillocheRotationLayer.swirlPaths(
-                    from: paths.rotationPaths(for: "A").first
-                ),
-                attitude: attitude
-            )
-
-            if let photo {
-                PhotoLayer(image: photo, style: .card)
-            } else {
-                // Frame = SVG viewBox (184×160) so the paths draw inside a
-                // bounded box that the enclosing ZStack centers on the card.
-                // Without it, paths draw from the ZStack's top-left and the
-                // letter drifts off-center.
-                GuillocheBlendLayer(
-                    paths: paths.blendPaths(
-                        for: accoutrements.letter,
-                        shape: accoutrements.guillocheShape,
-                        density: density
-                    ),
-                    density: density,
-                    attitude: attitude,
-                    tint: .white,
-                    depthScale: blendTuning.depthScale,
-                    reversed: true
-                )
-                .frame(width: 184, height: 160)
-                .opacity(0.55) // Figma `BPattern` container opacity.
-            }
+            CardBackdrop(record: record, attitude: attitude, paths: paths, photo: photo)
 
             // Zodiac stars (constellation): 100×90 pinned to the right edge,
             // top inset 37pt. Part of the backdrop so hologram text / frosted
