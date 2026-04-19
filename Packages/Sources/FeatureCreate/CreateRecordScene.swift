@@ -55,41 +55,45 @@ public struct CreateRecordScene: View {
 
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity)
         .background(CCDesign.Colors.L2)
     }
 
     @ViewBuilder
     private var cardArea: some View {
-        ZStack(alignment: .topTrailing) {
-            CardBackdrop(
-                record: model.previewRecord,
-                attitude: attitude,
-                paths: paths,
-                photo: photoImage
-            )
+        GeometryReader { geo in
+            ZStack(alignment: .topTrailing) {
+                CardBackdrop(
+                    record: model.previewRecord,
+                    attitude: attitude,
+                    paths: paths,
+                    photo: photoImage
+                )
 
-            // Right-edge zodiac bundle — 100×127 frame positioned per Figma
-            // (frame origin relative to card: right-aligned, 259pt top inset in
-            // a 375×467 card area).
-            ZStack(alignment: .topLeading) {
-                CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
-                    .frame(width: 100, height: 90)
+                // Right-edge zodiac bundle — 100×127 frame positioned per Figma
+                // (frame origin relative to card: right-aligned, 259pt top inset in
+                // a 375×467 card area).
+                ZStack(alignment: .topLeading) {
+                    CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
+                        .frame(width: 100, height: 90)
 
-                CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
-                    .frame(width: 35, height: 32)
-                    .offset(x: 52, y: 70)
+                    CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
+                        .frame(width: 35, height: 32)
+                        .offset(x: 52, y: 70)
 
-                CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
-                    .frame(width: 35, height: 56)
-                    .offset(x: 57, y: 71)
+                    CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
+                        .frame(width: 35, height: 56)
+                        .offset(x: 57, y: 71)
+                }
+                .frame(width: 100, height: 127)
+                .offset(y: 259)
+
+                // Editable form layer — anchored top-leading.
+                CreateFormOverlay(model: model)
             }
-            .frame(width: 100, height: 127)
-            .offset(y: 259)
-
-            // Editable form layer — anchored top-leading.
-            CreateFormOverlay(model: model)
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
         }
-        .clipped()
     }
 
     private var photoImage: Image? {
