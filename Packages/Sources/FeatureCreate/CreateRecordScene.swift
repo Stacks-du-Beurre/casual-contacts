@@ -48,29 +48,18 @@ public struct CreateRecordScene: View {
 
     private var atmosphericSection: some View {
         GeometryReader { geo in
-            ZStack(alignment: .bottomTrailing) {
+            ZStack {
                 // Centered atmospheric backdrop fills this section.
                 backdropLayer(size: geo.size)
                     .allowsHitTesting(false)
 
+                // Top nav pinned to top; zodiac/location/save pinned to bottom.
                 VStack(spacing: 0) {
                     PersonTopNav(onCancel: onCancel)
                         .padding(.top, 18)
 
                     Spacer(minLength: 0)
 
-                    CreateFormOverlay(
-                        model: model,
-                        nameFocused: $nameFocused,
-                        attitude: attitude,
-                        backdropSize: geo.size,
-                        coordinateSpaceName: Self.coordSpace,
-                        backdrop: { backdropLayer(size: geo.size) }
-                    )
-
-                    Spacer(minLength: 0)
-
-                    // Zodiac bundle — right-aligned, sits above the location strip.
                     zodiacBundle
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
@@ -86,6 +75,16 @@ public struct CreateRecordScene: View {
                         action: { onSave(model.draft) }
                     )
                 }
+
+                // Form overlay centered vertically in the container.
+                CreateFormOverlay(
+                    model: model,
+                    nameFocused: $nameFocused,
+                    attitude: attitude,
+                    backdropSize: geo.size,
+                    coordinateSpaceName: Self.coordSpace,
+                    backdrop: { backdropLayer(size: geo.size) }
+                )
             }
             .coordinateSpace(.named(Self.coordSpace))
         }
@@ -111,8 +110,9 @@ public struct CreateRecordScene: View {
                     .frame(width: 35, height: 32)
 
                 CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
-                    .frame(width: 35, height: 56)
+                    .frame(width: 35, height: 32)
             }
+            .padding(.trailing, 8)
         }
         .padding(.bottom, 20)
         .allowsHitTesting(false)

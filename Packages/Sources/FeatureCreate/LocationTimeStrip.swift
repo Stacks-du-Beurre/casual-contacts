@@ -61,6 +61,8 @@ struct LocationTimeStrip: View {
         .overlay(
             Rectangle().stroke(Color.white.opacity(0.25), lineWidth: 1)
         )
+        .padding(.horizontal, 8)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Formatters
