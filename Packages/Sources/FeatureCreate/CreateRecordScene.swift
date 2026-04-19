@@ -62,7 +62,7 @@ public struct CreateRecordScene: View {
     @ViewBuilder
     private var cardArea: some View {
         GeometryReader { geo in
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .topLeading) {
                 CardBackdrop(
                     record: model.previewRecord,
                     attitude: attitude,
@@ -70,9 +70,8 @@ public struct CreateRecordScene: View {
                     photo: photoImage
                 )
 
-                // Right-edge zodiac bundle — 100×127 frame positioned per Figma
-                // (frame origin relative to card: right-aligned, 259pt top inset in
-                // a 375×467 card area).
+                // Right-edge zodiac bundle — anchored top-trailing within the
+                // card, with Figma's 259pt top inset.
                 ZStack(alignment: .topLeading) {
                     CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
                         .frame(width: 100, height: 90)
@@ -86,12 +85,16 @@ public struct CreateRecordScene: View {
                         .offset(x: 57, y: 71)
                 }
                 .frame(width: 100, height: 127)
-                .offset(y: 259)
+                .padding(.top, 259)
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
-                // Editable form layer — anchored top-leading.
+                // Editable form layer — anchored top-leading via an explicit
+                // origin so it can't inherit the ZStack's cross-sibling
+                // alignment negotiation.
                 CreateFormOverlay(model: model)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
             .clipped()
         }
     }
