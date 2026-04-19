@@ -21,7 +21,7 @@ struct DescriptionPills: View {
 
     var body: some View {
         let segments = segments()
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                 pill(segment)
             }
@@ -76,11 +76,13 @@ struct DescriptionPills: View {
             base
                 .truncationMode(.tail)
                 .frame(maxWidth: maxPillWidth - 12, alignment: .leading)
+                .frame(height: CCDesign.Typography.LineHeight.description)
                 .padding(.horizontal, 6)
                 .overlay(Rectangle().stroke(CCDesign.Colors.L2, lineWidth: 1))
         } else {
             base
                 .fixedSize(horizontal: true, vertical: false)
+                .frame(height: CCDesign.Typography.LineHeight.description)
                 .padding(.horizontal, 6)
                 .overlay(Rectangle().stroke(CCDesign.Colors.L2, lineWidth: 1))
         }

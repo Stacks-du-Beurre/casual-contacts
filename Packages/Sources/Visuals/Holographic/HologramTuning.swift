@@ -16,7 +16,7 @@ public final class HologramTuning {
     public enum Defaults {
         public static let backdropBlurOpacity: Double = 1.0
         public static let whiteFillOpacity: Double = 0.56
-        public static let lightenOpacity: Double = 0.35
+        public static let lightenOpacity: Double = 0.25
         public static let luminosityOpacity: Double = 0.35
         public static let translationScaleX: Double = 90
         public static let translationScaleY: Double = 90

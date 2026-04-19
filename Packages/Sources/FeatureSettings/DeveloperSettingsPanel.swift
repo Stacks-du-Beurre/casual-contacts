@@ -8,6 +8,7 @@ struct DeveloperSettingsPanel: View {
     @Environment(\.dismiss) private var dismiss
     @Bindable private var tuning = HologramTuning.shared
     @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
+    @Bindable private var cardBlendTuning = CardBlendTuning.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -109,6 +110,13 @@ struct DeveloperSettingsPanel: View {
                 range: 0...60,
                 format: .decimal
             )
+            SettingsDivider()
+            SliderRow(
+                label: "Card blend depth",
+                value: $cardBlendTuning.depthScale,
+                range: 0...20,
+                format: .decimal
+            )
         }
     }
 
@@ -128,6 +136,7 @@ struct DeveloperSettingsPanel: View {
             SettingsRow(label: "Reset to defaults", onTap: {
                 tuning.reset()
                 gradientTuning.reset()
+                cardBlendTuning.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))

@@ -4,12 +4,12 @@ import DesignSystem
 
 /// Full-bleed sunset backdrop for the empty-state collection view.
 ///
-/// Renders a single `CCDesign.Gradients.sunset` painting, centered in its
-/// container and overscanned on the X axis so the gradient can drift with
-/// gyro motion without revealing the viewport edge. Translation is expressed
-/// as a fraction (`tuning.edgeReach`) of the available overscan slack, so
-/// the far edge of the painting can reach the viewport edge at full tilt
-/// but never pans past it. Pitch is ignored — X-only drift per design.
+/// Renders `CCDesign.Gradients.sunset` at its natural aspect, scaled to fill
+/// the viewport (cover). Horizontal drift is bound by the exact slack the
+/// image contributes at that viewport size — no arbitrary overscan. At
+/// `edgeReach = 1.0` and `|roll| = 1`, the image's edge reaches the viewport
+/// edge and no further; at lower reach it stops short. Pitch is ignored —
+/// X-only drift per design.
 ///
 /// `attitude` arrives from `CoreMotionService` already baseline-relative and
 /// tanh-saturated, so the gradient rests centered at launch pose and
@@ -20,10 +20,13 @@ public struct EmptyStateGradientBackdrop: View {
 
     private let tuning = EmptyStateGradientTuning.shared
 
-    /// Horizontal overscan multiplier. Total slack on each side is
-    /// `viewport * (overscan - 1) / 2`, which caps the maximum drift.
-    /// At 3.0× on a 375pt viewport, slack per side is ~375pt.
-    private static let overscan: CGFloat = 3.0
+    /// Natural pixel size of Sunset.png (see
+    /// `Packages/Sources/DesignSystem/Resources/Gradients.xcassets/Sunset.imageset/Sunset.png`).
+    /// Used to compute the exact horizontal slack available at each viewport
+    /// size when the image is scaled-to-fill. Kept in sync with the asset
+    /// manually — if the PNG is re-exported at a different aspect this value
+    /// must be updated.
+    static let imageSize = CGSize(width: 689, height: 416)
 
     public init(attitude: DeviceAttitude) {
         self.attitude = attitude
@@ -31,21 +34,34 @@ public struct EmptyStateGradientBackdrop: View {
 
     public var body: some View {
         GeometryReader { geo in
-            let slack = geo.size.width * (Self.overscan - 1) / 2
+            let geometry = Self.scaledGeometry(viewport: geo.size, imageSize: Self.imageSize)
             let reach = CGFloat(max(0, min(1, tuning.edgeReach)))
-            let target = CGFloat(attitude.roll) * reach * slack
-            let bounded = max(-slack, min(slack, target))
+            let offset = CGFloat(attitude.roll) * reach * geometry.slack
+            let bounded = max(-geometry.slack, min(geometry.slack, offset))
             ZStack {
                 CCDesign.Gradients.sunset
-                    .frame(
-                        width: geo.size.width * Self.overscan,
-                        height: geo.size.height
-                    )
+                    .frame(width: geometry.width, height: geometry.height)
                     .offset(x: bounded, y: 0)
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()
         }
         .accessibilityHidden(true)
+    }
+
+    /// Pure geometry helper: given a viewport size and the source image's
+    /// intrinsic size, returns the dimensions of the scaled-to-fill image
+    /// along with the horizontal slack (per side) available for drift.
+    /// Slack is 0 if the image's aspect ratio is narrower-or-equal than
+    /// the viewport's (width becomes the binding axis, leaving no X room).
+    static func scaledGeometry(viewport: CGSize, imageSize: CGSize) -> (width: CGFloat, height: CGFloat, slack: CGFloat) {
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return (viewport.width, viewport.height, 0)
+        }
+        let scale = max(viewport.width / imageSize.width, viewport.height / imageSize.height)
+        let scaledWidth = imageSize.width * scale
+        let scaledHeight = imageSize.height * scale
+        let slack = max(0, (scaledWidth - viewport.width) / 2)
+        return (scaledWidth, scaledHeight, slack)
     }
 }

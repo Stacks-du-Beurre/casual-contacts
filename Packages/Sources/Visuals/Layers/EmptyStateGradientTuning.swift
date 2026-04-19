@@ -14,9 +14,11 @@ public final class EmptyStateGradientTuning {
     public static let shared = EmptyStateGradientTuning()
 
     public enum Defaults {
-        /// Fraction of the available overscan slack the gradient reaches at
-        /// full tilt. `1.0` = the far edge of the painting touches the
-        /// viewport edge at `|roll| == 1`; the gradient never pans past it.
+        /// Fraction of the available horizontal slack the gradient reaches at
+        /// full tilt. Slack is derived from the painting's natural aspect
+        /// scaled-to-fill the viewport. `1.0` = the far edge of the painting
+        /// touches the viewport edge at `|roll| == 1`; the gradient never
+        /// pans past it.
         public static let edgeReach: Double = 1.0
     }
 
