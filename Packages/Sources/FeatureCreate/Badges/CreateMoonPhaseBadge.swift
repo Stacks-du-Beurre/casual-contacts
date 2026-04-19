@@ -13,7 +13,9 @@ struct CreateMoonPhaseBadge: View {
     var body: some View {
         Image("Moon_Background", bundle: CCVisuals.bundle)
             .resizable()
+            .scaledToFill()
             .frame(width: 34, height: 56)
+            .clipped()
             .overlay(alignment: .top) {
                 Image(Self.assetName(for: phase), bundle: CCVisuals.bundle)
                     .resizable()
