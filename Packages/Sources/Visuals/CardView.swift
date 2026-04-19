@@ -123,11 +123,10 @@ struct CardTextLayer<Backdrop: View>: View {
             }
 
             if !record.description.isEmpty {
-                Text(record.description)
-                    .font(CCDesign.Typography.descriptionSmall)
-                    .foregroundStyle(.white)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(2)
+                DescriptionPills(
+                    text: record.description,
+                    maxPillWidth: max(0, backdropSize.width - 32 - 60)
+                )
             }
             Spacer()
             if let location = record.location?.label {
