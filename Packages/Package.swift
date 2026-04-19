@@ -75,7 +75,7 @@ let package = Package(
         ),
         .testTarget(
             name: "FeatureCreateTests",
-            dependencies: ["FeatureCreate", "CoreModels"],
+            dependencies: ["FeatureCreate", "CoreModels", "Visuals"],
             path: "Tests/FeatureCreateTests"
         ),
         .target(
