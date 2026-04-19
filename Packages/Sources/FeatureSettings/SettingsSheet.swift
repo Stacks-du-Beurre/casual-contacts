@@ -6,25 +6,45 @@ public struct SettingsSheet: View {
     @Environment(\.colorScheme) private var scheme
     @State private var syncEnabled = false
     @State private var advancedCardStackEnabled = false
+    @State private var path: [Route] = []
     public let onAbout: () -> Void
+
+    private enum Route: Hashable { case developer }
 
     public init(onAbout: @escaping () -> Void) {
         self.onAbout = onAbout
     }
 
     public var body: some View {
+        NavigationStack(path: $path) {
+            root
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .developer: DeveloperSettingsPanel()
+                    }
+                }
+        }
+        #if os(iOS)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.hidden)
+        .presentationBackground(SettingsPalette.sheetBackground(scheme))
+        #endif
+    }
+
+    private var root: some View {
         VStack(spacing: 0) {
             header
-            groups
-            Spacer(minLength: 0)
+            ScrollView {
+                groups
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+            }
             footer
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(SettingsPalette.sheetBackground(scheme))
         #if os(iOS)
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.hidden)
-        .presentationBackground(SettingsPalette.sheetBackground(scheme))
+        .toolbar(.hidden, for: .navigationBar)
         #endif
     }
 
@@ -58,6 +78,12 @@ public struct SettingsSheet: View {
                 SettingsDivider()
                 SettingsRow(label: "Recommended Casual Contacts", onTap: {}) {
                     trailingIcon(systemName: "square.and.arrow.up")
+                }
+            }
+
+            SettingsGroup {
+                SettingsRow(label: "Developer settings", onTap: { path.append(.developer) }) {
+                    trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                 }
             }
 

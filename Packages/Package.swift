@@ -90,7 +90,7 @@ let package = Package(
         ),
         .target(
             name: "FeatureSettings",
-            dependencies: ["CoreModels", "DesignSystem"],
+            dependencies: ["CoreModels", "DesignSystem", "Visuals"],
             path: "Sources/FeatureSettings"
         ),
         .testTarget(

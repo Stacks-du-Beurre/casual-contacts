@@ -28,9 +28,8 @@ public struct EmptyStateView: View {
                 Button(action: onTap) {
                     HologramText(
                         "add the first person",
-                        font: CCDesign.Typography.title,
+                        font: Self.scaledTitleFont(canvasWidth: sceneGeo.size.width),
                         attitude: attitude,
-                        showsBackdropBlur: false,
                         backdropSize: sceneGeo.size,
                         coordinateSpaceName: Self.sceneCoordinateSpace,
                         backdrop: { backdrop }
@@ -47,6 +46,14 @@ public struct EmptyStateView: View {
     }
 
     private static let sceneCoordinateSpace = "EmptyStateScene"
+
+    /// Scale the 33pt Figma title proportionally to the 375pt iPhone 11 Pro
+    /// canvas it was designed against. Cap at 1.3× so iPad-width screens don't
+    /// blow the pill into a headline.
+    private static func scaledTitleFont(canvasWidth: CGFloat) -> Font {
+        let scale = min(max(canvasWidth / 375, 1.0), 1.3)
+        return Font.custom("CormorantSC-SemiBold", size: 33 * scale, relativeTo: .largeTitle)
+    }
 
     @ViewBuilder
     private var backdrop: some View {

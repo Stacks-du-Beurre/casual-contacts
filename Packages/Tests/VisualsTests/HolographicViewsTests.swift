@@ -35,9 +35,9 @@ import CoreModels
         // Locks the tuning surface so a silent edit to the defaults shows up
         // as a test diff the reviewer must explain. Values are calibrated
         // against the PDF §5 Title/Name sample on iPhone 11 Pro (375pt).
-        #expect(HologramText<Color>.translationScaleX == 12)
-        #expect(HologramText<Color>.translationScaleY == 8)
-        #expect(HologramText<Color>.rotationDegrees == 6)
+        #expect(HologramText<Color>.translationScaleX == 90)
+        #expect(HologramText<Color>.translationScaleY == 90)
+        #expect(HologramText<Color>.rotationDegrees == 30)
         #expect(HologramText<Color>.textureOverscan == 1.3)
     }
 }

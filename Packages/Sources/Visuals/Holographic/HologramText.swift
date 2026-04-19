@@ -26,6 +26,9 @@ import CoreModels
 /// Used on the empty-state "add the first person" button and on populated
 /// card names. Callers always pass real `attitude` — use `.zero` for static
 /// previews / snapshot baselines.
+///
+/// Opacity + motion values read from `HologramTuning.shared`, so the
+/// developer-settings panel can live-tune the stack.
 public struct HologramText<Backdrop: View>: View {
 
     public let text: String
@@ -34,18 +37,17 @@ public struct HologramText<Backdrop: View>: View {
     public let hologram: HologramTexture
     public let showsBackdropBlur: Bool
     public let blurRadius: CGFloat
-    public let lightenOpacity: Double
-    public let luminosityOpacity: Double
     public let backdropSize: CGSize
     public let coordinateSpaceName: String
     private let backdrop: Backdrop
 
-    /// Defaults below are tuneable. Bottom (`.lighten`) translates on roll/pitch,
-    /// top (`.luminosity`) rotates on roll. Overscan keeps the textures covering
-    /// the pill at full tilt / full rotation.
-    public static var translationScaleX: CGFloat { 12 }
-    public static var translationScaleY: CGFloat { 8 }
-    public static var rotationDegrees: Double { 6 }
+    private let tuning = HologramTuning.shared
+
+    /// Shipped defaults. Also mirrored in `HologramTuning.Defaults` so
+    /// `hologramTextTuningConstantsMatchSpec` keeps guarding the calibration.
+    public static var translationScaleX: CGFloat { CGFloat(HologramTuning.Defaults.translationScaleX) }
+    public static var translationScaleY: CGFloat { CGFloat(HologramTuning.Defaults.translationScaleY) }
+    public static var rotationDegrees: Double { HologramTuning.Defaults.rotationDegrees }
     public static var textureOverscan: CGFloat { 1.3 }
 
     public init(
@@ -55,8 +57,6 @@ public struct HologramText<Backdrop: View>: View {
         hologram: HologramTexture = .neon3,
         showsBackdropBlur: Bool = true,
         blurRadius: CGFloat = 54.365,
-        lightenOpacity: Double = 0.56,
-        luminosityOpacity: Double = 0.35,
         backdropSize: CGSize,
         coordinateSpaceName: String,
         @ViewBuilder backdrop: () -> Backdrop
@@ -67,8 +67,6 @@ public struct HologramText<Backdrop: View>: View {
         self.hologram = hologram
         self.showsBackdropBlur = showsBackdropBlur
         self.blurRadius = blurRadius
-        self.lightenOpacity = lightenOpacity
-        self.luminosityOpacity = luminosityOpacity
         self.backdropSize = backdropSize
         self.coordinateSpaceName = coordinateSpaceName
         self.backdrop = backdrop()
@@ -105,17 +103,22 @@ public struct HologramText<Backdrop: View>: View {
                         .frame(width: backdropSize.width, height: backdropSize.height)
                         .offset(x: -frame.minX, y: -frame.minY)
                         .blur(radius: blurRadius)
+                        .opacity(tuning.backdropBlurOpacity)
                 }
+
+                Color.white
+                    .opacity(tuning.whiteFillOpacity)
+                    .allowsHitTesting(false)
 
                 Image(hologram.rawValue, bundle: .module)
                     .resizable()
                     .scaledToFill()
                     .frame(width: overscanW, height: overscanH)
                     .offset(
-                        x: CGFloat(attitude.roll) * Self.translationScaleX,
-                        y: CGFloat(attitude.pitch) * Self.translationScaleY
+                        x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
+                        y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
                     )
-                    .opacity(lightenOpacity)
+                    .opacity(tuning.lightenOpacity)
                     .blendMode(.lighten)
                     .allowsHitTesting(false)
 
@@ -123,8 +126,8 @@ public struct HologramText<Backdrop: View>: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: overscanW, height: overscanH)
-                    .rotationEffect(.degrees(attitude.roll * Self.rotationDegrees))
-                    .opacity(luminosityOpacity)
+                    .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
+                    .opacity(tuning.luminosityOpacity)
                     .blendMode(.luminosity)
                     .allowsHitTesting(false)
             }
