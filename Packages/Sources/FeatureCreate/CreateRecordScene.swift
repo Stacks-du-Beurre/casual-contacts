@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import CoreModels
 import DesignSystem
@@ -10,8 +11,11 @@ public struct CreateRecordScene: View {
     public let onCancel: () -> Void
     public let onSave: (RecordDraft) -> Void
 
-    @State private var model = CreateRecordModel()
-    @State private var showingZodiacPicker = false
+    @State private var model = CreateRecordModel(
+        createdAt: Date(),
+        metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .fullMoon),
+        location: nil
+    )
 
     public init(
         attitude: DeviceAttitude,
@@ -33,7 +37,7 @@ public struct CreateRecordScene: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding()
 
-                CreateFormFields(model: model, isZodiacPickerShowing: $showingZodiacPicker)
+                CreateFormFields(model: model)
 
                 Spacer()
             }
@@ -52,9 +56,6 @@ public struct CreateRecordScene: View {
                     .disabled(!model.isSaveable)
                     .accessibilityIdentifier("saveRecordButton")
                 }
-            }
-            .sheet(isPresented: $showingZodiacPicker) {
-                ZodiacPickerSheet(selection: $model.zodiacSign)
             }
         }
     }
