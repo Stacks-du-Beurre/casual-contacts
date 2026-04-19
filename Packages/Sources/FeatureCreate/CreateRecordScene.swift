@@ -1,11 +1,10 @@
-import SwiftUI
-import Foundation
 import CoreModels
 import DesignSystem
+import Foundation
+import SwiftUI
 import Visuals
 
 public struct CreateRecordScene: View {
-
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
     public let onCancel: () -> Void
@@ -37,13 +36,30 @@ public struct CreateRecordScene: View {
     }
 
     public var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                PersonTopNav(onCancel: onCancel)
-                    .padding(.top, 18)
+        VStack(spacing: 0) {
+            // Everything from top-nav through location-strip shares the backdrop.
+            // SaveButton is a sibling at the bottom with its own gradient, so the
+            // backdrop's bottom edge pins exactly to the save button's top.
+            atmosphericSection
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .onAppear { nameFocused = true }
+    }
 
-                // Form content + zodiac bundle, anchored top.
-                ZStack(alignment: .topLeading) {
+    private var atmosphericSection: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .bottomTrailing) {
+                // Centered atmospheric backdrop fills this section.
+                backdropLayer(size: geo.size)
+                    .allowsHitTesting(false)
+
+                // Foreground VStack: top nav + centered form + bottom location strip.
+                VStack(spacing: 0) {
+                    PersonTopNav(onCancel: onCancel)
+                        .padding(.top, 18)
+
+                    Spacer(minLength: 0)
+
                     CreateFormOverlay(
                         model: model,
                         nameFocused: $nameFocused,
@@ -53,42 +69,30 @@ public struct CreateRecordScene: View {
                         backdrop: { backdropLayer(size: geo.size) }
                     )
 
-                    zodiacBundle
-                        .padding(.top, 259)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    Spacer(minLength: 0)
+
+                    LocationTimeStrip(
+                        location: model.location,
+                        createdAt: model.createdAt,
+                        timeOfDay: model.metadata.timeOfDay
+                    )
+                    SaveButton(
+                        isEnabled: model.isSaveable,
+                        timeOfDay: model.metadata.timeOfDay,
+                        attitude: attitude,
+                        action: { onSave(model.draft) }
+                    )
                 }
 
-                Spacer(minLength: 0)
+                // Zodiac bundle pinned to the bottom-right, above the location strip.
+                zodiacBundle
+                    .padding(.bottom, 40 + 20) // location strip (40pt) + gap above
+                    .padding(.trailing, 0)
             }
             .coordinateSpace(.named(Self.coordSpace))
-            .onAppear { nameFocused = true }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                LocationTimeStrip(
-                    location: model.location,
-                    createdAt: model.createdAt,
-                    timeOfDay: model.metadata.timeOfDay
-                )
-
-                SaveButton(
-                    isEnabled: model.isSaveable,
-                    timeOfDay: model.metadata.timeOfDay,
-                    attitude: attitude,
-                    action: { onSave(model.draft) }
-                )
-            }
-        }
-        .background {
-            GeometryReader { geo in
-                backdropLayer(size: geo.size)
-                    .allowsHitTesting(false)
-            }
-            .ignoresSafeArea()
         }
     }
 
-    @ViewBuilder
     private func backdropLayer(size: CGSize) -> some View {
         CardBackdrop(
             record: model.previewRecord,
@@ -99,7 +103,6 @@ public struct CreateRecordScene: View {
         .frame(width: size.width, height: size.height)
     }
 
-    @ViewBuilder
     private var zodiacBundle: some View {
         ZStack(alignment: .topLeading) {
             CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
@@ -114,14 +117,15 @@ public struct CreateRecordScene: View {
                 .offset(x: 57, y: 71)
         }
         .frame(width: 100, height: 127)
+        .allowsHitTesting(false)
     }
 
     private var photoImage: Image? {
         #if canImport(UIKit)
-        guard let data = model.photoData, let uiImage = UIImage(data: data) else { return nil }
-        return Image(uiImage: uiImage)
+            guard let data = model.photoData, let uiImage = UIImage(data: data) else { return nil }
+            return Image(uiImage: uiImage)
         #else
-        return nil
+            return nil
         #endif
     }
 }

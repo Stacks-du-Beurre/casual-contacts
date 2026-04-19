@@ -1,6 +1,6 @@
-import SwiftUI
 import CoreModels
 import DesignSystem
+import SwiftUI
 import Visuals
 
 /// Full-width SAVE button reusing the card's time-of-day gradient so it reads
@@ -20,8 +20,9 @@ struct SaveButton: View {
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(CCDesign.Colors.L0)
         }
-        .frame(height: 50)
         .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .clipped()
         .opacity(isEnabled ? 1 : 0.35)
         .contentShape(Rectangle())
         .onTapGesture {
