@@ -14,6 +14,8 @@ public struct CardView: View {
     public let paths: any CardPathProvider
     public let photo: Image?
 
+    @Bindable private var blendTuning = CardBlendTuning.shared
+
     public init(
         record: Record,
         size: CardSize,
