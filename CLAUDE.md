@@ -102,6 +102,26 @@ xcrun simctl install "iPhone 17" \
 xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
 ```
 
+### Inspect / debug the running app (iOS Simulator MCP)
+
+The `ios-simulator` MCP (joshuayoes/ios-simulator-mcp, configured in `.mcp.json`) is the preferred way to drive, screenshot, and inspect the simulator from within a session. Use it whenever you need to verify a visual change, reproduce a UI bug, or debug a layout issue — don't ask the user to describe what they see if you can look yourself.
+
+Tools most relevant to this project (all namespaced `mcp__ios-simulator__*`):
+
+- **`screenshot` / `ui_view`** — visual check after a build+install. `ui_view` returns an inline compressed image (fast, good for quick checks); `screenshot` writes a file (use when you need to diff against Figma).
+- **`ui_describe_all`** — **the go-to tool for debugging layout issues.** Returns the full accessibility hierarchy for the current screen: every element's frame, label, identifier, traits, and nesting. Use this instead of guessing when:
+  - Something is "not showing up" — check whether the element is in the tree at all, and if so what its frame is (off-screen? zero-sized? covered?).
+  - A tap isn't landing — confirm the actual on-screen bounds before re-running `ui_tap`.
+  - A card/row looks wrong — compare reported frames against Figma's expected proportions.
+  - VoiceOver labels need auditing for the accessibility pass (Plan 3.1 T10).
+- **`ui_describe_point`** — element at specific x,y. Useful when you have a screenshot with a suspicious region and want to know *which* element is there.
+- **`ui_tap` / `ui_swipe` / `ui_type`** — drive flows (e.g. empty state → tap + → type name → Save) to reach the screen you need to inspect.
+- **`launch_app` / `install_app`** — after a fresh `xcodebuild build`, `install_app` + `launch_app com.stacksdubeurre.CasualContacts` is equivalent to the `simctl` commands above.
+
+Typical debugging loop: build + install → `launch_app` → `ui_describe_all` to understand the current tree → `screenshot` for a visual → adjust SwiftUI → rebuild → re-inspect. This is much faster and more reliable than eyeballing screenshots alone when the issue is a frame/layout bug.
+
+Prerequisites: Facebook IDB (`brew install idb-companion` + `pipx install fb-idb --python python3.11`). If IDB isn't installed, the MCP tools will fail with a connection error — ask the user to install it rather than falling back to guesses.
+
 ### Regenerate guilloche Swift files
 
 After any change to `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Rotation/` or `design-assets/Blended_export/SVG/`:
