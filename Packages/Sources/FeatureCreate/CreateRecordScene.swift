@@ -36,33 +36,44 @@ public struct CreateRecordScene: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            // Everything from top-nav through location-strip shares the backdrop.
-            // SaveButton is a sibling at the bottom with its own gradient, so the
-            // backdrop's bottom edge pins exactly to the save button's top.
-            atmosphericSection
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .onAppear { nameFocused = true }
+        // Sheet-wide gradient that bleeds only past the BOTTOM safe area so
+        // color extends behind the keyboard / home indicator. Using .background
+        // (instead of a ZStack) pins the gradient's size to the host view so
+        // its flexible Image content can't inflate the parent container.
+        atmosphericSection
+            .background(
+                GradientLayer(timeOfDay: model.metadata.timeOfDay, attitude: attitude)
+                    .ignoresSafeArea(edges: .bottom)
+            )
+            .onAppear { nameFocused = true }
     }
 
     private var atmosphericSection: some View {
         GeometryReader { geo in
-            ZStack {
+            ZStack(alignment: .bottomTrailing) {
                 // Centered atmospheric backdrop fills this section.
                 backdropLayer(size: geo.size)
                     .allowsHitTesting(false)
 
-                // Top nav pinned to top; zodiac/location/save pinned to bottom.
+                // Top nav pinned to top; form centered; location/save at the
+                // bottom. Zodiac is absolutely positioned in the ZStack so it
+                // doesn't consume VStack space.
                 VStack(spacing: 0) {
                     PersonTopNav(onCancel: onCancel)
                         .padding(.top, 18)
 
                     Spacer(minLength: 0)
 
-                    zodiacBundle
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.bottom, 8)
+                    CreateFormOverlay(
+                        model: model,
+                        nameFocused: $nameFocused,
+                        attitude: attitude,
+                        backdropSize: geo.size,
+                        coordinateSpaceName: Self.coordSpace,
+                        backdrop: { backdropLayer(size: geo.size) }
+                    )
+
+                    Spacer(minLength: 0)
 
                     LocationTimeStrip(
                         location: model.location,
@@ -77,15 +88,9 @@ public struct CreateRecordScene: View {
                     )
                 }
 
-                // Form overlay centered vertically in the container.
-                CreateFormOverlay(
-                    model: model,
-                    nameFocused: $nameFocused,
-                    attitude: attitude,
-                    backdropSize: geo.size,
-                    coordinateSpaceName: Self.coordSpace,
-                    backdrop: { backdropLayer(size: geo.size) }
-                )
+                // Sits above the LocationTimeStrip (48) + SaveButton (50) + 8pt gap.
+                zodiacBundle
+                    .padding(.bottom, 106)
             }
             .coordinateSpace(.named(Self.coordSpace))
         }

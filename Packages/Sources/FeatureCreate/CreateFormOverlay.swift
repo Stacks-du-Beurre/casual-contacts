@@ -36,6 +36,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
             )
 
             DescriptionPill(model: model)
+                .padding(.bottom, 8)
         }
         .padding(.leading, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
