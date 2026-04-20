@@ -33,12 +33,17 @@ public struct CardView: View {
     public var body: some View {
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
+            // Build the backdrop view value once per body evaluation and hand the
+            // same struct to the three consumers (card background, name hologram
+            // sample, location pill sample) instead of reconstructing it through
+            // three separate `@ViewBuilder` closures.
+            let sharedBackdrop = backdrop()
             ZStack {
                 // Developer toggle (`CardBlendTuning.hideBackdrop`) omits the
                 // backdrop from both the rendered card and the text layer's
                 // sample closure — useful for isolating chrome/text work.
                 if !blendTuning.hideBackdrop {
-                    backdrop()
+                    sharedBackdrop
                 }
 
                 // Figural ornaments — rendered above the sampled backdrop so the
@@ -55,7 +60,7 @@ public struct CardView: View {
                         if blendTuning.hideBackdrop {
                             Color.clear
                         } else {
-                            backdrop()
+                            sharedBackdrop
                         }
                     }
                 )
@@ -158,7 +163,9 @@ struct CardTextLayer<Backdrop: View>: View {
             }
             .overlay(alignment: .topTrailing) {
                 // Top-right: date + time-of-day label, right-aligned two-line block.
+                // Equatable so it short-circuits on gyro updates (no attitude dep).
                 DateTimeBlock(record: record)
+                    .equatable()
                     .padding(EdgeInsets(top: 14, leading: 0, bottom: 0, trailing: 8))
             }
             .overlay(alignment: .bottomLeading) {
@@ -185,25 +192,24 @@ struct CardTextLayer<Backdrop: View>: View {
             }
             .overlay(alignment: .bottomTrailing) {
                 // Zodiac label sits just above the top of the moon phase frame.
+                // Equatable — no attitude dep.
                 if let sign = record.zodiacSign {
                     ZodiacLabel(sign: sign)
+                        .equatable()
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 77, trailing: 8))
                 }
             }
             .overlay(alignment: .bottomTrailing) {
                 // Right-bottom: moon phase label, two lines right-aligned, with a
-                // 1pt dot floating 4pt above the label's right edge.
-                VStack(alignment: .trailing, spacing: 4) {
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(width: 1, height: 1)
-                    MoonLabel(phase: record.metadata.moonPhase)
-                }
-                .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 8))
+                // 1pt dot floating 4pt above the label's right edge. Equatable.
+                MoonLabelColumn(phase: record.metadata.moonPhase)
+                    .equatable()
+                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 8))
             }
             .overlay {
-                // Right-edge decorative hairlines — fill the bounds directly.
+                // Right-edge decorative hairlines — no inputs, trivially Equatable.
                 RightEdgeHairlines()
+                    .equatable()
             }
     }
 }
@@ -243,12 +249,29 @@ private struct LocationPill<Backdrop: View>: View {
     }
 }
 
-private struct DateTimeBlock: View {
+private struct DateTimeBlock: View, Equatable {
     let record: Record
+
+    // DateFormatter allocation is expensive; share a single instance per format.
+    // `nonisolated(unsafe)` is safe here because DateFormatter is documented
+    // thread-safe for formatting after configuration, and we never mutate these.
+    private static nonisolated(unsafe) let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, yyyy"
+        return f
+    }()
+
+    private static nonisolated(unsafe) let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        f.amSymbol = "am"
+        f.pmSymbol = "pm"
+        return f
+    }()
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            Text(dateLine)
+            Text(Self.dateFormatter.string(from: record.createdAt))
             Text(timeLine)
         }
         .font(CCDesign.Typography.caption2)
@@ -256,24 +279,30 @@ private struct DateTimeBlock: View {
         .multilineTextAlignment(.trailing)
     }
 
-    private var dateLine: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: record.createdAt)
-    }
-
     private var timeLine: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        formatter.amSymbol = "am"
-        formatter.pmSymbol = "pm"
-        let time = formatter.string(from: record.createdAt)
+        let time = Self.timeFormatter.string(from: record.createdAt)
         let label = record.metadata.timeOfDay.rawValue.capitalized
         return "\(label), \(time)"
     }
 }
 
-private struct MoonLabel: View {
+/// 1pt dot + two-line moon phase label. Extracted as an Equatable wrapper so
+/// the `.equatable()` short-circuit applies to the full composition, not just
+/// the inner label. Inputs depend only on phase — attitude-independent.
+private struct MoonLabelColumn: View, Equatable {
+    let phase: MoonPhase
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Rectangle()
+                .fill(Color.white)
+                .frame(width: 1, height: 1)
+            MoonLabel(phase: phase)
+        }
+    }
+}
+
+private struct MoonLabel: View, Equatable {
     let phase: MoonPhase
 
     var body: some View {
@@ -302,7 +331,7 @@ private struct MoonLabel: View {
     }
 }
 
-private struct ZodiacLabel: View {
+private struct ZodiacLabel: View, Equatable {
     let sign: ZodiacSign
 
     var body: some View {
@@ -312,7 +341,7 @@ private struct ZodiacLabel: View {
     }
 }
 
-private struct RightEdgeHairlines: View {
+private struct RightEdgeHairlines: View, Equatable {
     var body: some View {
         Color.clear
             .overlay(alignment: .bottomTrailing) {
