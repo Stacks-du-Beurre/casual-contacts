@@ -51,8 +51,12 @@ public struct CreateRecordScene: View {
     private var atmosphericSection: some View {
         GeometryReader { geo in
             ZStack(alignment: .bottomTrailing) {
-                // Centered atmospheric backdrop fills this section.
+                // Backdrop pinned to the TOP of the available area so it stays
+                // anchored during interactive dismiss (where the sheet's usable
+                // height changes faster than the geo.size we sized the backdrop
+                // with, which would otherwise let it drift down from center).
                 backdropLayer(size: geo.size)
+                    .frame(maxHeight: .infinity, alignment: .top)
                     .allowsHitTesting(false)
 
                 // Top nav pinned to top; form centered; location/save at the
