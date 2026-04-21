@@ -156,6 +156,7 @@ struct CardTextLayer<Backdrop: View>: View {
                         maxWidth: layout.size.width * 0.45,
                         backdropSize: layout.size,
                         coordinateSpaceName: coordinateSpaceName,
+                        attitude: attitude,
                         backdrop: backdrop
                     )
                     .padding(EdgeInsets(top: 14, leading: 5, bottom: 0, trailing: 0))
@@ -221,6 +222,7 @@ private struct LocationPill<Backdrop: View>: View {
     let maxWidth: CGFloat
     let backdropSize: CGSize
     let coordinateSpaceName: String
+    let attitude: DeviceAttitude
     @ViewBuilder let backdrop: () -> Backdrop
 
     var body: some View {
@@ -231,29 +233,42 @@ private struct LocationPill<Backdrop: View>: View {
             coordinateSpaceName: coordinateSpaceName,
             backdrop: backdrop
         ) {
-            HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(label.split(separator: ", ").enumerated()), id: \.offset) { _, segment in
-                        Text(segment.uppercased())
-                            .font(CCDesign.Typography.caption1)
-                            .tracking(CCDesign.Typography.Tracking.caption1)
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
-                Image("LocationPin", bundle: CCDesign.bundle)
-                    .renderingMode(.template)
-                    .resizable()
-                    .frame(width: 12, height: 12)
-                    .foregroundStyle(CCDesign.Colors.L0)
-                    .opacity(0.75)
+            ZStack {
+                content
+                    .blur(radius: 2)
+                    .offset(
+                        x: CGFloat(attitude.roll) * 16,
+                        y: CGFloat(attitude.pitch) * 16
+                    )
+                content
             }
-            .frame(height: 24)
-            .padding(.horizontal, 12)
         }
         .frame(maxWidth: maxWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(label.split(separator: ", ").enumerated()), id: \.offset) { _, segment in
+                    Text(segment.uppercased())
+                        .font(CCDesign.Typography.caption1)
+                        .tracking(CCDesign.Typography.Tracking.caption1)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            Image("LocationPin", bundle: CCDesign.bundle)
+                .renderingMode(.template)
+                .resizable()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(CCDesign.Colors.L0)
+                .opacity(0.75)
+        }
+        .frame(height: 24)
+        .padding(.horizontal, 12)
     }
 }
 

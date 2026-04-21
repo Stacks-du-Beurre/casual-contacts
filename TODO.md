@@ -3,7 +3,6 @@
 - fix cancel button
 - add location pill animation
 - add photo support
-- improve location support, fix icon, move permission to better spot
 - add zodiac picker
 - add edit flow that includes a delete ?
 - add v2 features, recommended section, sorting
