@@ -13,6 +13,7 @@ public struct CardView: View {
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
     public let photo: Image?
+    public let photoSize: CGSize?
 
     @Bindable private var blendTuning = CardBlendTuning.shared
 
@@ -21,13 +22,15 @@ public struct CardView: View {
         size: CardSize,
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
-        photo: Image? = nil
+        photo: Image? = nil,
+        photoSize: CGSize? = nil
     ) {
         self.record = record
         self.size = size
         self.attitude = attitude
         self.paths = paths
         self.photo = photo
+        self.photoSize = photoSize
     }
 
     public var body: some View {
@@ -81,7 +84,13 @@ public struct CardView: View {
     @ViewBuilder
     private func backdrop() -> some View {
         ZStack {
-            CardBackdrop(record: record, attitude: attitude, paths: paths, photo: photo)
+            CardBackdrop(
+                record: record,
+                attitude: attitude,
+                paths: paths,
+                photo: photo,
+                photoSize: photoSize
+            )
 
             // Zodiac stars (constellation): 100×90 pinned to the right edge,
             // top inset 37pt. Part of the backdrop so hologram text / frosted

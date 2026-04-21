@@ -17,7 +17,8 @@ extension AppEnvironment {
             locationService: MockLocationService(),
             motionService: StaticMotionService(),
             metadataGenerator: FixedMetadataGenerator(),
-            cardPathProvider: NoopCardPathProvider()
+            cardPathProvider: NoopCardPathProvider(),
+            faceDetectionService: StaticFaceDetectionService(result: nil)
         )
     }
 }

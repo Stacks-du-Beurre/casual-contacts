@@ -9,6 +9,7 @@ public struct MediumDetailSheet: View {
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
     public let photo: Image?
+    public let photoSize: CGSize?
     public let onExpand: () -> Void
     public let onEdit: () -> Void
     public let onDelete: () -> Void
@@ -19,6 +20,7 @@ public struct MediumDetailSheet: View {
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
         photo: Image? = nil,
+        photoSize: CGSize? = nil,
         onExpand: @escaping () -> Void,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
@@ -28,6 +30,7 @@ public struct MediumDetailSheet: View {
         self.attitude = attitude
         self.paths = paths
         self.photo = photo
+        self.photoSize = photoSize
         self.onExpand = onExpand
         self.onEdit = onEdit
         self.onDelete = onDelete
@@ -36,7 +39,14 @@ public struct MediumDetailSheet: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            CardView(record: record, size: .medium, attitude: attitude, paths: paths, photo: photo)
+            CardView(
+                record: record,
+                size: .medium,
+                attitude: attitude,
+                paths: paths,
+                photo: photo,
+                photoSize: photoSize
+            )
                 .aspectRatio(16.0/10.0, contentMode: .fit)
                 .accessibilityHidden(true)
 

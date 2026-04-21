@@ -42,16 +42,33 @@ struct CreateFormOverlay<Backdrop: View>: View {
     @ViewBuilder
     private var addPhotoButton: some View {
         #if os(iOS)
-        Button(action: onAddPhoto) {
-            Text("+ Add Photo")
-                .font(CCDesign.Typography.caption2)
-                .foregroundStyle(CCDesign.Colors.L0)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 4)
-                .contentShape(Rectangle())
+        if model.isDetectingPhoto {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(CCDesign.Colors.L0)
+                    .scaleEffect(0.7)
+                Text("Analyzing photo…")
+                    .font(CCDesign.Typography.caption2)
+                    .foregroundStyle(CCDesign.Colors.L0)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Analyzing photo")
+            .accessibilityIdentifier("photoDetectingSpinner")
+        } else {
+            Button(action: onAddPhoto) {
+                Text(model.photoData == nil ? "+ Add Photo" : "Change photo")
+                    .font(CCDesign.Typography.caption2)
+                    .foregroundStyle(CCDesign.Colors.L0)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("addPhotoButton")
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("addPhotoButton")
         #else
         Text("+ Add Photo")
             .font(CCDesign.Typography.caption2)

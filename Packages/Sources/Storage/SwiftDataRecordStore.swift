@@ -28,6 +28,8 @@ public final class SwiftDataRecordStore: RecordStore {
             name: draft.name,
             recordDescription: draft.description,
             photoFilename: photoID?.filename,
+            photoFocusX: draft.photoFocus?.x,
+            photoFocusY: draft.photoFocus?.y,
             latitude: draft.location?.latitude,
             longitude: draft.location?.longitude,
             locationLabel: draft.location?.label,
@@ -62,6 +64,8 @@ public final class SwiftDataRecordStore: RecordStore {
         persisted.name = record.name
         persisted.recordDescription = record.description
         persisted.photoFilename = record.photoID?.filename
+        persisted.photoFocusX = record.photoFocus?.x
+        persisted.photoFocusY = record.photoFocus?.y
         persisted.latitude = record.location?.latitude
         persisted.longitude = record.location?.longitude
         persisted.locationLabel = record.location?.label
@@ -115,11 +119,16 @@ extension Record {
         }()
         let shape = persisted.guillocheShapeRaw.flatMap(GuillocheShape.init(rawValue:))
             ?? .deterministic(for: persisted.id)
+        let focus: NormalizedPoint? = {
+            guard let fx = persisted.photoFocusX, let fy = persisted.photoFocusY else { return nil }
+            return NormalizedPoint(x: fx, y: fy)
+        }()
         self.init(
             id: persisted.id,
             name: persisted.name,
             description: persisted.recordDescription,
             photoID: persisted.photoFilename.map(PhotoID.init(filename:)),
+            photoFocus: focus,
             location: location,
             zodiacSign: persisted.zodiacSignRaw.flatMap(ZodiacSign.init(rawValue:)),
             createdAt: persisted.createdAt,

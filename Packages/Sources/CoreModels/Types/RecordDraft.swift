@@ -4,6 +4,7 @@ public struct RecordDraft: Sendable {
     public var name: String
     public var description: String
     public var photo: Data?
+    public var photoFocus: NormalizedPoint?
     public var location: LocationInfo?
     public var zodiacSign: ZodiacSign?
     public var guillocheShape: GuillocheShape?
@@ -12,6 +13,7 @@ public struct RecordDraft: Sendable {
         name: String,
         description: String = "",
         photo: Data? = nil,
+        photoFocus: NormalizedPoint? = nil,
         location: LocationInfo? = nil,
         zodiacSign: ZodiacSign? = nil,
         guillocheShape: GuillocheShape? = nil
@@ -19,6 +21,7 @@ public struct RecordDraft: Sendable {
         self.name = name
         self.description = description
         self.photo = photo
+        self.photoFocus = photoFocus
         self.location = location
         self.zodiacSign = zodiacSign
         self.guillocheShape = guillocheShape

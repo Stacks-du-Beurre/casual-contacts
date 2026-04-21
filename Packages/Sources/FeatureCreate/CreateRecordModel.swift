@@ -11,10 +11,36 @@ import CoreModels
 @Observable
 public final class CreateRecordModel {
 
+    public enum PhotoState: Equatable, Sendable {
+        case none
+        /// Detection in flight. The create flow shows a spinner in place of the
+        /// photo until this resolves to `.ready`.
+        case detecting(Data)
+        case ready(Data, NormalizedPoint?)
+
+        public var data: Data? {
+            switch self {
+            case .none: return nil
+            case .detecting(let d): return d
+            case .ready(let d, _): return d
+            }
+        }
+
+        public var focus: NormalizedPoint? {
+            if case .ready(_, let focus) = self { return focus }
+            return nil
+        }
+
+        public var isDetecting: Bool {
+            if case .detecting = self { return true }
+            return false
+        }
+    }
+
     // User-editable state.
     public var name: String = ""
     public var description: String = ""
-    public var photoData: Data?
+    public private(set) var photoState: PhotoState = .none
 
     // Fixed at init — non-editable.
     public let createdAt: Date
@@ -46,8 +72,34 @@ public final class CreateRecordModel {
         self.guillocheShape = guillocheShape ?? GuillocheShape.allCases.randomElement()!
     }
 
+    /// Kicks off face detection and resolves the model's `photoState` when the
+    /// service returns. If the user replaces or clears the photo mid-detection,
+    /// the stale result is dropped — the most recent `setPhoto` call wins.
+    public func setPhoto(_ data: Data, using service: any FaceDetectionService) {
+        photoState = .detecting(data)
+        Task { @MainActor [weak self] in
+            let focus = await service.focusPoint(in: data)
+            guard let self else { return }
+            // Only commit if the state still reflects the same in-flight photo.
+            if case .detecting(let current) = self.photoState, current == data {
+                self.photoState = .ready(data, focus)
+            }
+        }
+    }
+
+    public func clearPhoto() {
+        photoState = .none
+    }
+
+    public var photoData: Data? { photoState.data }
+    public var photoFocus: NormalizedPoint? { photoState.focus }
+    public var isDetectingPhoto: Bool { photoState.isDetecting }
+
+    /// Save is blocked during detection so the persisted record always reflects
+    /// the detection outcome (centered photo in the card, not a mid-analysis
+    /// placeholder).
     public var isSaveable: Bool {
-        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isDetectingPhoto
     }
 
     public var draft: RecordDraft {
@@ -55,6 +107,7 @@ public final class CreateRecordModel {
             name: name,
             description: description,
             photo: photoData,
+            photoFocus: photoFocus,
             location: location,
             zodiacSign: randomZodiacSign,
             guillocheShape: guillocheShape
@@ -65,11 +118,25 @@ public final class CreateRecordModel {
     /// user is still editing. The ID is stable within-instance but not final;
     /// the persisted record gets a fresh ID at save time via `RecordStore`.
     public var previewRecord: Record {
-        Record(
+        // Only expose a photo in the preview once detection has resolved —
+        // while `.detecting`, the form layer shows a spinner in place of a
+        // half-rendered photo that would shift once detection landed.
+        let previewPhoto: PhotoID?
+        let previewFocus: NormalizedPoint?
+        switch photoState {
+        case .none, .detecting:
+            previewPhoto = nil
+            previewFocus = nil
+        case .ready(_, let focus):
+            previewPhoto = previewPhotoID
+            previewFocus = focus
+        }
+        return Record(
             id: previewID,
             name: name,
             description: description,
-            photoID: photoData == nil ? nil : previewPhotoID,
+            photoID: previewPhoto,
+            photoFocus: previewFocus,
             location: location,
             zodiacSign: randomZodiacSign,
             createdAt: createdAt,

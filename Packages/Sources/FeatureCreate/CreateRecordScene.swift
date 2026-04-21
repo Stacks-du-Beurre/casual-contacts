@@ -11,6 +11,7 @@ import UIKit
 public struct CreateRecordScene: View {
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
+    public let faceDetectionService: any FaceDetectionService
     public let onCancel: () -> Void
     public let onSave: (RecordDraft) -> Void
 
@@ -29,6 +30,7 @@ public struct CreateRecordScene: View {
     public init(
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
+        faceDetectionService: any FaceDetectionService,
         createdAt: Date,
         metadata: RecordMetadata,
         location: LocationInfo?,
@@ -37,6 +39,7 @@ public struct CreateRecordScene: View {
     ) {
         self.attitude = attitude
         self.paths = paths
+        self.faceDetectionService = faceDetectionService
         self.onCancel = onCancel
         self.onSave = onSave
         _model = State(initialValue: CreateRecordModel(
@@ -79,7 +82,7 @@ public struct CreateRecordScene: View {
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraPicker(
                     onCapture: { data in
-                        model.photoData = data
+                        model.setPhoto(data, using: faceDetectionService)
                         showingCamera = false
                     },
                     onCancel: { showingCamera = false }
@@ -90,7 +93,7 @@ public struct CreateRecordScene: View {
                 guard let newItem else { return }
                 Task {
                     if let data = try? await newItem.loadTransferable(type: Data.self) {
-                        model.photoData = data
+                        model.setPhoto(data, using: faceDetectionService)
                     }
                 }
             }
@@ -160,7 +163,8 @@ public struct CreateRecordScene: View {
             record: model.previewRecord,
             attitude: attitude,
             paths: paths,
-            photo: photoImage
+            photo: photoImageAndSize?.image,
+            photoSize: photoImageAndSize?.size
         )
         .frame(width: size.width, height: size.height)
     }
@@ -182,10 +186,14 @@ public struct CreateRecordScene: View {
         .allowsHitTesting(false)
     }
 
-    private var photoImage: Image? {
+    private var photoImageAndSize: (image: Image, size: CGSize)? {
         #if canImport(UIKit)
-            guard let data = model.photoData, let uiImage = UIImage(data: data) else { return nil }
-            return Image(uiImage: uiImage)
+            // Omit the photo during detection so the spinner carries the wait
+            // state instead of flashing a momentarily miscropped image.
+            guard case .ready(let data, _) = model.photoState,
+                  let uiImage = UIImage(data: data)
+            else { return nil }
+            return (Image(uiImage: uiImage), uiImage.size)
         #else
             return nil
         #endif

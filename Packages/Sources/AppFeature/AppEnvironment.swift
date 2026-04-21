@@ -24,6 +24,7 @@ public final class AppEnvironment {
     public let motionService: any MotionService
     public let metadataGenerator: any MetadataGenerator
     public let cardPathProvider: any CardPathProvider
+    public let faceDetectionService: any FaceDetectionService
 
     public init(
         recordStore: any RecordStore,
@@ -31,7 +32,8 @@ public final class AppEnvironment {
         locationService: any LocationService,
         motionService: any MotionService,
         metadataGenerator: any MetadataGenerator,
-        cardPathProvider: any CardPathProvider
+        cardPathProvider: any CardPathProvider,
+        faceDetectionService: any FaceDetectionService
     ) {
         self.recordStore = recordStore
         self.photoStore = photoStore
@@ -39,6 +41,7 @@ public final class AppEnvironment {
         self.motionService = motionService
         self.metadataGenerator = metadataGenerator
         self.cardPathProvider = cardPathProvider
+        self.faceDetectionService = faceDetectionService
     }
 
     /// Production wiring: SwiftData persistence, on-disk photo storage,
@@ -66,7 +69,8 @@ public final class AppEnvironment {
             locationService: CoreLocationService(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
-            cardPathProvider: RealCardPathProvider()
+            cardPathProvider: RealCardPathProvider(),
+            faceDetectionService: VisionFaceDetectionService()
         )
     }
 
@@ -97,7 +101,8 @@ public final class AppEnvironment {
             locationService: CoreLocationService(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
-            cardPathProvider: RealCardPathProvider()
+            cardPathProvider: RealCardPathProvider(),
+            faceDetectionService: VisionFaceDetectionService()
         )
     }
     #endif

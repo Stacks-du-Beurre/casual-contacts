@@ -11,6 +11,7 @@ public struct CardBackdrop: View {
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
     public let photo: Image?
+    public let photoSize: CGSize?
 
     @Bindable private var blendTuning = CardBlendTuning.shared
 
@@ -18,12 +19,14 @@ public struct CardBackdrop: View {
         record: Record,
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
-        photo: Image? = nil
+        photo: Image? = nil,
+        photoSize: CGSize? = nil
     ) {
         self.record = record
         self.attitude = attitude
         self.paths = paths
         self.photo = photo
+        self.photoSize = photoSize
     }
 
     public var body: some View {
@@ -41,7 +44,12 @@ public struct CardBackdrop: View {
             )
 
             if let photo {
-                PhotoLayer(image: photo, style: .card)
+                PhotoLayer(
+                    image: photo,
+                    imageSize: photoSize,
+                    focus: record.photoFocus,
+                    style: .card
+                )
             }
 
             GuillocheBlendLayer(

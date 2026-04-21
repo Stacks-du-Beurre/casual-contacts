@@ -5,6 +5,7 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
     public var name: String
     public var description: String
     public var photoID: PhotoID?
+    public var photoFocus: NormalizedPoint?
     public var location: LocationInfo?
     public var zodiacSign: ZodiacSign?
     public let createdAt: Date
@@ -17,6 +18,7 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
         name: String,
         description: String,
         photoID: PhotoID?,
+        photoFocus: NormalizedPoint? = nil,
         location: LocationInfo?,
         zodiacSign: ZodiacSign?,
         createdAt: Date,
@@ -28,6 +30,7 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
         self.name = name
         self.description = description
         self.photoID = photoID
+        self.photoFocus = photoFocus
         self.location = location
         self.zodiacSign = zodiacSign
         self.createdAt = createdAt

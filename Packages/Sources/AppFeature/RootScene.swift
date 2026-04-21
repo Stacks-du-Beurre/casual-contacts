@@ -74,7 +74,8 @@ public struct RootScene: Scene {
                     environment.motionService.start()
                 }
             },
-            photoFor: { photoCache.image(for: $0.photoID) }
+            photoFor: { photoCache.image(for: $0.photoID) },
+            photoSizeFor: { photoCache.imageSize(for: $0.photoID) }
         )
         .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
             Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
@@ -133,6 +134,7 @@ public struct RootScene: Scene {
             CreateRecordScene(
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
+                faceDetectionService: environment.faceDetectionService,
                 createdAt: createdAt,
                 metadata: metadata,
                 location: currentLocation,
@@ -166,6 +168,7 @@ public struct RootScene: Scene {
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
                 photo: photoCache.image(for: record.photoID),
+                photoSize: photoCache.imageSize(for: record.photoID),
                 onExpand: {
                     router.selectedRecordForMediumDetail = nil
                     router.selectedRecordForLargeDetail = record
@@ -191,6 +194,7 @@ public struct RootScene: Scene {
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
                 photo: photoCache.image(for: record.photoID),
+                photoSize: photoCache.imageSize(for: record.photoID),
                 onEdit: {
                     router.editingRecord = record
                     router.selectedRecordForLargeDetail = nil

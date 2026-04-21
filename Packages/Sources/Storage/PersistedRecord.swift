@@ -7,6 +7,13 @@ public final class PersistedRecord {
     public var name: String
     public var recordDescription: String
     public var photoFilename: String?
+    /// Normalized focus point (top-left origin, 0…1). Both components are nil
+    /// for records saved before face-detection shipped, for records whose photo
+    /// has no detectable face, or for records without a photo. Lightweight
+    /// schema evolution: SwiftData treats the new optional columns as absent
+    /// on legacy rows.
+    public var photoFocusX: Double?
+    public var photoFocusY: Double?
     public var latitude: Double?
     public var longitude: Double?
     public var locationLabel: String?
@@ -24,6 +31,8 @@ public final class PersistedRecord {
         name: String,
         recordDescription: String,
         photoFilename: String?,
+        photoFocusX: Double? = nil,
+        photoFocusY: Double? = nil,
         latitude: Double?,
         longitude: Double?,
         locationLabel: String?,
@@ -38,6 +47,8 @@ public final class PersistedRecord {
         self.name = name
         self.recordDescription = recordDescription
         self.photoFilename = photoFilename
+        self.photoFocusX = photoFocusX
+        self.photoFocusY = photoFocusY
         self.latitude = latitude
         self.longitude = longitude
         self.locationLabel = locationLabel

@@ -19,6 +19,10 @@ public struct RecordsListScene: View {
     /// Lookup for a record's photo image. Host (AppFeature) provides a cache
     /// that loads PhotoIDs via PhotoStore; default returns nil for previews.
     public let photoFor: (Record) -> Image?
+    /// Lookup for a record's photo pixel size, paired with `photoFor`. Needed
+    /// by `PhotoLayer` to offset the image so the detected face sits at the
+    /// container center.
+    public let photoSizeFor: (Record) -> CGSize?
 
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
@@ -38,7 +42,8 @@ public struct RecordsListScene: View {
         onTapCreate: @escaping () -> Void,
         onTapSettings: @escaping () -> Void,
         onScrollInteractionChange: @escaping (Bool) -> Void = { _ in },
-        photoFor: @escaping (Record) -> Image? = { _ in nil }
+        photoFor: @escaping (Record) -> Image? = { _ in nil },
+        photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil }
     ) {
         self.store = store
         self.paths = paths
@@ -48,6 +53,7 @@ public struct RecordsListScene: View {
         self.onTapSettings = onTapSettings
         self.onScrollInteractionChange = onScrollInteractionChange
         self.photoFor = photoFor
+        self.photoSizeFor = photoSizeFor
     }
 
     @MainActor
@@ -201,7 +207,8 @@ public struct RecordsListScene: View {
                                 size: .small,
                                 attitude: attitude,
                                 paths: paths,
-                                photo: photoFor(record)
+                                photo: photoFor(record),
+                                photoSize: photoSizeFor(record)
                             )
                             .frame(height: 211)
                             // Rasterize each card's full blend stack into a

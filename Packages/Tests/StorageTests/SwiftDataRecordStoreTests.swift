@@ -52,6 +52,28 @@ import CoreModels
         #expect(fetched == created)
     }
 
+    @Test func roundTripPreservesPhotoFocus() async throws {
+        let store = try makeStore()
+        let focus = NormalizedPoint(x: 0.3, y: 0.4)
+        let draft = RecordDraft(name: "Jane", photoFocus: focus)
+
+        let created = try await store.create(
+            draft,
+            metadata: sampleMetadata,
+            photoID: PhotoID(filename: "abc.heic")
+        )
+
+        #expect(created.photoFocus == focus)
+        let fetched = store.records.first { $0.id == created.id }
+        #expect(fetched?.photoFocus == focus)
+    }
+
+    @Test func photoFocusDefaultsToNil() async throws {
+        let store = try makeStore()
+        let created = try await store.create(RecordDraft(name: "Jane"), metadata: sampleMetadata)
+        #expect(created.photoFocus == nil)
+    }
+
     @Test func updateModifiesExistingRecord() async throws {
         let store = try makeStore()
         var record = try await store.create(RecordDraft(name: "Jane"), metadata: sampleMetadata)

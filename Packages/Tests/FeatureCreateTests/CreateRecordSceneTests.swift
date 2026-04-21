@@ -17,10 +17,15 @@ import Visuals
     private let metadata = RecordMetadata(timeOfDay: .sunset, moonPhase: .fullMoon)
     private let location = LocationInfo(latitude: 37.77, longitude: -122.41, label: "1200 Treat Ave, San Francisco")
 
+    private struct StubFaceDetectionService: FaceDetectionService {
+        func focusPoint(in imageData: Data) async -> NormalizedPoint? { nil }
+    }
+
     @Test func sceneInstantiatesWithAllInputs() {
         _ = CreateRecordScene(
             attitude: .zero,
             paths: StubPaths(),
+            faceDetectionService: StubFaceDetectionService(),
             createdAt: fixedDate,
             metadata: metadata,
             location: location,
@@ -33,6 +38,7 @@ import Visuals
         _ = CreateRecordScene(
             attitude: .zero,
             paths: StubPaths(),
+            faceDetectionService: StubFaceDetectionService(),
             createdAt: fixedDate,
             metadata: metadata,
             location: nil,
