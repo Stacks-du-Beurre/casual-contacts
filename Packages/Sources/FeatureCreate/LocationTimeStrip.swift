@@ -31,8 +31,10 @@ struct LocationTimeStrip: View {
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "location.fill")
-                    .font(.system(size: 10))
+                Image("LocationPin", bundle: CCDesign.bundle)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 12, height: 12)
                     .foregroundStyle(CCDesign.Colors.L0)
                     .opacity(0.75)
                     .padding(.trailing, 8)
