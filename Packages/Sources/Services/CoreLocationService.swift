@@ -19,7 +19,12 @@ public final class CoreLocationService: NSObject, LocationService, CLLocationMan
 
     private let manager: LocationManagerProtocol
     private var authContinuation: CheckedContinuation<LocationAuthorization, Never>?
-    private var locationContinuation: CheckedContinuation<LocationInfo?, Error>?
+    private var locationContinuation: CheckedContinuation<RawCoordinates?, Error>?
+
+    private struct RawCoordinates: Sendable {
+        let latitude: Double
+        let longitude: Double
+    }
 
     public init(managerFactory: () -> LocationManagerProtocol = { CLLocationManager() }) {
         self.manager = managerFactory()
@@ -52,10 +57,27 @@ public final class CoreLocationService: NSObject, LocationService, CLLocationMan
         guard auth == .authorized else {
             throw LocationServiceError.notAuthorized
         }
-        return try await withCheckedThrowingContinuation { continuation in
+        let raw = try await withCheckedThrowingContinuation { continuation in
             self.locationContinuation = continuation
             self.manager.requestLocation()
         }
+        guard let raw else { return nil }
+        let label = await Self.reverseGeocode(latitude: raw.latitude, longitude: raw.longitude)
+        return LocationInfo(latitude: raw.latitude, longitude: raw.longitude, label: label)
+    }
+
+    private static func reverseGeocode(latitude: Double, longitude: Double) async -> String? {
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: latitude, longitude: longitude)
+        guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first else {
+            return nil
+        }
+        let street = [placemark.subThoroughfare, placemark.thoroughfare]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        let city = placemark.locality ?? placemark.subAdministrativeArea
+        let parts = [street.isEmpty ? nil : street, city].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
     // MARK: - CLLocationManagerDelegate
@@ -87,12 +109,11 @@ public final class CoreLocationService: NSObject, LocationService, CLLocationMan
             locationContinuation = nil
             return
         }
-        let info = LocationInfo(
+        let raw = RawCoordinates(
             latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude,
-            label: nil
+            longitude: location.coordinate.longitude
         )
-        locationContinuation?.resume(returning: info)
+        locationContinuation?.resume(returning: raw)
         locationContinuation = nil
     }
 

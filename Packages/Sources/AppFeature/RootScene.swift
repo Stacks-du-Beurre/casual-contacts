@@ -21,6 +21,7 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
+    @State private var currentLocation: LocationInfo?
     @Environment(\.scenePhase) private var scenePhase
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
@@ -54,6 +55,9 @@ public struct RootScene: Scene {
             },
             onTapCreate: {
                 router.showingCreate = true
+                Task {
+                    currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
+                }
             },
             onTapSettings: {
                 router.showingSettings = true
@@ -73,6 +77,10 @@ public struct RootScene: Scene {
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
+            Task {
+                _ = await environment.locationService.requestAuthorization()
+                currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
+            }
             for await raw in environment.motionService.attitude {
                 // Re-read @State each tick so mid-session toggles from the
                 // UIAccessibility notification propagate on the next gyro sample.
@@ -102,6 +110,9 @@ public struct RootScene: Scene {
                 if !reduceMotionEnabled {
                     environment.motionService.start()
                 }
+                Task {
+                    currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
+                }
             case .inactive, .background:
                 environment.motionService.stop()
             @unknown default:
@@ -110,13 +121,13 @@ public struct RootScene: Scene {
         }
         .sheet(isPresented: $router.showingCreate) {
             let createdAt = Date()
-            let metadata = environment.metadataGenerator.metadata(at: createdAt, location: nil)
+            let metadata = environment.metadataGenerator.metadata(at: createdAt, location: currentLocation)
             CreateRecordScene(
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
                 createdAt: createdAt,
                 metadata: metadata,
-                location: nil,
+                location: currentLocation,
                 onCancel: { router.showingCreate = false },
                 onSave: { draft in
                     Task {
