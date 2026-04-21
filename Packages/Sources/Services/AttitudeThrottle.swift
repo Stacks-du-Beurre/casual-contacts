@@ -24,7 +24,7 @@ public final class AttitudeThrottle: @unchecked Sendable {
     private var lastEmittedValue: DeviceAttitude?
 
     public init(
-        baseInterval: TimeInterval = 1.0 / 30.0,
+        baseInterval: TimeInterval = 1.0 / 60.0,
         idleInterval: TimeInterval = 1.0 / 12.0,
         movementThreshold: Double = 0.01
     ) {

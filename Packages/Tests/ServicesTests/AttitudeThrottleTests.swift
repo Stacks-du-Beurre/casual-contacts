@@ -84,6 +84,18 @@ import CoreModels
         #expect(emitted != nil)
     }
 
+    // MARK: - Defaults
+
+    @Test func defaultBaseIntervalMatchesCoreMotionRate() {
+        // The throttle's base rate sits at the CoreMotion delegate's 60 Hz
+        // ceiling so the gyro pipeline runs full rate when the user is moving
+        // the device. Drop this if the per-card body cost ever regresses past
+        // the GPU savings the per-card drawingGroup buys.
+        let throttle = AttitudeThrottle()
+        #expect(throttle.baseInterval == 1.0 / 60.0)
+        #expect(throttle.idleInterval == 1.0 / 12.0)
+    }
+
     // MARK: - Sustained rates
 
     @Test func sustainedMovementEmitsAtApproximatelyBaseRate() {
