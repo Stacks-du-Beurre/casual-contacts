@@ -36,3 +36,6 @@ Packages/Sources/Visuals/Guilloche/Generated/
 *.p8
 *.p12
 *.mobileprovision
+
+# MetricKit payload dumps pulled from device/sim — local-only, not for commit.
+docs/research/metrics/
