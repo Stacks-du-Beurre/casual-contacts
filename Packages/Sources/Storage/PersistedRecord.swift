@@ -15,6 +15,9 @@ public final class PersistedRecord {
     public var updatedAt: Date
     public var timeOfDayRaw: String
     public var moonPhaseRaw: String
+    /// Optional for lightweight schema evolution: records created before this
+    /// field existed decode as `nil` and fall back to the UUID-derived default.
+    public var guillocheShapeRaw: String?
 
     public init(
         id: UUID,
@@ -28,7 +31,8 @@ public final class PersistedRecord {
         createdAt: Date,
         updatedAt: Date,
         timeOfDayRaw: String,
-        moonPhaseRaw: String
+        moonPhaseRaw: String,
+        guillocheShapeRaw: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -42,5 +46,6 @@ public final class PersistedRecord {
         self.updatedAt = updatedAt
         self.timeOfDayRaw = timeOfDayRaw
         self.moonPhaseRaw = moonPhaseRaw
+        self.guillocheShapeRaw = guillocheShapeRaw
     }
 }

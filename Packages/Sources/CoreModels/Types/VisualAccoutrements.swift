@@ -19,19 +19,10 @@ public extension Record {
             return Character(String(c).uppercased())
         }()
 
-        // Deterministic across processes — Swift's String/Int hashValue is seeded per launch,
-        // so we sum the UUID's raw bytes instead. Stable for the lifetime of a record.
-        var byteSum: Int = 0
-        withUnsafeBytes(of: id.uuid) { bytes in
-            for byte in bytes { byteSum &+= Int(byte) }
-        }
-        let shapeIndex = byteSum % GuillocheShape.allCases.count
-        let shape = GuillocheShape.allCases[shapeIndex]
-
         return VisualAccoutrements(
             palette: ColorPalette(timeOfDay: metadata.timeOfDay),
             letter: firstLetter,
-            guillocheShape: shape
+            guillocheShape: guillocheShape
         )
     }
 }

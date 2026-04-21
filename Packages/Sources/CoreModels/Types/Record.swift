@@ -10,6 +10,7 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
     public let createdAt: Date
     public var updatedAt: Date
     public let metadata: RecordMetadata
+    public let guillocheShape: GuillocheShape
 
     public init(
         id: UUID,
@@ -20,7 +21,8 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
         zodiacSign: ZodiacSign?,
         createdAt: Date,
         updatedAt: Date,
-        metadata: RecordMetadata
+        metadata: RecordMetadata,
+        guillocheShape: GuillocheShape? = nil
     ) {
         self.id = id
         self.name = name
@@ -31,5 +33,6 @@ public struct Record: Identifiable, Hashable, Codable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.metadata = metadata
+        self.guillocheShape = guillocheShape ?? .deterministic(for: id)
     }
 }
