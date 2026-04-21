@@ -134,6 +134,7 @@ public struct HologramText<Backdrop: View>: View {
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()
             .accessibilityHidden(true)
+            .allowsHitTesting(false)
         }
     }
 }
