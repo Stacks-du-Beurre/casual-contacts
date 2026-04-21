@@ -39,3 +39,6 @@ Packages/Sources/Visuals/Guilloche/Generated/
 
 # MetricKit payload dumps pulled from device/sim — local-only, not for commit.
 docs/research/metrics/
+
+# Git worktrees (local-only isolated workspaces)
+.worktrees/
