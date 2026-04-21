@@ -31,6 +31,7 @@ import CoreModels
                 attitude: .zero,
                 backdropSize: CGSize(width: 400, height: 800),
                 coordinateSpaceName: "test",
+                onAddPhoto: {},
                 backdrop: { Color.clear }
             )
         }

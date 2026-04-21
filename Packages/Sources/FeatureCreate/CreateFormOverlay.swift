@@ -15,11 +15,8 @@ struct CreateFormOverlay<Backdrop: View>: View {
     let attitude: DeviceAttitude
     let backdropSize: CGSize
     let coordinateSpaceName: String
+    let onAddPhoto: () -> Void
     @ViewBuilder let backdrop: () -> Backdrop
-
-    #if os(iOS)
-    @State private var photoItem: PhotosPickerItem?
-    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -45,20 +42,16 @@ struct CreateFormOverlay<Backdrop: View>: View {
     @ViewBuilder
     private var addPhotoButton: some View {
         #if os(iOS)
-        PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
+        Button(action: onAddPhoto) {
             Text("+ Add Photo")
                 .font(CCDesign.Typography.caption2)
                 .foregroundStyle(CCDesign.Colors.L0)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 4)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier("addPhotoButton")
-        .onChange(of: photoItem) { _, newItem in
-            guard let newItem else { return }
-            Task {
-                if let data = try? await newItem.loadTransferable(type: Data.self) {
-                    model.photoData = data
-                }
-            }
-        }
         #else
         Text("+ Add Photo")
             .font(CCDesign.Typography.caption2)

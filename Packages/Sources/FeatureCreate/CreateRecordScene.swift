@@ -3,6 +3,10 @@ import DesignSystem
 import Foundation
 import SwiftUI
 import Visuals
+#if os(iOS)
+import PhotosUI
+import UIKit
+#endif
 
 public struct CreateRecordScene: View {
     public let attitude: DeviceAttitude
@@ -12,6 +16,13 @@ public struct CreateRecordScene: View {
 
     @State private var model: CreateRecordModel
     @FocusState private var nameFocused: Bool
+
+    #if os(iOS)
+    @State private var photoItem: PhotosPickerItem?
+    @State private var showingPhotoChooser = false
+    @State private var showingPhotosPicker = false
+    @State private var showingCamera = false
+    #endif
 
     private static let coordSpace = "createScene"
 
@@ -46,6 +57,44 @@ public struct CreateRecordScene: View {
                     .ignoresSafeArea(edges: .bottom)
             )
             .onAppear { nameFocused = true }
+            #if os(iOS)
+            .sheet(isPresented: $showingPhotoChooser) {
+                PhotoSourceSheet(
+                    onCamera: {
+                        showingPhotoChooser = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showingCamera = true
+                        }
+                    },
+                    onPhotos: {
+                        showingPhotoChooser = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            showingPhotosPicker = true
+                        }
+                    },
+                    onCancel: { showingPhotoChooser = false }
+                )
+            }
+            .photosPicker(isPresented: $showingPhotosPicker, selection: $photoItem, matching: .images, photoLibrary: .shared())
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker(
+                    onCapture: { data in
+                        model.photoData = data
+                        showingCamera = false
+                    },
+                    onCancel: { showingCamera = false }
+                )
+                .ignoresSafeArea()
+            }
+            .onChange(of: photoItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self) {
+                        model.photoData = data
+                    }
+                }
+            }
+            #endif
     }
 
     private var atmosphericSection: some View {
@@ -74,6 +123,12 @@ public struct CreateRecordScene: View {
                         attitude: attitude,
                         backdropSize: geo.size,
                         coordinateSpaceName: Self.coordSpace,
+                        onAddPhoto: {
+                            #if os(iOS)
+                            nameFocused = false
+                            showingPhotoChooser = true
+                            #endif
+                        },
                         backdrop: { backdropLayer(size: geo.size) }
                     )
 
