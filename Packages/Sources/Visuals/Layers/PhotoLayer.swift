@@ -14,6 +14,7 @@ public struct PhotoLayer: View {
     }
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Bindable private var focusTuning = PhotoFocusTuning.shared
 
     public init(
         image: Image,
@@ -41,7 +42,7 @@ public struct PhotoLayer: View {
             } else {
                 framedImage
                     .blendMode(.luminosity)
-                    .opacity(0.6)
+                    .opacity(focusTuning.opacity)
             }
         case .recommended:
             if reduceTransparency {
@@ -57,24 +58,26 @@ public struct PhotoLayer: View {
         }
     }
 
-    /// `scaledToFill` with an optional translation so the focus point lands at
-    /// the container's geometric center, clamped to image bounds. Without a
-    /// focus (or without the image's pixel size), behavior is byte-for-byte
-    /// identical to the plain `.resizable().scaledToFill()` baseline.
+    /// Renders the image at `zoomMultiplier × scaledToFill` and shifts it so
+    /// the focus point lands at the card's center (clamped to image bounds).
+    /// `zoomMultiplier = 1.0` is the max zoom-out — scaledToFill, the photo
+    /// fully covers the card. Multipliers above 1.0 zoom in on the face.
+    /// Without image size, falls back to plain `.scaledToFill()`.
     @ViewBuilder
     private var framedImage: some View {
         if let focus, let imageSize, imageSize.width > 0, imageSize.height > 0 {
             GeometryReader { geo in
-                let offset = PhotoLayer.focusOffset(
+                let result = PhotoLayer.focusLayout(
                     container: geo.size,
                     imageSize: imageSize,
-                    focus: focus
+                    focus: focus,
+                    zoomMultiplier: CGFloat(focusTuning.zoomMultiplier)
                 )
                 image
                     .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .offset(x: offset.width, y: offset.height)
+                    .frame(width: result.scaled.width, height: result.scaled.height)
+                    .offset(x: result.offset.width, y: result.offset.height)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
                     .clipped()
             }
         } else {
@@ -84,31 +87,41 @@ public struct PhotoLayer: View {
         }
     }
 
-    /// Computes the SwiftUI `.offset` needed to place `focus` at the center of
-    /// `container` when the image is rendered with `scaledToFill`, clamped so
-    /// we never reveal empty margin past the image edge.
-    static func focusOffset(
+    /// Computes the scaled image dimensions and the SwiftUI `.offset` needed
+    /// to center `focus` in `container` when the image is rendered at
+    /// `zoomMultiplier × scaledToFill`. `zoomMultiplier` is clamped to be
+    /// at least 1.0 — the image always covers the container. Offset is
+    /// clamped so the image stays flush with the container bounds (no empty
+    /// margin past the edge).
+    static func focusLayout(
         container: CGSize,
         imageSize: CGSize,
-        focus: NormalizedPoint
-    ) -> CGSize {
+        focus: NormalizedPoint,
+        zoomMultiplier: CGFloat
+    ) -> (scaled: CGSize, offset: CGSize) {
         guard container.width > 0, container.height > 0,
               imageSize.width > 0, imageSize.height > 0
-        else { return .zero }
+        else { return (container, .zero) }
 
         let imageAspect = imageSize.width / imageSize.height
         let containerAspect = container.width / container.height
 
-        // scaledToFill: cover the container; one axis overflows past its bounds.
-        let scaledWidth: CGFloat
-        let scaledHeight: CGFloat
+        // scaledToFill base dims (cover the container exactly — one axis
+        // overflows, the other matches the container).
+        let fillWidth: CGFloat
+        let fillHeight: CGFloat
         if imageAspect > containerAspect {
-            scaledHeight = container.height
-            scaledWidth = container.height * imageAspect
+            fillHeight = container.height
+            fillWidth = container.height * imageAspect
         } else {
-            scaledWidth = container.width
-            scaledHeight = container.width / imageAspect
+            fillWidth = container.width
+            fillHeight = container.width / imageAspect
         }
+
+        // Never allow scale below fill — that would expose empty margin.
+        let zoom = max(1.0, zoomMultiplier)
+        let scaledWidth = fillWidth * zoom
+        let scaledHeight = fillHeight * zoom
 
         let desiredDX = (0.5 - focus.x) * scaledWidth
         let desiredDY = (0.5 - focus.y) * scaledHeight
@@ -116,9 +129,12 @@ public struct PhotoLayer: View {
         let maxDX = max(0, (scaledWidth - container.width) / 2)
         let maxDY = max(0, (scaledHeight - container.height) / 2)
 
-        return CGSize(
-            width: min(max(desiredDX, -maxDX), maxDX),
-            height: min(max(desiredDY, -maxDY), maxDY)
+        return (
+            CGSize(width: scaledWidth, height: scaledHeight),
+            CGSize(
+                width: min(max(desiredDX, -maxDX), maxDX),
+                height: min(max(desiredDY, -maxDY), maxDY)
+            )
         )
     }
 }

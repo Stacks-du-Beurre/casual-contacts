@@ -19,7 +19,12 @@ public final class VisionFaceDetectionService: FaceDetectionService, @unchecked 
         // whichever path runs first.
         await withCheckedContinuation { continuation in
             let resumeBox = ResumeOnce()
-            let request = VNDetectFaceRectanglesRequest { request, _ in
+            // Landmarks request is a superset of the rectangles request — it
+            // returns the same face bounding boxes PLUS per-face landmarks.
+            // Centering on the landmarks bbox (eyes/nose/mouth/contour) gives
+            // an anatomically accurate face center; the bare rectangles bbox
+            // drifts because it includes hair and ear overhang.
+            let request = VNDetectFaceLandmarksRequest { request, _ in
                 let observations = (request.results as? [VNFaceObservation]) ?? []
                 let point = Self.largestFaceCenter(from: observations)
                 resumeBox.resumeOnce { continuation.resume(returning: point) }
@@ -48,18 +53,47 @@ public final class VisionFaceDetectionService: FaceDetectionService, @unchecked 
         }
     }
 
-    /// Vision returns `boundingBox` in normalized coordinates with origin at the
-    /// bottom-left. Convert to top-left origin and return the box's center.
+    /// Returns the center of the largest face in image-normalized, top-left
+    /// coordinates. Prefers the bounding box of the face landmarks (eyes,
+    /// nose, mouth, contour) when available; falls back to the observation's
+    /// overall bounding box otherwise.
     static func largestFaceCenter(from observations: [VNFaceObservation]) -> CoreModels.NormalizedPoint? {
         guard let largest = observations.max(by: { a, b in
             (a.boundingBox.width * a.boundingBox.height) < (b.boundingBox.width * b.boundingBox.height)
         }) else { return nil }
 
-        let box = largest.boundingBox
-        let centerX = box.origin.x + box.width / 2
-        let centerYBottomUp = box.origin.y + box.height / 2
-        let centerYTopDown = 1 - centerYBottomUp
-        return CoreModels.NormalizedPoint(x: centerX, y: centerYTopDown)
+        let bottomUpCenter = landmarksCenter(for: largest) ?? boundingBoxCenter(of: largest.boundingBox)
+        // Flip Y from Vision's bottom-left origin to top-left.
+        return CoreModels.NormalizedPoint(x: bottomUpCenter.x, y: 1 - bottomUpCenter.y)
+    }
+
+    private static func boundingBoxCenter(of box: CGRect) -> CGPoint {
+        CGPoint(x: box.origin.x + box.width / 2, y: box.origin.y + box.height / 2)
+    }
+
+    /// Computes the bounding-box center of all available facial landmarks in
+    /// image-normalized (bottom-up) coordinates. Landmark points are stored in
+    /// coordinates normalized to the observation's bounding box, so we project
+    /// them back into image-normalized space before measuring.
+    private static func landmarksCenter(for observation: VNFaceObservation) -> CGPoint? {
+        guard let all = observation.landmarks?.allPoints else { return nil }
+        let box = observation.boundingBox
+        let points = all.normalizedPoints
+        guard !points.isEmpty else { return nil }
+
+        var minX = CGFloat.infinity
+        var maxX = -CGFloat.infinity
+        var minY = CGFloat.infinity
+        var maxY = -CGFloat.infinity
+        for p in points {
+            let x = box.origin.x + p.x * box.width
+            let y = box.origin.y + p.y * box.height
+            if x < minX { minX = x }
+            if x > maxX { maxX = x }
+            if y < minY { minY = y }
+            if y > maxY { maxY = y }
+        }
+        return CGPoint(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
     }
 
     /// UIImage's embedded orientation drives how Vision interprets the pixel

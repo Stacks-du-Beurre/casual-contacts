@@ -12,6 +12,7 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var zodiacTuning = ZodiacHologramTuning.shared
     @Bindable private var gradientLayerTuning = GradientLayerTuning.shared
     @Bindable private var rotationTuning = GuillocheRotationTuning.shared
+    @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -174,6 +175,20 @@ struct DeveloperSettingsPanel: View {
                 range: 0...360,
                 format: .decimal
             )
+            SettingsDivider()
+            SliderRow(
+                label: "Photo face zoom",
+                value: $photoFocusTuning.faceZoom,
+                range: 0...1,
+                format: .percent
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Photo opacity",
+                value: $photoFocusTuning.opacity,
+                range: 0...1,
+                format: .percent
+            )
         }
     }
 
@@ -186,6 +201,7 @@ struct DeveloperSettingsPanel: View {
                 zodiacTuning.reset()
                 gradientLayerTuning.reset()
                 rotationTuning.reset()
+                photoFocusTuning.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))
