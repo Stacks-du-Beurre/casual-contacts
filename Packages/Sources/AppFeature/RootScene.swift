@@ -71,7 +71,14 @@ public struct RootScene: Scene {
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             if reduceMotionEnabled {
+                // Stop the CoreMotion delegate so no more gyro callbacks fire.
+                // The stream itself stays open; ReducedMotionAdapter clamps any
+                // straggler sample to .zero.
+                environment.motionService.stop()
                 currentAttitude = .zero
+            } else {
+                // Resume gyro sampling on the existing stream.
+                environment.motionService.start()
             }
         }
         .sheet(isPresented: $router.showingCreate) {

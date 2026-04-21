@@ -2,6 +2,7 @@ import Foundation
 import CoreModels
 #if canImport(CoreMotion) && !os(macOS)
 import CoreMotion
+import UIKit
 #endif
 
 // MARK: - Pure smoothing (unit-tested)
@@ -44,6 +45,7 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
 
     private let manager = CMMotionManager()
     private let smoother = AttitudeLowPass(alpha: 0.1)
+    private let throttle = AttitudeThrottle()
     private var continuation: AsyncStream<DeviceAttitude>.Continuation?
 
     // The first raw sample received after `start()` is captured as the
@@ -83,6 +85,15 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
     }
 
     public func start() {
+        // Reduce Motion bypass: if the user has Reduce Motion on at start time,
+        // yield a single `.zero` sample and don't register the CoreMotion
+        // callback at all. This avoids burning the 60 Hz delegate thread when
+        // its output is going to be clamped to zero by ReducedMotionAdapter
+        // anyway. RootScene calls `stop()` / `start()` on toggle to flip modes.
+        if UIAccessibility.isReduceMotionEnabled {
+            continuation?.yield(.zero)
+            return
+        }
         guard manager.isDeviceMotionAvailable else { return }
         baseline = nil
         rebaseTransitionStart = nil
@@ -137,14 +148,21 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
                 }
             }
 
-            self.continuation?.yield(shaped)
+            // Rate-limit emission: 30 Hz while moving, ~12 Hz when stationary.
+            // CoreMotion keeps feeding us at 60 Hz so the smoother + rebase
+            // logic above stay high-resolution; only the downstream yield is
+            // throttled.
+            if let emitted = self.throttle.admit(shaped, now: now) {
+                self.continuation?.yield(emitted)
+            }
         }
     }
 
+    /// Halts the CoreMotion callback without finishing the stream. Callers can
+    /// `start()` again later (e.g., when Reduce Motion is toggled off) and the
+    /// same `attitude` consumer loop will continue receiving samples.
     public func stop() {
         manager.stopDeviceMotionUpdates()
-        continuation?.finish()
-        continuation = nil
     }
 
     /// Advance any in-flight rebase transition and return the baseline the
