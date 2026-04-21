@@ -226,23 +226,31 @@ private struct LocationPill<Backdrop: View>: View {
     var body: some View {
         BackdropBlurPill(
             fill: Color(red: 40 / 255, green: 60 / 255, blue: 85 / 255).opacity(0.1),
+            blurRadius: 1.25,
             backdropSize: backdropSize,
             coordinateSpaceName: coordinateSpaceName,
             backdrop: backdrop
         ) {
-            HStack(spacing: 4) {
-                Image(systemName: "location.fill")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white)
-                Text(label.uppercased())
-                    .font(CCDesign.Typography.caption1)
-                    .tracking(CCDesign.Typography.Tracking.caption1)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(label.split(separator: ", ").enumerated()), id: \.offset) { _, segment in
+                        Text(segment.uppercased())
+                            .font(CCDesign.Typography.caption1)
+                            .tracking(CCDesign.Typography.Tracking.caption1)
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                Image("LocationPin", bundle: CCDesign.bundle)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+                    .foregroundStyle(CCDesign.Colors.L0)
+                    .opacity(0.75)
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .frame(height: 24)
+            .padding(.horizontal, 12)
         }
         .frame(maxWidth: maxWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)

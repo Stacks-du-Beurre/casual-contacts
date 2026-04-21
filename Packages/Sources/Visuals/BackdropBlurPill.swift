@@ -57,7 +57,7 @@ public struct BackdropBlurPill<Backdrop: View, Content: View>: View {
             .background(alignment: .topLeading) {
                 GeometryReader { geo in
                     let frame = geo.frame(in: .named(coordinateSpaceName))
-                    ZStack {
+                    ZStack(alignment: .topLeading) {
                         backdrop
                             .frame(width: backdropSize.width, height: backdropSize.height)
                             .offset(x: -frame.minX, y: -frame.minY)
@@ -65,7 +65,7 @@ public struct BackdropBlurPill<Backdrop: View, Content: View>: View {
 
                         fill
                     }
-                    .frame(width: geo.size.width, height: geo.size.height)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                     .clipped()
                     .accessibilityHidden(true)
                 }
