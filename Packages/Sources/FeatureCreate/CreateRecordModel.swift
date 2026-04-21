@@ -26,17 +26,24 @@ public final class CreateRecordModel {
     /// interactive state.
     public let randomZodiacSign: ZodiacSign
 
+    /// Guilloche shape picked once at init so the preview backdrop matches what
+    /// gets persisted on save — otherwise the saved record's shape silently
+    /// re-rolls when `SwiftDataRecordStore.create` assigns a fresh UUID.
+    public let guillocheShape: GuillocheShape
+
     public init(
         createdAt: Date,
         metadata: RecordMetadata,
         location: LocationInfo?,
-        randomZodiacSign: ZodiacSign? = nil
+        randomZodiacSign: ZodiacSign? = nil,
+        guillocheShape: GuillocheShape? = nil
     ) {
         self.createdAt = createdAt
         self.metadata = metadata
         self.location = location
         // ZodiacSign has 12 cases; allCases.randomElement()! is safe.
         self.randomZodiacSign = randomZodiacSign ?? ZodiacSign.allCases.randomElement()!
+        self.guillocheShape = guillocheShape ?? GuillocheShape.allCases.randomElement()!
     }
 
     public var isSaveable: Bool {
@@ -49,7 +56,8 @@ public final class CreateRecordModel {
             description: description,
             photo: photoData,
             location: location,
-            zodiacSign: randomZodiacSign
+            zodiacSign: randomZodiacSign,
+            guillocheShape: guillocheShape
         )
     }
 
@@ -66,7 +74,8 @@ public final class CreateRecordModel {
             zodiacSign: randomZodiacSign,
             createdAt: createdAt,
             updatedAt: createdAt,
-            metadata: metadata
+            metadata: metadata,
+            guillocheShape: guillocheShape
         )
     }
 

@@ -21,8 +21,10 @@ public final class SwiftDataRecordStore: RecordStore {
 
     public func create(_ draft: RecordDraft, metadata: RecordMetadata) async throws -> Record {
         let now = Date()
+        let newID = UUID()
+        let shape = draft.guillocheShape ?? .deterministic(for: newID)
         let persisted = PersistedRecord(
-            id: UUID(),
+            id: newID,
             name: draft.name,
             recordDescription: draft.description,
             photoFilename: nil,
@@ -33,7 +35,8 @@ public final class SwiftDataRecordStore: RecordStore {
             createdAt: now,
             updatedAt: now,
             timeOfDayRaw: metadata.timeOfDay.rawValue,
-            moonPhaseRaw: metadata.moonPhase.rawValue
+            moonPhaseRaw: metadata.moonPhase.rawValue,
+            guillocheShapeRaw: shape.rawValue
         )
         context.insert(persisted)
         do {
@@ -63,6 +66,7 @@ public final class SwiftDataRecordStore: RecordStore {
         persisted.longitude = record.location?.longitude
         persisted.locationLabel = record.location?.label
         persisted.zodiacSignRaw = record.zodiacSign?.rawValue
+        persisted.guillocheShapeRaw = record.guillocheShape.rawValue
         persisted.updatedAt = Date()
         do {
             try context.save()
@@ -109,6 +113,8 @@ extension Record {
             guard let lat = persisted.latitude, let lon = persisted.longitude else { return nil }
             return LocationInfo(latitude: lat, longitude: lon, label: persisted.locationLabel)
         }()
+        let shape = persisted.guillocheShapeRaw.flatMap(GuillocheShape.init(rawValue:))
+            ?? .deterministic(for: persisted.id)
         self.init(
             id: persisted.id,
             name: persisted.name,
@@ -121,7 +127,8 @@ extension Record {
             metadata: RecordMetadata(
                 timeOfDay: TimeOfDay(rawValue: persisted.timeOfDayRaw) ?? .midday,
                 moonPhase: MoonPhase(rawValue: persisted.moonPhaseRaw) ?? .fullMoon
-            )
+            ),
+            guillocheShape: shape
         )
     }
 }

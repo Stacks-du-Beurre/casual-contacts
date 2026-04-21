@@ -23,7 +23,8 @@ public final class InMemoryRecordStore: RecordStore {
             zodiacSign: draft.zodiacSign,
             createdAt: now,
             updatedAt: now,
-            metadata: metadata
+            metadata: metadata,
+            guillocheShape: draft.guillocheShape
         )
         records.insert(record, at: 0)
         return record
