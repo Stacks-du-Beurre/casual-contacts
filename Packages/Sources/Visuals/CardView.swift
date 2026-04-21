@@ -253,15 +253,14 @@ private struct DateTimeBlock: View, Equatable {
     let record: Record
 
     // DateFormatter allocation is expensive; share a single instance per format.
-    // `nonisolated(unsafe)` is safe here because DateFormatter is documented
-    // thread-safe for formatting after configuration, and we never mutate these.
-    private static nonisolated(unsafe) let dateFormatter: DateFormatter = {
+    // Sendable as of Swift 6, safe to use across body evaluations.
+    private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "MMM d, yyyy"
         return f
     }()
 
-    private static nonisolated(unsafe) let timeFormatter: DateFormatter = {
+    private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "h:mm a"
         f.amSymbol = "am"

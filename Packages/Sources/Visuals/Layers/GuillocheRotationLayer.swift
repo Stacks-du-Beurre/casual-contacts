@@ -51,6 +51,12 @@ public struct GuillocheRotationLayer: View {
                     }
                 }
                 .frame(width: 380, height: 380)
+                // Rasterize the 72-path stroke pass into a single Metal-backed
+                // texture once. The rotation below then animates a cheap CTM
+                // transform of the cached texture instead of re-stroking every
+                // path each frame. opaque: false preserves the alpha so the
+                // gradient + blend guilloche remain visible underneath.
+                .drawingGroup(opaque: false)
                 .rotationEffect(.degrees(motionRotation))
                 // Second-stage smoothing: the motion service already low-passes
                 // the raw CoreMotion stream (`AttitudeLowPass` α=0.1), but the
