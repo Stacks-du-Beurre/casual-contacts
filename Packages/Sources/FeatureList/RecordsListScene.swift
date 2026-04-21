@@ -189,6 +189,16 @@ public struct RecordsListScene: View {
                                 paths: paths
                             )
                             .frame(height: 211)
+                            // Rasterize each card's full blend stack into a
+                            // single Metal texture per row instead of paying
+                            // ~20 offscreen passes per card per frame for the
+                            // hologram blur + blend chains. The scroll-pause
+                            // we ship at the motion-service level keeps the
+                            // texture cache valid through the gesture; outside
+                            // scroll, the throttled gyro rate (≤30 Hz) bounds
+                            // re-rasterization. opaque: false preserves the
+                            // alpha so the rounded clip below stays correct.
+                            .drawingGroup(opaque: false)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
                             .accessibilityAddTraits(.isButton)
                             .onTapGesture { onTapRecord(record) }
