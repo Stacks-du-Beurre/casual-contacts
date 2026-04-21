@@ -12,13 +12,13 @@ public final class InMemoryRecordStore: RecordStore {
         self.records = seed.sorted { $0.createdAt > $1.createdAt }
     }
 
-    public func create(_ draft: RecordDraft, metadata: RecordMetadata) async throws -> Record {
+    public func create(_ draft: RecordDraft, metadata: RecordMetadata, photoID: PhotoID?) async throws -> Record {
         let now = Date()
         let record = Record(
             id: UUID(),
             name: draft.name,
             description: draft.description,
-            photoID: nil,
+            photoID: photoID,
             location: draft.location,
             zodiacSign: draft.zodiacSign,
             createdAt: now,

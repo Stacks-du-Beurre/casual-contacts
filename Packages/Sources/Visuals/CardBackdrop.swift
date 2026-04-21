@@ -42,22 +42,22 @@ public struct CardBackdrop: View {
 
             if let photo {
                 PhotoLayer(image: photo, style: .card)
-            } else {
-                GuillocheBlendLayer(
-                    paths: paths.blendPaths(
-                        for: accoutrements.letter,
-                        shape: accoutrements.guillocheShape,
-                        density: density
-                    ),
-                    density: density,
-                    attitude: attitude,
-                    tint: .white,
-                    depthScale: blendTuning.depthScale,
-                    reversed: true
-                )
-                .frame(width: 184, height: 160)
-                .opacity(0.55)
             }
+
+            GuillocheBlendLayer(
+                paths: paths.blendPaths(
+                    for: accoutrements.letter,
+                    shape: accoutrements.guillocheShape,
+                    density: density
+                ),
+                density: density,
+                attitude: attitude,
+                tint: .white,
+                depthScale: blendTuning.depthScale,
+                reversed: true
+            )
+            .frame(width: 184, height: 160)
+            .opacity(0.55)
         }
     }
 }

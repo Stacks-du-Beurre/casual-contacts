@@ -16,6 +16,9 @@ public struct RecordsListScene: View {
     /// returns to idle. Caller pauses the gyro pipeline accordingly so cards
     /// stop re-evaluating the moment the user touches the list.
     public let onScrollInteractionChange: (Bool) -> Void
+    /// Lookup for a record's photo image. Host (AppFeature) provides a cache
+    /// that loads PhotoIDs via PhotoStore; default returns nil for previews.
+    public let photoFor: (Record) -> Image?
 
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
@@ -34,7 +37,8 @@ public struct RecordsListScene: View {
         onTapRecord: @escaping (Record) -> Void,
         onTapCreate: @escaping () -> Void,
         onTapSettings: @escaping () -> Void,
-        onScrollInteractionChange: @escaping (Bool) -> Void = { _ in }
+        onScrollInteractionChange: @escaping (Bool) -> Void = { _ in },
+        photoFor: @escaping (Record) -> Image? = { _ in nil }
     ) {
         self.store = store
         self.paths = paths
@@ -43,6 +47,7 @@ public struct RecordsListScene: View {
         self.onTapCreate = onTapCreate
         self.onTapSettings = onTapSettings
         self.onScrollInteractionChange = onScrollInteractionChange
+        self.photoFor = photoFor
     }
 
     @MainActor
@@ -195,7 +200,8 @@ public struct RecordsListScene: View {
                                 record: displayRecord(for: record),
                                 size: .small,
                                 attitude: attitude,
-                                paths: paths
+                                paths: paths,
+                                photo: photoFor(record)
                             )
                             .frame(height: 211)
                             // Rasterize each card's full blend stack into a

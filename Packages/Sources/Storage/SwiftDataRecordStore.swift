@@ -19,7 +19,7 @@ public final class SwiftDataRecordStore: RecordStore {
 
     // MARK: - RecordStore
 
-    public func create(_ draft: RecordDraft, metadata: RecordMetadata) async throws -> Record {
+    public func create(_ draft: RecordDraft, metadata: RecordMetadata, photoID: PhotoID?) async throws -> Record {
         let now = Date()
         let newID = UUID()
         let shape = draft.guillocheShape ?? .deterministic(for: newID)
@@ -27,7 +27,7 @@ public final class SwiftDataRecordStore: RecordStore {
             id: newID,
             name: draft.name,
             recordDescription: draft.description,
-            photoFilename: nil,
+            photoFilename: photoID?.filename,
             latitude: draft.location?.latitude,
             longitude: draft.location?.longitude,
             locationLabel: draft.location?.label,

@@ -8,6 +8,7 @@ public struct LargeDetailScene: View {
     public let record: Record
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
+    public let photo: Image?
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
@@ -16,6 +17,7 @@ public struct LargeDetailScene: View {
         record: Record,
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
+        photo: Image? = nil,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
         onDismiss: @escaping () -> Void
@@ -23,6 +25,7 @@ public struct LargeDetailScene: View {
         self.record = record
         self.attitude = attitude
         self.paths = paths
+        self.photo = photo
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
@@ -30,7 +33,7 @@ public struct LargeDetailScene: View {
 
     public var body: some View {
         NavigationStack {
-            CardView(record: record, size: .large, attitude: attitude, paths: paths)
+            CardView(record: record, size: .large, attitude: attitude, paths: paths, photo: photo)
                 .ignoresSafeArea()
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Self.accessibilityLabel(for: record))

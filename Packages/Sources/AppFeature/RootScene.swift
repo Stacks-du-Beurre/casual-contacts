@@ -22,6 +22,7 @@ public struct RootScene: Scene {
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
     @State private var currentLocation: LocationInfo?
+    @State private var photoCache = PhotoCache()
     @Environment(\.scenePhase) private var scenePhase
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
@@ -72,8 +73,15 @@ public struct RootScene: Scene {
                 } else if !reduceMotionEnabled {
                     environment.motionService.start()
                 }
-            }
+            },
+            photoFor: { photoCache.image(for: $0.photoID) }
         )
+        .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
+            Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
+        }
+        .task {
+            await photoCache.preload(environment.recordStore.records, using: environment.photoStore)
+        }
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
@@ -131,11 +139,21 @@ public struct RootScene: Scene {
                 onCancel: { router.showingCreate = false },
                 onSave: { draft in
                     Task {
+                        let photoID: PhotoID?
+                        if let data = draft.photo {
+                            photoID = try? await environment.photoStore.save(data)
+                        } else {
+                            photoID = nil
+                        }
                         let saveMetadata = environment.metadataGenerator.metadata(
                             at: Date(),
                             location: draft.location
                         )
-                        _ = try? await environment.recordStore.create(draft, metadata: saveMetadata)
+                        _ = try? await environment.recordStore.create(
+                            draft,
+                            metadata: saveMetadata,
+                            photoID: photoID
+                        )
                         router.showingCreate = false
                     }
                 }
@@ -147,6 +165,7 @@ public struct RootScene: Scene {
                 record: record,
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
+                photo: photoCache.image(for: record.photoID),
                 onExpand: {
                     router.selectedRecordForMediumDetail = nil
                     router.selectedRecordForLargeDetail = record
@@ -171,6 +190,7 @@ public struct RootScene: Scene {
                 record: record,
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
+                photo: photoCache.image(for: record.photoID),
                 onEdit: {
                     router.editingRecord = record
                     router.selectedRecordForLargeDetail = nil
