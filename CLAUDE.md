@@ -108,8 +108,10 @@ The `ios-simulator` MCP (joshuayoes/ios-simulator-mcp, configured in `.mcp.json`
 
 Tools most relevant to this project (all namespaced `mcp__ios-simulator__*`):
 
-- **`screenshot` / `ui_view`** — visual check after a build+install. `ui_view` returns an inline compressed image (fast, good for quick checks); `screenshot` writes a file (use when you need to diff against Figma).
-- **`ui_describe_all`** — **the go-to tool for debugging layout issues.** Returns the full accessibility hierarchy for the current screen: every element's frame, label, identifier, traits, and nesting. Use this instead of guessing when:
+**Prefer `ui_describe_all` over screenshots whenever possible** — the view hierarchy is structured text and uses far less context than an image. Reach for `screenshot` / `ui_view` only when you genuinely need to *see* the rendered pixels (Figma diffs, blend-mode validation, font rendering). For "is the element on screen, where, and what does it say?" the hierarchy tells you everything without burning image tokens.
+
+- **`screenshot` / `ui_view`** — visual check after a build+install. Use only when pixels matter (Figma comparison, visual regressions). `ui_view` returns an inline compressed image; `screenshot` writes a file.
+- **`ui_describe_all`** — **the default tool for inspecting the running app and debugging layout issues.** Returns the full accessibility hierarchy for the current screen: every element's frame, label, identifier, traits, and nesting. Use this instead of guessing — and instead of a screenshot — when:
   - Something is "not showing up" — check whether the element is in the tree at all, and if so what its frame is (off-screen? zero-sized? covered?).
   - A tap isn't landing — confirm the actual on-screen bounds before re-running `ui_tap`.
   - A card/row looks wrong — compare reported frames against Figma's expected proportions.
@@ -118,7 +120,7 @@ Tools most relevant to this project (all namespaced `mcp__ios-simulator__*`):
 - **`ui_tap` / `ui_swipe` / `ui_type`** — drive flows (e.g. empty state → tap + → type name → Save) to reach the screen you need to inspect.
 - **`launch_app` / `install_app`** — after a fresh `xcodebuild build`, `install_app` + `launch_app com.stacksdubeurre.CasualContacts` is equivalent to the `simctl` commands above.
 
-Typical debugging loop: build + install → `launch_app` → `ui_describe_all` to understand the current tree → `screenshot` for a visual → adjust SwiftUI → rebuild → re-inspect. This is much faster and more reliable than eyeballing screenshots alone when the issue is a frame/layout bug.
+Typical debugging loop: build + install → `launch_app` → `ui_describe_all` to understand the current tree → adjust SwiftUI → rebuild → re-inspect. Only fall back to `screenshot` if the hierarchy can't answer the question (e.g. you need to see actual rendered pixels). This is much faster, cheaper on context, and more reliable than eyeballing screenshots alone when the issue is a frame/layout bug.
 
 Prerequisites: Facebook IDB (`brew install idb-companion` + `pipx install fb-idb --python python3.11`). If IDB isn't installed, the MCP tools will fail with a connection error — ask the user to install it rather than falling back to guesses.
 
