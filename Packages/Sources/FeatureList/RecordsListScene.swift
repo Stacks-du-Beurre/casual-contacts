@@ -11,6 +11,11 @@ public struct RecordsListScene: View {
     public let onTapRecord: (Record) -> Void
     public let onTapCreate: () -> Void
     public let onTapSettings: () -> Void
+    /// Called with `true` when the user begins interacting with the scroll
+    /// (touch-down / scrolling / decelerating) and `false` when the scroll
+    /// returns to idle. Caller pauses the gyro pipeline accordingly so cards
+    /// stop re-evaluating the moment the user touches the list.
+    public let onScrollInteractionChange: (Bool) -> Void
 
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
@@ -23,7 +28,8 @@ public struct RecordsListScene: View {
         attitude: DeviceAttitude,
         onTapRecord: @escaping (Record) -> Void,
         onTapCreate: @escaping () -> Void,
-        onTapSettings: @escaping () -> Void
+        onTapSettings: @escaping () -> Void,
+        onScrollInteractionChange: @escaping (Bool) -> Void = { _ in }
     ) {
         self.store = store
         self.paths = paths
@@ -31,6 +37,7 @@ public struct RecordsListScene: View {
         self.onTapRecord = onTapRecord
         self.onTapCreate = onTapCreate
         self.onTapSettings = onTapSettings
+        self.onScrollInteractionChange = onScrollInteractionChange
     }
 
     @MainActor
@@ -190,6 +197,15 @@ public struct RecordsListScene: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
+                #if os(iOS)
+                // `.interacting` fires the moment the user touches the scroll
+                // surface (before any movement is detected), so the gyro
+                // pipeline pauses on touch-down — not just once scrolling
+                // begins. `.idle` after lift+decel resumes it.
+                .onScrollPhaseChange { _, phase in
+                    onScrollInteractionChange(phase != .idle)
+                }
+                #endif
             }
 
             AddButton(

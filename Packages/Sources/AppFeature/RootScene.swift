@@ -56,6 +56,17 @@ public struct RootScene: Scene {
             },
             onTapSettings: {
                 router.showingSettings = true
+            },
+            onScrollInteractionChange: { interacting in
+                // Pause the gyro pipeline the moment the user touches the
+                // list (not just once scrolling begins) and resume on idle.
+                // Reduce-motion takes precedence — never resume CoreMotion if
+                // the user has it on.
+                if interacting {
+                    environment.motionService.stop()
+                } else if !reduceMotionEnabled {
+                    environment.motionService.start()
+                }
             }
         )
         .task {
