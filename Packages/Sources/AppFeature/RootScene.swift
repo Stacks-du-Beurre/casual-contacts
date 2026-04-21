@@ -41,18 +41,6 @@ public struct RootScene: Scene {
         }
     }
 
-    /// True whenever any sheet / full-screen cover is on top of the list.
-    /// Drives the modal-pause: when this flips true we stop CoreMotion so the
-    /// cards (or empty-state filigree) underneath stop burning gyro cycles.
-    private var anyModalPresented: Bool {
-        router.showingCreate
-            || router.showingSettings
-            || router.showingAbout
-            || router.selectedRecordForMediumDetail != nil
-            || router.selectedRecordForLargeDetail != nil
-            || router.editingRecord != nil
-    }
-
     #if os(iOS)
     @MainActor
     @ViewBuilder
@@ -111,24 +99,13 @@ public struct RootScene: Scene {
             // both `.active` and reduce-motion off.
             switch newPhase {
             case .active:
-                if !reduceMotionEnabled && !anyModalPresented {
+                if !reduceMotionEnabled {
                     environment.motionService.start()
                 }
             case .inactive, .background:
                 environment.motionService.stop()
             @unknown default:
                 break
-            }
-        }
-        .onChange(of: anyModalPresented) { _, presented in
-            // Pause the gyro pipeline whenever any modal is over the list /
-            // empty-state hero — the cards and the empty-state filigree
-            // beneath aren't actively viewable so per-tick work is wasted.
-            // Resume only if scene is active and reduce-motion is off.
-            if presented {
-                environment.motionService.stop()
-            } else if !reduceMotionEnabled && scenePhase == .active {
-                environment.motionService.start()
             }
         }
         .sheet(isPresented: $router.showingCreate) {
