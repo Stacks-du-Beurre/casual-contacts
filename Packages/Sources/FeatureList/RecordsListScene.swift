@@ -20,6 +20,11 @@ public struct RecordsListScene: View {
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
+    /// Memoized sorted-and-filtered view of `store.records`. Computed once per
+    /// actual input change (records / search / sort option) via `onChange`
+    /// hooks rather than per body re-evaluation — the scene body runs on every
+    /// gyro tick, and at list scale that resort/realloc dominates otherwise.
+    @State private var visibleRecords: [Record] = []
     @Environment(\.colorScheme) private var colorScheme
 
     public init(
@@ -41,9 +46,9 @@ public struct RecordsListScene: View {
     }
 
     @MainActor
-    private var visibleRecords: [Record] {
+    private func rebuildVisibleRecords() {
         let base = searchText.isEmpty ? store.records : store.search(searchText)
-        return Self.sorted(base, by: sortOption)
+        visibleRecords = Self.sorted(base, by: sortOption)
     }
 
     static func sorted(_ records: [Record], by option: SortOption) -> [Record] {
@@ -122,6 +127,10 @@ public struct RecordsListScene: View {
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
+            .task { rebuildVisibleRecords() }
+            .onChange(of: store.records) { _, _ in rebuildVisibleRecords() }
+            .onChange(of: searchText) { _, _ in rebuildVisibleRecords() }
+            .onChange(of: sortOption) { _, _ in rebuildVisibleRecords() }
         }
     }
 

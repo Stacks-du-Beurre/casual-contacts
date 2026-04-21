@@ -9,9 +9,10 @@ import StorageTestSupport
 /// Wall-clock budgets for `RecordsListScene` body construction at scale. Same
 /// caveat as `CardViewPerformanceTests`: this measures the SwiftUI body-build
 /// cost, not layout/rasterization. The scene uses a `LazyVStack` so only
-/// visible rows materialize at runtime — but the input record list is sorted
-/// eagerly in `visibleRecords`, and chrome (nav bar, sort sheet plumbing,
-/// background resolution) rebuilds on every body call.
+/// visible rows materialize at runtime. The sorted/filtered record list is
+/// memoized via `.onChange(of:)` hooks so body eval itself just reads an
+/// `@State` array; chrome (nav bar, sort sheet plumbing, background
+/// resolution) still rebuilds on every body call.
 @Suite @MainActor struct RecordsListPerformanceTests {
 
     private struct ListPathProvider: CardPathProvider {
@@ -68,10 +69,11 @@ import StorageTestSupport
     }
 
     /// 50 seeded records → build the scene body 5 times, measure mean. The
-    /// body itself doesn't materialize all 50 cards (LazyVStack), but it does
-    /// resolve `visibleRecords` (an O(N log N) sort over the seed) and rebuild
-    /// the nav bar + chrome on every call. Budget: ≤ 50 ms mean. A regression
-    /// past 5× this points at non-trivial work creeping into list body.
+    /// body itself doesn't materialize all 50 cards (LazyVStack) and doesn't
+    /// re-run the sort (memoized via onChange hooks) — it just rebuilds the
+    /// nav bar + chrome + reads the cached records array. Budget: ≤ 50 ms
+    /// mean. A regression past 5× this points at non-trivial work creeping
+    /// into list body or the memoization being defeated.
     @Test func recordsListSceneBuildsWithManyRowsWithinBudget() {
         let store = InMemoryRecordStore(seed: Self.seededRecords(50))
         let provider = ListPathProvider()
