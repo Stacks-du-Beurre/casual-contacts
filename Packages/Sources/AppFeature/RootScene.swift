@@ -21,6 +21,7 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
     /// app target, or `.testing()` in previews/tests). Registering bundled fonts
@@ -90,6 +91,21 @@ public struct RootScene: Scene {
             } else {
                 // Resume gyro sampling on the existing stream.
                 environment.motionService.start()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Stop CoreMotion the moment the app loses focus (lock screen,
+            // Control Center, app switcher, background). Resuming requires
+            // both `.active` and reduce-motion off.
+            switch newPhase {
+            case .active:
+                if !reduceMotionEnabled {
+                    environment.motionService.start()
+                }
+            case .inactive, .background:
+                environment.motionService.stop()
+            @unknown default:
+                break
             }
         }
         .sheet(isPresented: $router.showingCreate) {
