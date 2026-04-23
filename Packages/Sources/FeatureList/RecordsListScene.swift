@@ -28,6 +28,8 @@ public struct RecordsListScene: View {
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
+    @State private var menuRecordID: Record.ID?
+    @State private var pendingDeleteRecord: Record?
     @Environment(\.colorScheme) private var colorScheme
 
     public init(
@@ -136,6 +138,25 @@ public struct RecordsListScene: View {
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
+            .alert(
+                "Delete contact?",
+                isPresented: Binding(
+                    get: { pendingDeleteRecord != nil },
+                    set: { if !$0 { pendingDeleteRecord = nil } }
+                ),
+                presenting: pendingDeleteRecord
+            ) { record in
+                Button("Delete", role: .destructive) {
+                    pendingDeleteRecord = nil
+                    Task { try? await store.delete(id: record.id) }
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingDeleteRecord = nil
+                }
+            } message: { record in
+                let name = record.name.isEmpty ? "This contact" : record.name.capitalized
+                Text("\(name) will be permanently removed.")
+            }
         }
     }
 
@@ -216,8 +237,25 @@ public struct RecordsListScene: View {
                             // alpha so the rounded clip below stays correct.
                             .drawingGroup(opaque: false)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .overlay {
+                                if menuRecordID == record.id {
+                                    RecordActionMenu(
+                                        onEdit: { menuRecordID = nil },
+                                        onDelete: {
+                                            menuRecordID = nil
+                                            pendingDeleteRecord = record
+                                        }
+                                    )
+                                    .fixedSize()
+                                    .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .center)))
+                                }
+                            }
                             .accessibilityAddTraits(.isButton)
-                            .onTapGesture { onTapRecord(record) }
+                            .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
+                            .onTapGesture {
+                                menuRecordID = (menuRecordID == record.id) ? nil : record.id
+                            }
+                            .zIndex(menuRecordID == record.id ? 1 : 0)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -284,6 +322,51 @@ public struct RecordsListScene: View {
         #else
         return record
         #endif
+    }
+}
+
+private struct RecordActionMenu: View {
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onEdit) {
+                rowLabel("Edit", role: nil)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("recordActionEdit")
+
+            Divider()
+                .background(Color.white.opacity(0.12))
+
+            Button(action: onDelete) {
+                rowLabel("Delete", role: .destructive)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("recordActionDelete")
+        }
+        .frame(width: 160)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                )
+        )
+        .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
+    }
+
+    private func rowLabel(_ text: String, role: ButtonRole?) -> some View {
+        Text(text.uppercased())
+            .font(CCDesign.Typography.headline)
+            .tracking(CCDesign.Typography.Tracking.headline)
+            .foregroundStyle(role == .destructive ? Color.red : CCDesign.Colors.L0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
     }
 }
 

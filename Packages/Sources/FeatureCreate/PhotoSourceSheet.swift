@@ -48,7 +48,8 @@ struct PhotoSourceSheet: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 26, weight: .regular))
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(CCDesign.Typography.caption2)
+                    .tracking(CCDesign.Typography.Tracking.caption2)
                     .lineLimit(1)
                     .fixedSize()
             }
