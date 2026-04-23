@@ -49,6 +49,11 @@ public final class PhotoCache {
         }
     }
 
+    public func invalidate(_ id: PhotoID?) {
+        guard let id else { return }
+        cache.removeValue(forKey: id.filename)
+    }
+
     private static func decode(_ data: Data) -> Entry? {
         #if canImport(UIKit)
         guard let ui = UIImage(data: data) else { return nil }
