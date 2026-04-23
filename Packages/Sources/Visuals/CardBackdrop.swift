@@ -12,6 +12,7 @@ public struct CardBackdrop: View {
     public let paths: any CardPathProvider
     public let photo: Image?
     public let photoSize: CGSize?
+    public let showsGuilloche: Bool
 
     @Bindable private var blendTuning = CardBlendTuning.shared
 
@@ -20,13 +21,15 @@ public struct CardBackdrop: View {
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
         photo: Image? = nil,
-        photoSize: CGSize? = nil
+        photoSize: CGSize? = nil,
+        showsGuilloche: Bool = true
     ) {
         self.record = record
         self.attitude = attitude
         self.paths = paths
         self.photo = photo
         self.photoSize = photoSize
+        self.showsGuilloche = showsGuilloche
     }
 
     public var body: some View {
@@ -36,12 +39,14 @@ public struct CardBackdrop: View {
         ZStack {
             GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
 
-            GuillocheRotationLayer(
-                paths: GuillocheRotationLayer.swirlPaths(
-                    from: paths.rotationPaths(for: "A").first
-                ),
-                attitude: attitude
-            )
+            if showsGuilloche {
+                GuillocheRotationLayer(
+                    paths: GuillocheRotationLayer.swirlPaths(
+                        from: paths.rotationPaths(for: "A").first
+                    ),
+                    attitude: attitude
+                )
+            }
 
             if let photo {
                 PhotoLayer(
@@ -52,20 +57,22 @@ public struct CardBackdrop: View {
                 )
             }
 
-            GuillocheBlendLayer(
-                paths: paths.blendPaths(
-                    for: accoutrements.letter,
-                    shape: accoutrements.guillocheShape,
-                    density: density
-                ),
-                density: density,
-                attitude: attitude,
-                tint: .white,
-                depthScale: blendTuning.depthScale,
-                reversed: true
-            )
-            .frame(width: 184, height: 160)
-            .opacity(0.55)
+            if showsGuilloche {
+                GuillocheBlendLayer(
+                    paths: paths.blendPaths(
+                        for: accoutrements.letter,
+                        shape: accoutrements.guillocheShape,
+                        density: density
+                    ),
+                    density: density,
+                    attitude: attitude,
+                    tint: .white,
+                    depthScale: blendTuning.depthScale,
+                    reversed: true
+                )
+                .frame(width: 184, height: 160)
+                .opacity(0.55)
+            }
         }
     }
 }

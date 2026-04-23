@@ -189,7 +189,8 @@ public struct CreateRecordScene: View {
             attitude: attitude,
             paths: paths,
             photo: photoImageAndSize?.image,
-            photoSize: photoImageAndSize?.size
+            photoSize: photoImageAndSize?.size,
+            showsGuilloche: model.name.first?.isLetter == true
         )
         .frame(width: size.width, height: size.height)
     }
