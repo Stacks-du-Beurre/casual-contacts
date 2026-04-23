@@ -71,6 +71,30 @@ public final class CreateRecordModel {
         self.guillocheShape = guillocheShape ?? GuillocheShape.allCases.randomElement()!
     }
 
+    /// Convenience init for editing an existing `Record`. Pins all ambient
+    /// fields (`createdAt`, `metadata`, `location`, `guillocheShape`) to the
+    /// record's values so they are never re-rolled on edit. If `photoData` is
+    /// provided, starts `photoState` in `.ready` so the form shows the existing
+    /// photo immediately without re-running face detection.
+    public convenience init(
+        editing record: Record,
+        photoData: Data?,
+        photoFocus: NormalizedPoint?
+    ) {
+        self.init(
+            createdAt: record.createdAt,
+            metadata: record.metadata,
+            location: record.location,
+            zodiacSign: record.zodiacSign,
+            guillocheShape: record.guillocheShape
+        )
+        self.name = record.name
+        self.description = record.description
+        if let data = photoData {
+            self.photoState = .ready(data, photoFocus)
+        }
+    }
+
     /// Kicks off face detection and resolves the model's `photoState` when the
     /// service returns. If the user replaces or clears the photo mid-detection,
     /// the stale result is dropped — the most recent `setPhoto` call wins.

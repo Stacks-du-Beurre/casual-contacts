@@ -166,4 +166,80 @@ import CoreModels
         #expect(model.draft.photo == Data([0x02]))
         #expect(model.draft.photoFocus == NormalizedPoint(x: 0.9, y: 0.9))
     }
+
+    @Test func editingInitPreloadsTextFields() {
+        let record = Record(
+            id: UUID(),
+            name: "Existing",
+            description: "old desc",
+            photoID: nil,
+            location: location,
+            zodiacSign: .virgo,
+            createdAt: fixedDate,
+            updatedAt: fixedDate,
+            metadata: metadata
+        )
+        let model = CreateRecordModel(editing: record, photoData: nil, photoFocus: nil)
+        #expect(model.name == "Existing")
+        #expect(model.description == "old desc")
+        #expect(model.zodiacSign == .virgo)
+        #expect(model.isSaveable)
+    }
+
+    @Test func editingInitPinsAmbientFieldsToRecord() {
+        let record = Record(
+            id: UUID(),
+            name: "Pinned",
+            description: "",
+            photoID: nil,
+            location: location,
+            zodiacSign: nil,
+            createdAt: fixedDate,
+            updatedAt: fixedDate,
+            metadata: metadata
+        )
+        let model = CreateRecordModel(editing: record, photoData: nil, photoFocus: nil)
+        #expect(model.createdAt == fixedDate)
+        #expect(model.metadata.timeOfDay == .sunset)
+        #expect(model.metadata.moonPhase == .fullMoon)
+        #expect(model.location?.label == location.label)
+        #expect(model.guillocheShape == record.guillocheShape)
+    }
+
+    @Test func editingInitWithPhotoStartsReadyState() {
+        let bytes = Data([0x01, 0x02, 0x03])
+        let focus = NormalizedPoint(x: 0.5, y: 0.5)
+        let record = Record(
+            id: UUID(),
+            name: "WithPhoto",
+            description: "",
+            photoID: PhotoID(filename: "old.jpg"),
+            photoFocus: focus,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: fixedDate,
+            updatedAt: fixedDate,
+            metadata: metadata
+        )
+        let model = CreateRecordModel(editing: record, photoData: bytes, photoFocus: focus)
+        #expect(model.photoData == bytes)
+        #expect(model.photoFocus == focus)
+        #expect(!model.isDetectingPhoto)
+    }
+
+    @Test func editingInitWithoutPhotoStartsNoneState() {
+        let record = Record(
+            id: UUID(),
+            name: "NoPhoto",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: fixedDate,
+            updatedAt: fixedDate,
+            metadata: metadata
+        )
+        let model = CreateRecordModel(editing: record, photoData: nil, photoFocus: nil)
+        #expect(model.photoData == nil)
+    }
 }
