@@ -2,7 +2,7 @@ import SwiftUI
 import CoreModels
 import DesignSystem
 
-public struct GuillocheRotationLayer: View {
+public struct GuillocheRotationLayer: View, Animatable {
 
     /// Which calling context the layer is used in — picks the matching
     /// tuning value so the card and empty-state hero can be dialed
@@ -17,6 +17,15 @@ public struct GuillocheRotationLayer: View {
     public let tint: Color
     public let attitude: DeviceAttitude
     public let usage: Usage
+    public var reveal: Double
+
+    /// `Animatable` hook — SwiftUI interpolates `reveal` between frames via
+    /// this property and re-invokes `body` each frame, so the Canvas redraws
+    /// with staged opacities instead of jumping to the target in one shot.
+    nonisolated public var animatableData: Double {
+        get { reveal }
+        set { reveal = newValue }
+    }
 
     @Bindable private var tuning = GuillocheRotationTuning.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,13 +35,15 @@ public struct GuillocheRotationLayer: View {
         opacity: Double = 0.2,
         tint: Color = CCDesign.Colors.L4,
         attitude: DeviceAttitude = .zero,
-        usage: Usage = .card
+        usage: Usage = .card,
+        reveal: Double = 1.0
     ) {
         self.paths = paths
         self.opacity = opacity
         self.tint = tint
         self.attitude = attitude
         self.usage = usage
+        self.reveal = reveal
     }
 
     public var body: some View {
@@ -45,18 +56,19 @@ public struct GuillocheRotationLayer: View {
         // so rotation never clips through the fan itself.
         Color.clear
             .overlay {
-                Canvas { context, _ in
-                    for path in paths {
-                        context.stroke(path, with: .color(tint.opacity(opacity)), lineWidth: 0.5)
+                // Rasterize the 72-path stroke pass into a single Metal-backed
+                // texture once the stagger has finished. While revealing, skip
+                // `drawingGroup` so per-path opacity can animate smoothly.
+                Group {
+                    if reveal >= 1.0 {
+                        canvasContent
+                            .frame(width: 380, height: 380)
+                            .drawingGroup(opaque: false)
+                    } else {
+                        canvasContent
+                            .frame(width: 380, height: 380)
                     }
                 }
-                .frame(width: 380, height: 380)
-                // Rasterize the 72-path stroke pass into a single Metal-backed
-                // texture once. The rotation below then animates a cheap CTM
-                // transform of the cached texture instead of re-stroking every
-                // path each frame. opaque: false preserves the alpha so the
-                // gradient + blend guilloche remain visible underneath.
-                .drawingGroup(opaque: false)
                 .rotationEffect(.degrees(motionRotation))
                 // Second-stage smoothing: the motion service already low-passes
                 // the raw CoreMotion stream (`AttitudeLowPass` α=0.1), but the
@@ -67,6 +79,45 @@ public struct GuillocheRotationLayer: View {
                 .animation(.easeOut(duration: 0.4), value: motionRotation)
             }
             .accessibilityHidden(true)
+    }
+
+    /// Re-strokes every frame while `reveal < 1` so the per-path opacity
+    /// ramp is honored. Once fully revealed, a sibling `.drawingGroup` wraps
+    /// this view into a cached texture so the rotation animation is cheap.
+    private var canvasContent: some View {
+        Canvas { context, _ in
+            guard reveal > 0 else { return }
+            // Under Reduce Motion, skip the stagger and treat `reveal` as a
+            // flat opacity multiplier so the filigree cross-fades instead of
+            // scribbling in.
+            if reduceMotion {
+                for path in paths {
+                    context.stroke(
+                        path,
+                        with: .color(tint.opacity(opacity * reveal)),
+                        lineWidth: 0.5
+                    )
+                }
+                return
+            }
+
+            // Strict sequential reveal: each rotated copy owns a 1/total
+            // slice of the reveal window and only starts once the previous
+            // copy has finished — no overlap.
+            let total = max(paths.count, 1)
+            let slot = 1.0 / Double(total)
+            for (index, path) in paths.enumerated() {
+                let start = Double(index) * slot
+                let local = (reveal - start) / slot
+                let localReveal = min(max(local, 0), 1)
+                guard localReveal > 0 else { continue }
+                context.stroke(
+                    path,
+                    with: .color(tint.opacity(opacity * localReveal)),
+                    lineWidth: 0.5
+                )
+            }
+        }
     }
 
     /// `(roll - pitch) * rotationDegrees`, zeroed under Reduce Motion.
