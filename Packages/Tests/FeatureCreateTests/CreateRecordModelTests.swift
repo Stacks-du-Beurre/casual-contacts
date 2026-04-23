@@ -60,18 +60,17 @@ import CoreModels
         #expect(model.location?.label == "1200 Treat Ave, San Francisco")
     }
 
-    @Test func randomZodiacSignIsOneOfAllCases() {
+    @Test func zodiacSignStartsNil() {
         let model = makeModel()
-        #expect(ZodiacSign.allCases.contains(model.randomZodiacSign))
+        #expect(model.zodiacSign == nil)
     }
 
-    @Test func randomZodiacSignIsStableAcrossReads() {
+    @Test func zodiacSignUpdateFlowsToPreviewAndDraft() {
         let model = makeModel()
-        let first = model.randomZodiacSign
-        let second = model.randomZodiacSign
-        let third = model.randomZodiacSign
-        #expect(first == second)
-        #expect(second == third)
+        model.name = "Leo"
+        model.zodiacSign = .leo
+        #expect(model.previewRecord.zodiacSign == .leo)
+        #expect(model.draft.zodiacSign == .leo)
     }
 
     @Test func previewRecordMirrorsModelState() {
@@ -82,20 +81,20 @@ import CoreModels
         #expect(record.name == "Alex")
         #expect(record.description == "Met at the festival")
         #expect(record.location?.label == "1200 Treat Ave, San Francisco")
-        #expect(record.zodiacSign == model.randomZodiacSign)
+        #expect(record.zodiacSign == nil)
         #expect(record.metadata.timeOfDay == .sunset)
         #expect(record.metadata.moonPhase == .fullMoon)
         #expect(record.createdAt == fixedDate)
     }
 
-    @Test func draftUsesRandomZodiacSign() {
+    @Test func draftZodiacSignIsNilUntilSelected() {
         let model = makeModel()
         model.name = "Jane"
         model.description = "Met at cafe"
         let draft = model.draft
         #expect(draft.name == "Jane")
         #expect(draft.description == "Met at cafe")
-        #expect(draft.zodiacSign == model.randomZodiacSign)
+        #expect(draft.zodiacSign == nil)
         #expect(draft.location?.label == "1200 Treat Ave, San Francisco")
     }
 

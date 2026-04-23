@@ -52,7 +52,7 @@ struct ZodiacSheet: View {
             onSelect(sign)
             onClose()
         } label: {
-            HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
                 CreateZodiacSymbolBadge(sign: sign, attitude: attitude)
                     .frame(width: 35, height: 32)
                 Text(sign.rawValue.capitalized)

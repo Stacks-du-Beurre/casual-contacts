@@ -4,9 +4,9 @@ import Observation
 import CoreModels
 
 /// Editable form state for the create-record flow. Owns the name, description,
-/// and photo data that the user types/picks. All other fields (`createdAt`,
-/// `metadata`, `location`, `randomZodiacSign`) are fixed at init: they reflect
-/// the ambient context at the moment the sheet opened.
+/// photo, and zodiac sign that the user types/picks. The ambient fields
+/// (`createdAt`, `metadata`, `location`, `guillocheShape`) are fixed at init:
+/// they reflect the moment the sheet opened.
 @MainActor
 @Observable
 public final class CreateRecordModel {
@@ -47,10 +47,10 @@ public final class CreateRecordModel {
     public let metadata: RecordMetadata
     public let location: LocationInfo?
 
-    /// A random sign chosen once per instance. Temporary: the real zodiac
-    /// picker replaces this in a later plan. Visible-only; does not drive
-    /// interactive state.
-    public let randomZodiacSign: ZodiacSign
+    /// `nil` until the user explicitly picks a sign from the Add Zodiac
+    /// picker. The preview card and saved record both reflect this value, so
+    /// a fresh Create flow shows no constellation badge.
+    public var zodiacSign: ZodiacSign?
 
     /// Guilloche shape picked once at init so the preview backdrop matches what
     /// gets persisted on save — otherwise the saved record's shape silently
@@ -61,14 +61,13 @@ public final class CreateRecordModel {
         createdAt: Date,
         metadata: RecordMetadata,
         location: LocationInfo?,
-        randomZodiacSign: ZodiacSign? = nil,
+        zodiacSign: ZodiacSign? = nil,
         guillocheShape: GuillocheShape? = nil
     ) {
         self.createdAt = createdAt
         self.metadata = metadata
         self.location = location
-        // ZodiacSign has 12 cases; allCases.randomElement()! is safe.
-        self.randomZodiacSign = randomZodiacSign ?? ZodiacSign.allCases.randomElement()!
+        self.zodiacSign = zodiacSign
         self.guillocheShape = guillocheShape ?? GuillocheShape.allCases.randomElement()!
     }
 
@@ -109,7 +108,7 @@ public final class CreateRecordModel {
             photo: photoData,
             photoFocus: photoFocus,
             location: location,
-            zodiacSign: randomZodiacSign,
+            zodiacSign: zodiacSign,
             guillocheShape: guillocheShape
         )
     }
@@ -138,7 +137,7 @@ public final class CreateRecordModel {
             photoID: previewPhoto,
             photoFocus: previewFocus,
             location: location,
-            zodiacSign: randomZodiacSign,
+            zodiacSign: zodiacSign,
             createdAt: createdAt,
             updatedAt: createdAt,
             metadata: metadata,

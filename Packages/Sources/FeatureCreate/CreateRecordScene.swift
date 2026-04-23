@@ -154,10 +154,8 @@ public struct CreateRecordScene: View {
                             #endif
                         },
                         isZodiacPickerPresented: $showingZodiacPicker,
-                        onSelectZodiac: { _ in
-                            // Selection wiring intentionally a no-op until the
-                            // model exposes a mutable zodiac — the UI simply
-                            // demonstrates the picker layout for now.
+                        onSelectZodiac: { sign in
+                            model.zodiacSign = sign
                         },
                         backdrop: { backdropLayer(size: geo.size) }
                     )
@@ -198,12 +196,20 @@ public struct CreateRecordScene: View {
 
     private var zodiacBundle: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            CreateConstellationBadge(sign: model.randomZodiacSign, attitude: attitude)
-                .frame(width: 100, height: 90)
+            if let sign = model.zodiacSign {
+                CreateConstellationBadge(sign: sign, attitude: attitude)
+                    .frame(width: 100, height: 90)
+            } else {
+                // Reserve the constellation's slot so the moon-phase row stays
+                // pinned to its anchor when no zodiac sign is selected.
+                Color.clear.frame(width: 100, height: 90)
+            }
 
             HStack(spacing: 5) {
-                CreateZodiacSymbolBadge(sign: model.randomZodiacSign, attitude: attitude)
-                    .frame(width: 35, height: 32)
+                if let sign = model.zodiacSign {
+                    CreateZodiacSymbolBadge(sign: sign, attitude: attitude)
+                        .frame(width: 35, height: 32)
+                }
 
                 CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
                     .frame(width: 35, height: 32)
