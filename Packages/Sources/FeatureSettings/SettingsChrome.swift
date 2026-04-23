@@ -40,11 +40,11 @@ struct SettingsRow<Trailing: View>: View {
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 43)
+        .contentShape(Rectangle())
 
         if let onTap {
             Button(action: onTap) { content }
                 .buttonStyle(.plain)
-                .contentShape(Rectangle())
         } else {
             content
         }
@@ -75,22 +75,39 @@ struct SettingsToggleRow: View {
 
 struct SettingsGroup<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
+    let title: String?
     @ViewBuilder let content: () -> Content
 
+    init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.content = content
+    }
+
     var body: some View {
-        VStack(spacing: 0) { content() }
-            .frame(maxWidth: .infinity)
-            .background(SettingsPalette.rowBackground(scheme))
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundStyle(SettingsPalette.border(scheme))
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(CCDesign.Typography.caption2)
+                    .tracking(CCDesign.Typography.Tracking.headline)
+                    .textCase(.uppercase)
+                    .foregroundStyle(SettingsPalette.footer(scheme))
+                    .padding(.horizontal, 16)
+                    .accessibilityAddTraits(.isHeader)
             }
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundStyle(SettingsPalette.border(scheme))
-            }
+            VStack(spacing: 0) { content() }
+                .frame(maxWidth: .infinity)
+                .background(SettingsPalette.rowBackground(scheme))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundStyle(SettingsPalette.border(scheme))
+                }
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundStyle(SettingsPalette.border(scheme))
+                }
+        }
     }
 }
 

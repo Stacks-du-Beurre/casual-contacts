@@ -7,6 +7,9 @@ public struct SettingsSheet: View {
     @State private var syncEnabled = false
     @State private var advancedCardStackEnabled = false
     @State private var path: [Route] = []
+    #if os(iOS)
+    @State private var detent: PresentationDetent = .medium
+    #endif
     public let onAbout: () -> Void
 
     private enum Route: Hashable { case developer }
@@ -25,9 +28,12 @@ public struct SettingsSheet: View {
                 }
         }
         #if os(iOS)
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large], selection: $detent)
         .presentationDragIndicator(.hidden)
         .presentationBackground(SettingsPalette.sheetBackground(scheme))
+        .onChange(of: path) { _, newPath in
+            detent = newPath.contains(.developer) ? .large : .medium
+        }
         #endif
     }
 
@@ -61,13 +67,13 @@ public struct SettingsSheet: View {
 
     private var groups: some View {
         VStack(spacing: 24) {
-            SettingsGroup {
+            SettingsGroup(title: "General") {
                 SettingsToggleRow(label: "Sync data with iCloud", isOn: $syncEnabled)
                 SettingsDivider()
                 SettingsToggleRow(label: "Turn on advanced card stack", isOn: $advancedCardStackEnabled)
             }
 
-            SettingsGroup {
+            SettingsGroup(title: "Support") {
                 SettingsRow(label: "Rate on the App Store", onTap: {}) {
                     trailingIcon(systemName: "star")
                 }
@@ -77,13 +83,13 @@ public struct SettingsSheet: View {
                 }
             }
 
-            SettingsGroup {
+            SettingsGroup(title: "Developer") {
                 SettingsRow(label: "Developer settings", onTap: { path.append(.developer) }) {
                     trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                 }
             }
 
-            SettingsGroup {
+            SettingsGroup(title: "About") {
                 SettingsRow(label: "About developers", onTap: onAbout) {
                     trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                 }
