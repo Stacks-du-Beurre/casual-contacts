@@ -1,10 +1,10 @@
 import SwiftUI
 import DesignSystem
 
-/// Top bar for the create-record sheet: Cancel on the left, PERSON heading
-/// centered, `+ Person` disabled placeholder on the right. 44pt tall.
-/// `+ Person` is rendered for visual parity with Figma; behavior (2-person
-/// flow) is deferred to a later plan.
+/// Top bar for the create-record sheet: Cancel on the left, centered title
+/// (defaults to "PERSON"), `+ Person` disabled placeholder on the right.
+/// 44pt tall. `+ Person` is rendered for visual parity with Figma; behavior
+/// (2-person flow) is deferred to a later plan.
 struct PersonTopNav: View {
     let title: String
     let onCancel: () -> Void
