@@ -6,14 +6,20 @@ import DesignSystem
 /// `+ Person` is rendered for visual parity with Figma; behavior (2-person
 /// flow) is deferred to a later plan.
 struct PersonTopNav: View {
+    let title: String
     let onCancel: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
+    init(title: String = "PERSON", onCancel: @escaping () -> Void) {
+        self.title = title
+        self.onCancel = onCancel
+    }
+
     var body: some View {
         ZStack {
             // Heading — centered. 20% larger than Figma base 17pt.
-            Text("PERSON")
+            Text(title)
                 .font(.custom("CormorantSC-Bold", size: 20.4))
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(CCDesign.Colors.L2)
