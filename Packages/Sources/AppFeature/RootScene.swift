@@ -21,7 +21,6 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
-    @State private var currentLocation: LocationInfo?
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
     @Environment(\.scenePhase) private var scenePhase
@@ -64,9 +63,6 @@ public struct RootScene: Scene {
             },
             onTapCreate: {
                 router.showingCreate = true
-                // TEMP: location lookup disabled to keep simulator smoke tests
-                // unblocked from the system permission prompt. Re-enable before
-                // shipping.
             },
             onTapSettings: {
                 router.showingSettings = true
@@ -97,12 +93,6 @@ public struct RootScene: Scene {
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
-            // TEMP: location permission + lookup disabled to keep simulator
-            // smoke tests unblocked. Re-enable before shipping.
-            // Task {
-            //     _ = await environment.locationService.requestAuthorization()
-            //     currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
-            // }
             for await raw in environment.motionService.attitude {
                 // Re-read @State each tick so mid-session toggles from the
                 // UIAccessibility notification propagate on the next gyro sample.
@@ -139,10 +129,6 @@ public struct RootScene: Scene {
                     at: Date(),
                     location: nil
                 ).timeOfDay
-                // TEMP: see notes above on disabling location during smoke tests.
-                // Task {
-                //     currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
-                // }
             case .inactive, .background:
                 environment.motionService.stop()
             @unknown default:
@@ -151,14 +137,14 @@ public struct RootScene: Scene {
         }
         .sheet(isPresented: $router.showingCreate) {
             let createdAt = Date()
-            let metadata = environment.metadataGenerator.metadata(at: createdAt, location: currentLocation)
+            let metadata = environment.metadataGenerator.metadata(at: createdAt, location: nil)
             CreateRecordScene(
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
                 faceDetectionService: environment.faceDetectionService,
                 createdAt: createdAt,
                 metadata: metadata,
-                location: currentLocation,
+                location: nil,
                 onCancel: { router.showingCreate = false },
                 onSave: { outcome in
                     guard case let .create(draft) = outcome else { return }
