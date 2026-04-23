@@ -18,44 +18,22 @@ struct PhotoSourceSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Capsule()
-                .fill(Color.white.opacity(0.25))
-                .frame(width: 36, height: 4)
-                .padding(.top, 8)
-
-            HStack(spacing: 12) {
-                tile(
-                    title: "Camera",
-                    systemImage: "camera.fill",
-                    isEnabled: cameraAvailable,
-                    action: onCamera
-                )
-                tile(
-                    title: "Photos",
-                    systemImage: "photo.on.rectangle.angled",
-                    isEnabled: true,
-                    action: onPhotos
-                )
-            }
-            .padding(.horizontal, 16)
-
-            Button(action: onCancel) {
-                Text("Cancel")
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(glassBackground)
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+        HStack(spacing: 12) {
+            tile(
+                title: "Camera",
+                systemImage: "camera.fill",
+                isEnabled: cameraAvailable,
+                action: onCamera
+            )
+            tile(
+                title: "Photos",
+                systemImage: "photo.on.rectangle.angled",
+                isEnabled: true,
+                action: onPhotos
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
-        .presentationDetents([.height(230)])
-        .presentationDragIndicator(.hidden)
-        .presentationCornerRadius(24)
+        .padding(16)
+        .presentationCompactAdaptation(.popover)
     }
 
     @ViewBuilder
@@ -66,30 +44,38 @@ struct PhotoSourceSheet: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .font(.system(size: 26, weight: .regular))
                 Text(title)
                     .font(.system(size: 15, weight: .medium))
+                    .lineLimit(1)
+                    .fixedSize()
             }
-            .foregroundStyle(isEnabled ? .primary : .secondary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 100)
-            .background(glassBackground)
+            .foregroundStyle(tileForeground(isEnabled: isEnabled))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .disabled(!isEnabled)
     }
 
-    @ViewBuilder
-    private var glassBackground: some View {
+    /// On iOS 26 the popover chrome is dark Liquid Glass, so pure white reads
+    /// cleanly. On iOS 18 the system popover chrome is light-adaptive
+    /// (translucent material that takes the system appearance), so `.primary`
+    /// / `.secondary` will pick a legible color for both dark and light mode.
+    private func tileForeground(isEnabled: Bool) -> AnyShapeStyle {
         if #available(iOS 26.0, *) {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.clear)
-                .glassEffect(.regular, in: .rect(cornerRadius: 18))
+            return isEnabled
+                ? AnyShapeStyle(Color.white)
+                : AnyShapeStyle(Color.white.opacity(0.5))
         } else {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
+            return isEnabled
+                ? AnyShapeStyle(HierarchicalShapeStyle.primary)
+                : AnyShapeStyle(HierarchicalShapeStyle.secondary)
         }
     }
+
 }
 #endif

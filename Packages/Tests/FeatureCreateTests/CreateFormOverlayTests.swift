@@ -22,16 +22,22 @@ import CoreModels
     /// can be constructed inside a `View` context.
     private struct Harness: View {
         @Bindable var model: CreateRecordModel
-        @FocusState var focused: Bool
+        @FocusState var focus: CreateFormField?
+        @State var showingPhotoChooser = false
+        @State var showingZodiacPicker = false
 
         var body: some View {
             CreateFormOverlay(
                 model: model,
-                nameFocused: $focused,
+                formFocus: $focus,
                 attitude: .zero,
                 backdropSize: CGSize(width: 400, height: 800),
                 coordinateSpaceName: "test",
-                onAddPhoto: {},
+                isPhotoChooserPresented: $showingPhotoChooser,
+                onPickCamera: {},
+                onPickPhotos: {},
+                isZodiacPickerPresented: $showingZodiacPicker,
+                onSelectZodiac: { _ in },
                 backdrop: { Color.clear }
             )
         }

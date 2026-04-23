@@ -6,34 +6,49 @@ import Visuals
 import PhotosUI
 #endif
 
+/// Identifies the two text-editable fields on the Create form. Used for a
+/// single `@FocusState` binding so the scene can save/restore which field was
+/// in focus across picker presentations.
+enum CreateFormField: Hashable {
+    case name
+    case description
+}
+
 /// Editable form layer painted over the card backdrop: `+ Add Photo` button,
 /// name pill (editable HologramText), description pill.
 struct CreateFormOverlay<Backdrop: View>: View {
 
     @Bindable var model: CreateRecordModel
-    var nameFocused: FocusState<Bool>.Binding
+    var formFocus: FocusState<CreateFormField?>.Binding
     let attitude: DeviceAttitude
     let backdropSize: CGSize
     let coordinateSpaceName: String
-    let onAddPhoto: () -> Void
+    @Binding var isPhotoChooserPresented: Bool
+    let onPickCamera: () -> Void
+    let onPickPhotos: () -> Void
+    @Binding var isZodiacPickerPresented: Bool
+    let onSelectZodiac: (ZodiacSign) -> Void
     @ViewBuilder let backdrop: () -> Backdrop
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             addPhotoButton
-                .padding(.bottom, 4)
+                .padding(.bottom, -14)
 
             NamePill(
                 model: model,
-                focused: nameFocused,
+                focus: formFocus,
                 attitude: attitude,
                 backdropSize: backdropSize,
                 coordinateSpaceName: coordinateSpaceName,
                 backdrop: backdrop
             )
 
-            DescriptionPill(model: model)
-                .padding(.bottom, 8)
+            DescriptionPill(model: model, focus: formFocus)
+
+            addZodiacButton
+                .padding(.top, -2)
+                .padding(.bottom, -6)
         }
         .padding(.leading, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,19 +73,63 @@ struct CreateFormOverlay<Backdrop: View>: View {
             .accessibilityLabel("Analyzing photo")
             .accessibilityIdentifier("photoDetectingSpinner")
         } else {
-            Button(action: onAddPhoto) {
+            Button(action: { isPhotoChooserPresented = true }) {
                 Text(model.photoData == nil ? "+ Add Photo" : "Change photo")
                     .font(CCDesign.Typography.caption2)
                     .foregroundStyle(CCDesign.Colors.L0)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
+                    .frame(minWidth: 44, minHeight: 44, alignment: .topLeading)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("addPhotoButton")
+            .popover(
+                isPresented: $isPhotoChooserPresented,
+                attachmentAnchor: .rect(.bounds),
+                arrowEdge: .leading
+            ) {
+                PhotoSourceSheet(
+                    onCamera: onPickCamera,
+                    onPhotos: onPickPhotos,
+                    onCancel: { isPhotoChooserPresented = false }
+                )
+            }
         }
         #else
         Text("+ Add Photo")
+            .font(CCDesign.Typography.caption2)
+            .foregroundStyle(CCDesign.Colors.L0)
+        #endif
+    }
+
+    @ViewBuilder
+    private var addZodiacButton: some View {
+        #if os(iOS)
+        Button(action: { isZodiacPickerPresented = true }) {
+            Text("+ Add Zodiac")
+                .font(CCDesign.Typography.caption2)
+                .foregroundStyle(CCDesign.Colors.L0)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 4)
+                .frame(minWidth: 44, minHeight: 44, alignment: .topLeading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("addZodiacButton")
+        .popover(
+            isPresented: $isZodiacPickerPresented,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: .leading
+        ) {
+            ZodiacSheet(
+                attitude: attitude,
+                onSelect: onSelectZodiac,
+                onClose: { isZodiacPickerPresented = false }
+            )
+        }
+        #else
+        Text("+ Add Zodiac")
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(CCDesign.Colors.L0)
         #endif
@@ -83,7 +142,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
 /// when the model is empty, acting as a visible placeholder.
 private struct NamePill<Backdrop: View>: View {
     @Bindable var model: CreateRecordModel
-    var focused: FocusState<Bool>.Binding
+    var focus: FocusState<CreateFormField?>.Binding
     let attitude: DeviceAttitude
     let backdropSize: CGSize
     let coordinateSpaceName: String
@@ -110,7 +169,7 @@ private struct NamePill<Backdrop: View>: View {
                 .tint(.black)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 6)
-                .focused(focused)
+                .focused(focus, equals: .name)
                 .accessibilityIdentifier("nameField")
         }
         .fixedSize(horizontal: true, vertical: false)
@@ -125,6 +184,7 @@ private struct NamePill<Backdrop: View>: View {
 /// SemiBold 18. Plain TextField (no hologram treatment on description).
 private struct DescriptionPill: View {
     @Bindable var model: CreateRecordModel
+    var focus: FocusState<CreateFormField?>.Binding
 
     var body: some View {
         TextField("Description", text: $model.description, axis: .horizontal)
@@ -140,6 +200,7 @@ private struct DescriptionPill: View {
                 Rectangle()
                     .stroke(Color.white.opacity(0.45), lineWidth: 1)
             )
+            .focused(focus, equals: .description)
             .accessibilityIdentifier("descriptionField")
             .fixedSize(horizontal: true, vertical: false)
     }

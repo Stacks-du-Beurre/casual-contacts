@@ -16,11 +16,13 @@ public struct CreateRecordScene: View {
     public let onSave: (RecordDraft) -> Void
 
     @State private var model: CreateRecordModel
-    @FocusState private var nameFocused: Bool
+    @FocusState private var formFocus: CreateFormField?
+    @State private var suspendedFocus: CreateFormField?
 
+    @State private var showingPhotoChooser = false
+    @State private var showingZodiacPicker = false
     #if os(iOS)
     @State private var photoItem: PhotosPickerItem?
-    @State private var showingPhotoChooser = false
     @State private var showingPhotosPicker = false
     @State private var showingCamera = false
     #endif
@@ -59,25 +61,8 @@ public struct CreateRecordScene: View {
                 GradientLayer(timeOfDay: model.metadata.timeOfDay, attitude: attitude)
                     .ignoresSafeArea(edges: .bottom)
             )
-            .onAppear { nameFocused = true }
+            .onAppear { formFocus = .name }
             #if os(iOS)
-            .sheet(isPresented: $showingPhotoChooser) {
-                PhotoSourceSheet(
-                    onCamera: {
-                        showingPhotoChooser = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showingCamera = true
-                        }
-                    },
-                    onPhotos: {
-                        showingPhotoChooser = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showingPhotosPicker = true
-                        }
-                    },
-                    onCancel: { showingPhotoChooser = false }
-                )
-            }
             .photosPicker(isPresented: $showingPhotosPicker, selection: $photoItem, matching: .images, photoLibrary: .shared())
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraPicker(
@@ -89,6 +74,12 @@ public struct CreateRecordScene: View {
                 )
                 .ignoresSafeArea()
             }
+            .onChange(of: showingPhotosPicker) { _, shown in
+                if !shown { restoreSuspendedFocus() }
+            }
+            .onChange(of: showingCamera) { _, shown in
+                if !shown { restoreSuspendedFocus() }
+            }
             .onChange(of: photoItem) { _, newItem in
                 guard let newItem else { return }
                 Task {
@@ -98,6 +89,23 @@ public struct CreateRecordScene: View {
                 }
             }
             #endif
+    }
+
+    /// Capture whichever form field currently owns focus, then release it so
+    /// the keyboard retracts cleanly before a picker presents.
+    private func suspendFocus() {
+        suspendedFocus = formFocus
+        formFocus = nil
+    }
+
+    /// Restore focus to the field that was active before the last picker was
+    /// presented. Called once the picker has dismissed.
+    private func restoreSuspendedFocus() {
+        guard let suspended = suspendedFocus else { return }
+        suspendedFocus = nil
+        DispatchQueue.main.async {
+            formFocus = suspended
+        }
     }
 
     private var atmosphericSection: some View {
@@ -122,15 +130,34 @@ public struct CreateRecordScene: View {
 
                     CreateFormOverlay(
                         model: model,
-                        nameFocused: $nameFocused,
+                        formFocus: $formFocus,
                         attitude: attitude,
                         backdropSize: geo.size,
                         coordinateSpaceName: Self.coordSpace,
-                        onAddPhoto: {
+                        isPhotoChooserPresented: $showingPhotoChooser,
+                        onPickCamera: {
                             #if os(iOS)
-                            nameFocused = false
-                            showingPhotoChooser = true
+                            suspendFocus()
+                            showingPhotoChooser = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                showingCamera = true
+                            }
                             #endif
+                        },
+                        onPickPhotos: {
+                            #if os(iOS)
+                            suspendFocus()
+                            showingPhotoChooser = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                showingPhotosPicker = true
+                            }
+                            #endif
+                        },
+                        isZodiacPickerPresented: $showingZodiacPicker,
+                        onSelectZodiac: { _ in
+                            // Selection wiring intentionally a no-op until the
+                            // model exposes a mutable zodiac — the UI simply
+                            // demonstrates the picker layout for now.
                         },
                         backdrop: { backdropLayer(size: geo.size) }
                     )
