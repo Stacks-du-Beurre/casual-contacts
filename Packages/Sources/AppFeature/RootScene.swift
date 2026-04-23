@@ -207,6 +207,15 @@ public struct RootScene: Scene {
                 }
             )
         }
+        .sheet(item: $router.editingRecord) { record in
+            EditingSheetContent(
+                record: record,
+                environment: environment,
+                photoCache: photoCache,
+                attitude: currentAttitude,
+                onFinish: { router.editingRecord = nil }
+            )
+        }
         .fullScreenCover(item: $router.selectedRecordForLargeDetail) { record in
             LargeDetailScene(
                 record: record,
@@ -246,3 +255,69 @@ public struct RootScene: Scene {
     }
     #endif
 }
+
+#if os(iOS)
+@MainActor
+private struct EditingSheetContent: View {
+    let record: Record
+    let environment: AppEnvironment
+    @Bindable var photoCache: PhotoCache
+    let attitude: DeviceAttitude
+    let onFinish: () -> Void
+
+    @State private var photoData: Data?
+    @State private var didLoad = false
+
+    var body: some View {
+        Group {
+            if didLoad {
+                CreateRecordScene(
+                    editing: record,
+                    attitude: attitude,
+                    paths: environment.cardPathProvider,
+                    faceDetectionService: environment.faceDetectionService,
+                    photoData: photoData,
+                    photoFocus: record.photoFocus,
+                    onCancel: onFinish,
+                    onSave: { outcome in
+                        guard case let .update(updated, newPhotoData, newPhotoFocus) = outcome else {
+                            onFinish()
+                            return
+                        }
+                        Task {
+                            var resolved = updated
+                            if newPhotoData != photoData {
+                                if let bytes = newPhotoData {
+                                    resolved.photoID = try? await environment.photoStore.save(bytes)
+                                    resolved.photoFocus = newPhotoFocus
+                                } else {
+                                    resolved.photoID = nil
+                                    resolved.photoFocus = nil
+                                }
+                                if let oldID = record.photoID, oldID != resolved.photoID {
+                                    try? await environment.photoStore.delete(oldID)
+                                    photoCache.invalidate(oldID)
+                                }
+                            }
+                            try? await environment.recordStore.update(resolved)
+                            // Invalidate the cache for this slot so the list reloads
+                            // the new bytes.
+                            photoCache.invalidate(resolved.photoID)
+                            await photoCache.preload([resolved], using: environment.photoStore)
+                            onFinish()
+                        }
+                    }
+                )
+            } else {
+                Color.clear
+            }
+        }
+        .task {
+            if let id = record.photoID {
+                photoData = try? await environment.photoStore.load(id)
+            }
+            didLoad = true
+        }
+    }
+}
+#endif

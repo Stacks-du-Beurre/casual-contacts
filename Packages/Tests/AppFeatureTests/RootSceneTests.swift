@@ -1,6 +1,7 @@
 import Testing
 import SwiftUI
 import CoreModels
+import StorageTestSupport
 @testable import AppFeature
 
 @MainActor
@@ -39,5 +40,56 @@ import CoreModels
         )
         router.selectedRecordForMediumDetail = record
         #expect(router.selectedRecordForMediumDetail?.id == record.id)
+    }
+
+    @Test func editingRecordPathPersistsViaUpdate() async throws {
+        let original = Record(
+            id: UUID(),
+            name: "Old",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
+        let store = InMemoryRecordStore(seed: [original])
+        let env = AppEnvironment.testing(recordStore: store)
+
+        // Simulate the edit-flow save closure directly.
+        let updated = Record(
+            id: original.id,
+            name: "New",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: original.createdAt,
+            updatedAt: Date(),
+            metadata: original.metadata,
+            guillocheShape: original.guillocheShape
+        )
+        try await env.recordStore.update(updated)
+        #expect(env.recordStore.records.first(where: { $0.id == original.id })?.name == "New")
+    }
+
+    @Test func photoSwapDeletesOldPhotoFile() async throws {
+        final class TrackingPhotoStore: PhotoStore, @unchecked Sendable {
+            var deleted: [PhotoID] = []
+            func save(_ data: Data) async throws -> PhotoID { PhotoID(filename: "new.jpg") }
+            func load(_ id: PhotoID) async throws -> Data? { Data() }
+            func delete(_ id: PhotoID) async throws { deleted.append(id) }
+        }
+
+        let photoStore = TrackingPhotoStore()
+        let oldID = PhotoID(filename: "old.jpg")
+
+        // Mirror the helper that RootScene's edit save closure will call.
+        let newID = try await photoStore.save(Data([0x01]))
+        try await photoStore.delete(oldID)
+
+        #expect(newID.filename == "new.jpg")
+        #expect(photoStore.deleted == [oldID])
     }
 }

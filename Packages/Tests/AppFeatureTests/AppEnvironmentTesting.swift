@@ -10,10 +10,13 @@ extension AppEnvironment {
     /// Test-only wiring: in-memory stores + mock services. Keeps tests hermetic
     /// (no SwiftData container, no CoreLocation permission prompts, no motion).
     @MainActor
-    static func testing() -> AppEnvironment {
+    static func testing(
+        recordStore: (any RecordStore)? = nil,
+        photoStore: (any PhotoStore)? = nil
+    ) -> AppEnvironment {
         AppEnvironment(
-            recordStore: InMemoryRecordStore(),
-            photoStore: InMemoryPhotoStore(),
+            recordStore: recordStore ?? InMemoryRecordStore(),
+            photoStore: photoStore ?? InMemoryPhotoStore(),
             locationService: MockLocationService(),
             motionService: StaticMotionService(),
             metadataGenerator: FixedMetadataGenerator(),
