@@ -64,15 +64,12 @@ public struct RootScene: Scene {
             },
             onTapCreate: {
                 router.showingCreate = true
-                Task {
-                    currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
-                }
+                // TEMP: location lookup disabled to keep simulator smoke tests
+                // unblocked from the system permission prompt. Re-enable before
+                // shipping.
             },
             onTapSettings: {
                 router.showingSettings = true
-            },
-            onEditRecord: { record in
-                router.editingRecord = record
             },
             onScrollInteractionChange: { interacting in
                 // Pause the gyro pipeline the moment the user touches the
@@ -84,6 +81,9 @@ public struct RootScene: Scene {
                 } else if !reduceMotionEnabled {
                     environment.motionService.start()
                 }
+            },
+            onEditRecord: { record in
+                router.editingRecord = record
             },
             photoFor: { photoCache.image(for: $0.photoID) },
             photoSizeFor: { photoCache.imageSize(for: $0.photoID) }
@@ -97,10 +97,12 @@ public struct RootScene: Scene {
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             environment.motionService.start()
-            Task {
-                _ = await environment.locationService.requestAuthorization()
-                currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
-            }
+            // TEMP: location permission + lookup disabled to keep simulator
+            // smoke tests unblocked. Re-enable before shipping.
+            // Task {
+            //     _ = await environment.locationService.requestAuthorization()
+            //     currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
+            // }
             for await raw in environment.motionService.attitude {
                 // Re-read @State each tick so mid-session toggles from the
                 // UIAccessibility notification propagate on the next gyro sample.
@@ -137,9 +139,10 @@ public struct RootScene: Scene {
                     at: Date(),
                     location: nil
                 ).timeOfDay
-                Task {
-                    currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
-                }
+                // TEMP: see notes above on disabling location during smoke tests.
+                // Task {
+                //     currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
+                // }
             case .inactive, .background:
                 environment.motionService.stop()
             @unknown default:
@@ -193,8 +196,14 @@ public struct RootScene: Scene {
                     router.selectedRecordForLargeDetail = record
                 },
                 onEdit: {
-                    router.editingRecord = record
+                    // Dismiss the medium sheet first; defer presenting the
+                    // edit sheet a tick so SwiftUI doesn't drop the second
+                    // presentation while the first is still dismissing.
                     router.selectedRecordForMediumDetail = nil
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(400))
+                        router.editingRecord = record
+                    }
                 },
                 onDelete: {
                     Task {
@@ -215,6 +224,7 @@ public struct RootScene: Scene {
                 attitude: currentAttitude,
                 onFinish: { router.editingRecord = nil }
             )
+            .presentationCornerRadius(12)
         }
         .fullScreenCover(item: $router.selectedRecordForLargeDetail) { record in
             LargeDetailScene(
