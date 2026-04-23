@@ -154,7 +154,8 @@ public struct RootScene: Scene {
                 metadata: metadata,
                 location: currentLocation,
                 onCancel: { router.showingCreate = false },
-                onSave: { draft in
+                onSave: { outcome in
+                    guard case let .create(draft) = outcome else { return }
                     Task {
                         let photoID: PhotoID?
                         if let data = draft.photo {

@@ -13,7 +13,8 @@ public struct CreateRecordScene: View {
     public let paths: any CardPathProvider
     public let faceDetectionService: any FaceDetectionService
     public let onCancel: () -> Void
-    public let onSave: (RecordDraft) -> Void
+    public let onSave: (CreateRecordOutcome) -> Void
+    public let editingRecord: Record?
 
     @State private var model: CreateRecordModel
     @FocusState private var formFocus: CreateFormField?
@@ -29,6 +30,9 @@ public struct CreateRecordScene: View {
 
     private static let coordSpace = "createScene"
 
+    private var topNavTitle: String { editingRecord == nil ? "PERSON" : "EDIT" }
+    private var saveButtonLabel: String { editingRecord == nil ? "SAVE" : "UPDATE" }
+
     public init(
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
@@ -37,17 +41,41 @@ public struct CreateRecordScene: View {
         metadata: RecordMetadata,
         location: LocationInfo?,
         onCancel: @escaping () -> Void,
-        onSave: @escaping (RecordDraft) -> Void
+        onSave: @escaping (CreateRecordOutcome) -> Void
     ) {
         self.attitude = attitude
         self.paths = paths
         self.faceDetectionService = faceDetectionService
+        self.editingRecord = nil
         self.onCancel = onCancel
         self.onSave = onSave
         _model = State(initialValue: CreateRecordModel(
             createdAt: createdAt,
             metadata: metadata,
             location: location
+        ))
+    }
+
+    public init(
+        editing record: Record,
+        attitude: DeviceAttitude,
+        paths: any CardPathProvider,
+        faceDetectionService: any FaceDetectionService,
+        photoData: Data?,
+        photoFocus: NormalizedPoint?,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping (CreateRecordOutcome) -> Void
+    ) {
+        self.attitude = attitude
+        self.paths = paths
+        self.faceDetectionService = faceDetectionService
+        self.editingRecord = record
+        self.onCancel = onCancel
+        self.onSave = onSave
+        _model = State(initialValue: CreateRecordModel(
+            editing: record,
+            photoData: photoData,
+            photoFocus: photoFocus
         ))
     }
 
@@ -123,7 +151,7 @@ public struct CreateRecordScene: View {
                 // bottom. Zodiac is absolutely positioned in the ZStack so it
                 // doesn't consume VStack space.
                 VStack(spacing: 0) {
-                    PersonTopNav(onCancel: onCancel)
+                    PersonTopNav(title: topNavTitle, onCancel: onCancel)
                         .padding(.top, 18)
 
                     Spacer(minLength: 0)
@@ -168,10 +196,30 @@ public struct CreateRecordScene: View {
                         timeOfDay: model.metadata.timeOfDay
                     )
                     SaveButton(
+                        label: saveButtonLabel,
                         isEnabled: model.isSaveable,
                         timeOfDay: model.metadata.timeOfDay,
                         attitude: attitude,
-                        action: { onSave(model.draft) }
+                        action: {
+                            if let editing = editingRecord {
+                                let updated = Record(
+                                    id: editing.id,
+                                    name: model.name,
+                                    description: model.description,
+                                    photoID: editing.photoID,
+                                    photoFocus: model.photoFocus ?? editing.photoFocus,
+                                    location: editing.location,
+                                    zodiacSign: model.zodiacSign,
+                                    createdAt: editing.createdAt,
+                                    updatedAt: Date(),
+                                    metadata: editing.metadata,
+                                    guillocheShape: editing.guillocheShape
+                                )
+                                onSave(.update(updated, photoData: model.photoData, photoFocus: model.photoFocus))
+                            } else {
+                                onSave(.create(model.draft))
+                            }
+                        }
                     )
                 }
 
