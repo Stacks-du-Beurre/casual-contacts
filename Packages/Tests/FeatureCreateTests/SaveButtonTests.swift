@@ -27,4 +27,17 @@ import CoreModels
             action: {}
         ).body
     }
+
+    @Test func customLabelRendersInsteadOfDefault() {
+        let button = SaveButton(
+            label: "UPDATE",
+            isEnabled: true,
+            timeOfDay: .midday,
+            attitude: .zero,
+            action: {}
+        )
+        let mirror = Mirror(reflecting: button)
+        let labelProperty = mirror.children.first { $0.label == "label" }
+        #expect((labelProperty?.value as? String) == "UPDATE")
+    }
 }
