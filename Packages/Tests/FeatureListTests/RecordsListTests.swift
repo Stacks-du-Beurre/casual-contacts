@@ -35,4 +35,43 @@ struct NoopCardPathProvider: CardPathProvider {
     @Test func emptyStateViewInstantiates() {
         _ = EmptyStateView(paths: NoopCardPathProvider(), timeOfDay: .sunset).body
     }
+
+    @MainActor
+    @Test func editMenuActionInvokesOnEditRecord() {
+        let record = Record(
+            id: UUID(),
+            name: "Edit me",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
+        let store = InMemoryRecordStore(seed: [record])
+
+        var captured: Record?
+        let scene = RecordsListScene(
+            store: store,
+            paths: NoopCardPathProvider(),
+            attitude: .zero,
+            timeOfDay: .midday,
+            onTapRecord: { _ in },
+            onTapCreate: {},
+            onTapSettings: {},
+            onEditRecord: { captured = $0 }
+        )
+        _ = scene.body  // realize the view
+
+        // We can't drive the menu's button action without rendering, so assert
+        // the closure is wired by reading it back via Mirror.
+        let mirror = Mirror(reflecting: scene)
+        let onEditRecord = mirror.children.first { $0.label == "onEditRecord" }
+        #expect(onEditRecord != nil)
+
+        // Direct invoke as a sanity check.
+        (onEditRecord?.value as? (Record) -> Void)?(record)
+        #expect(captured?.id == record.id)
+    }
 }

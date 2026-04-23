@@ -17,6 +17,7 @@ public struct RecordsListScene: View {
     /// returns to idle. Caller pauses the gyro pipeline accordingly so cards
     /// stop re-evaluating the moment the user touches the list.
     public let onScrollInteractionChange: (Bool) -> Void
+    public let onEditRecord: (Record) -> Void
     /// Lookup for a record's photo image. Host (AppFeature) provides a cache
     /// that loads PhotoIDs via PhotoStore; default returns nil for previews.
     public let photoFor: (Record) -> Image?
@@ -41,6 +42,7 @@ public struct RecordsListScene: View {
         onTapCreate: @escaping () -> Void,
         onTapSettings: @escaping () -> Void,
         onScrollInteractionChange: @escaping (Bool) -> Void = { _ in },
+        onEditRecord: @escaping (Record) -> Void = { _ in },
         photoFor: @escaping (Record) -> Image? = { _ in nil },
         photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil }
     ) {
@@ -52,6 +54,7 @@ public struct RecordsListScene: View {
         self.onTapCreate = onTapCreate
         self.onTapSettings = onTapSettings
         self.onScrollInteractionChange = onScrollInteractionChange
+        self.onEditRecord = onEditRecord
         self.photoFor = photoFor
         self.photoSizeFor = photoSizeFor
     }
@@ -240,7 +243,11 @@ public struct RecordsListScene: View {
                             .overlay {
                                 if menuRecordID == record.id {
                                     RecordActionMenu(
-                                        onEdit: { menuRecordID = nil },
+                                        onEdit: {
+                                            let editing = record
+                                            menuRecordID = nil
+                                            onEditRecord(editing)
+                                        },
                                         onDelete: {
                                             menuRecordID = nil
                                             pendingDeleteRecord = record

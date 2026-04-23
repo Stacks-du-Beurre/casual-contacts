@@ -71,6 +71,9 @@ public struct RootScene: Scene {
             onTapSettings: {
                 router.showingSettings = true
             },
+            onEditRecord: { record in
+                router.editingRecord = record
+            },
             onScrollInteractionChange: { interacting in
                 // Pause the gyro pipeline the moment the user touches the
                 // list (not just once scrolling begins) and resume on idle.
