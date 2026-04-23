@@ -22,6 +22,7 @@ public struct RootScene: Scene {
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
     @State private var currentLocation: LocationInfo?
+    @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -30,6 +31,12 @@ public struct RootScene: Scene {
     /// is idempotent, so we do it here rather than in the app target.
     public init(environment: AppEnvironment) {
         _environment = State(initialValue: environment)
+        // Seed the current time-of-day from the metadata generator so the
+        // empty-state gradient paints the correct PNG on first frame. Refreshed
+        // on every `.active` scene phase so it stays accurate across dawn/dusk
+        // boundaries while the app is open.
+        let seed = environment.metadataGenerator.metadata(at: Date(), location: nil).timeOfDay
+        _currentTimeOfDay = State(initialValue: seed)
         FontRegistration.registerBundledFonts()
     }
 
@@ -51,6 +58,7 @@ public struct RootScene: Scene {
             store: environment.recordStore,
             paths: environment.cardPathProvider,
             attitude: currentAttitude,
+            timeOfDay: currentTimeOfDay,
             onTapRecord: { record in
                 router.selectedRecordForMediumDetail = record
             },
@@ -119,6 +127,13 @@ public struct RootScene: Scene {
                 if !reduceMotionEnabled {
                     environment.motionService.start()
                 }
+                // Refresh time-of-day so the empty-state gradient tracks wall
+                // time across foreground returns (e.g. re-opening at dusk
+                // after launching at midday).
+                currentTimeOfDay = environment.metadataGenerator.metadata(
+                    at: Date(),
+                    location: nil
+                ).timeOfDay
                 Task {
                     currentLocation = (try? await environment.locationService.currentLocation()) ?? nil
                 }

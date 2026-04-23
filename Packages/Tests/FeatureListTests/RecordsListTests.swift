@@ -33,6 +33,6 @@ struct NoopCardPathProvider: CardPathProvider {
     }
 
     @Test func emptyStateViewInstantiates() {
-        _ = EmptyStateView(paths: NoopCardPathProvider()).body
+        _ = EmptyStateView(paths: NoopCardPathProvider(), timeOfDay: .sunset).body
     }
 }

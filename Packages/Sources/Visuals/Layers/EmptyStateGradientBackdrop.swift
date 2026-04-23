@@ -2,33 +2,35 @@ import SwiftUI
 import CoreModels
 import DesignSystem
 
-/// Full-bleed sunset backdrop for the empty-state collection view.
+/// Full-bleed time-of-day backdrop for the empty-state collection view.
 ///
-/// Renders `CCDesign.Gradients.sunset` at its natural aspect, scaled to fill
-/// the viewport (cover). Horizontal drift is bound by the exact slack the
-/// image contributes at that viewport size — no arbitrary overscan. At
-/// `edgeReach = 1.0` and `|roll| = 1`, the image's edge reaches the viewport
-/// edge and no further; at lower reach it stops short. Pitch is ignored —
-/// X-only drift per design.
+/// Renders the `CCDesign.Gradients` PNG for the current `TimeOfDay` at its
+/// natural aspect, scaled to fill the viewport (cover). Horizontal drift is
+/// bound by the exact slack the image contributes at that viewport size — no
+/// arbitrary overscan. At `edgeReach = 1.0` and `|roll| = 1`, the image's edge
+/// reaches the viewport edge and no further; at lower reach it stops short.
+/// Pitch is ignored — X-only drift per design.
 ///
 /// `attitude` arrives from `CoreMotionService` already baseline-relative and
 /// tanh-saturated, so the gradient rests centered at launch pose and
 /// auto-rebases along with every other attitude-driven effect.
 public struct EmptyStateGradientBackdrop: View {
 
+    public let timeOfDay: TimeOfDay
     public let attitude: DeviceAttitude
 
     private let tuning = EmptyStateGradientTuning.shared
 
-    /// Natural pixel size of Sunset.png (see
-    /// `Packages/Sources/DesignSystem/Resources/Gradients.xcassets/Sunset.imageset/Sunset.png`).
-    /// Used to compute the exact horizontal slack available at each viewport
-    /// size when the image is scaled-to-fill. Kept in sync with the asset
-    /// manually — if the PNG is re-exported at a different aspect this value
-    /// must be updated.
+    /// Natural pixel size of the gradient PNGs (all seven time-of-day bitmaps
+    /// share ~689×416 within ±1px — see `Resources/Gradients.xcassets/`). Used
+    /// to compute the exact horizontal slack available at each viewport size
+    /// when the image is scaled-to-fill. Kept in sync with the assets manually
+    /// — if any PNG is re-exported at a different aspect this value must be
+    /// updated.
     static let imageSize = CGSize(width: 689, height: 416)
 
-    public init(attitude: DeviceAttitude) {
+    public init(timeOfDay: TimeOfDay, attitude: DeviceAttitude) {
+        self.timeOfDay = timeOfDay
         self.attitude = attitude
     }
 
@@ -39,7 +41,7 @@ public struct EmptyStateGradientBackdrop: View {
             let offset = CGFloat(attitude.roll) * reach * geometry.slack
             let bounded = max(-geometry.slack, min(geometry.slack, offset))
             ZStack {
-                CCDesign.Gradients.sunset
+                CCDesign.Gradients.view(for: timeOfDay)
                     .frame(width: geometry.width, height: geometry.height)
                     .offset(x: bounded, y: 0)
             }

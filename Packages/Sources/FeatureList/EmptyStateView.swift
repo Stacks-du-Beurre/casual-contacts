@@ -6,15 +6,18 @@ import Visuals
 public struct EmptyStateView: View {
 
     public let paths: any CardPathProvider
+    public let timeOfDay: TimeOfDay
     public let attitude: DeviceAttitude
     public let onTap: () -> Void
 
     public init(
         paths: any CardPathProvider,
+        timeOfDay: TimeOfDay,
         attitude: DeviceAttitude = .zero,
         onTap: @escaping () -> Void = {}
     ) {
         self.paths = paths
+        self.timeOfDay = timeOfDay
         self.attitude = attitude
         self.onTap = onTap
     }
@@ -58,7 +61,7 @@ public struct EmptyStateView: View {
     @ViewBuilder
     private var backdrop: some View {
         ZStack {
-            EmptyStateGradientBackdrop(attitude: attitude)
+            EmptyStateGradientBackdrop(timeOfDay: timeOfDay, attitude: attitude)
 
             GuillocheRotationLayer(
                 paths: GuillocheRotationLayer.swirlPaths(

@@ -79,6 +79,7 @@ import StorageTestSupport
                 store: store,
                 paths: provider,
                 attitude: .zero,
+                timeOfDay: .sunset,
                 onTapRecord: { _ in },
                 onTapCreate: {},
                 onTapSettings: {}

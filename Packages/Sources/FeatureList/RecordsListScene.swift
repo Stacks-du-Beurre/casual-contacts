@@ -8,6 +8,7 @@ public struct RecordsListScene: View {
     public let store: any RecordStore
     public let paths: any CardPathProvider
     public let attitude: DeviceAttitude
+    public let timeOfDay: TimeOfDay
     public let onTapRecord: (Record) -> Void
     public let onTapCreate: () -> Void
     public let onTapSettings: () -> Void
@@ -33,6 +34,7 @@ public struct RecordsListScene: View {
         store: any RecordStore,
         paths: any CardPathProvider,
         attitude: DeviceAttitude,
+        timeOfDay: TimeOfDay,
         onTapRecord: @escaping (Record) -> Void,
         onTapCreate: @escaping () -> Void,
         onTapSettings: @escaping () -> Void,
@@ -43,6 +45,7 @@ public struct RecordsListScene: View {
         self.store = store
         self.paths = paths
         self.attitude = attitude
+        self.timeOfDay = timeOfDay
         self.onTapRecord = onTapRecord
         self.onTapCreate = onTapCreate
         self.onTapSettings = onTapSettings
@@ -92,9 +95,9 @@ public struct RecordsListScene: View {
         colorScheme == .dark ? CCDesign.Colors.D4 : CCDesign.Colors.L2
     }
 
-    /// Populated-list background. Empty state draws its own sunset gradient
-    /// which covers this in the empty case. Matches Figma `L_Collection_View`
-    /// (L2 = #E9EAF1) and `D_Collection_View` (D3 = #282A30).
+    /// Populated-list background. Empty state draws its own time-of-day
+    /// gradient which covers this in the empty case. Matches Figma
+    /// `L_Collection_View` (L2 = #E9EAF1) and `D_Collection_View` (D3 = #282A30).
     private var populatedBackground: Color {
         colorScheme == .dark ? CCDesign.Colors.D3 : CCDesign.Colors.L2
     }
@@ -137,7 +140,7 @@ public struct RecordsListScene: View {
     }
 
     private func customNavBar(scale: CGFloat) -> some View {
-        // Empty state sits on the sunset gradient in both modes, so the
+        // Empty state sits on the time-of-day gradient in both modes, so the
         // title stays L2; only the populated-list title inverts.
         let titleColor: Color = isEmpty ? CCDesign.Colors.L2 : chromePrimary
         return ZStack {
@@ -188,7 +191,7 @@ public struct RecordsListScene: View {
     private var listContent: some View {
         ZStack(alignment: .bottomTrailing) {
             if isEmpty {
-                EmptyStateView(paths: paths, attitude: attitude, onTap: onTapCreate)
+                EmptyStateView(paths: paths, timeOfDay: timeOfDay, attitude: attitude, onTap: onTapCreate)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
