@@ -288,15 +288,25 @@ private struct EditingSheetContent: View {
                             var resolved = updated
                             if newPhotoData != photoData {
                                 if let bytes = newPhotoData {
-                                    resolved.photoID = try? await environment.photoStore.save(bytes)
-                                    resolved.photoFocus = newPhotoFocus
+                                    if let savedID = try? await environment.photoStore.save(bytes) {
+                                        resolved.photoID = savedID
+                                        resolved.photoFocus = newPhotoFocus
+                                        // Only remove the old file once the new one is safely persisted.
+                                        if let oldID = record.photoID, oldID != savedID {
+                                            try? await environment.photoStore.delete(oldID)
+                                            photoCache.invalidate(oldID)
+                                        }
+                                    }
+                                    // If save failed, leave resolved.photoID == record.photoID (untouched)
+                                    // so the record still points at a valid file.
                                 } else {
+                                    // User explicitly cleared the photo.
                                     resolved.photoID = nil
                                     resolved.photoFocus = nil
-                                }
-                                if let oldID = record.photoID, oldID != resolved.photoID {
-                                    try? await environment.photoStore.delete(oldID)
-                                    photoCache.invalidate(oldID)
+                                    if let oldID = record.photoID {
+                                        try? await environment.photoStore.delete(oldID)
+                                        photoCache.invalidate(oldID)
+                                    }
                                 }
                             }
                             try? await environment.recordStore.update(resolved)

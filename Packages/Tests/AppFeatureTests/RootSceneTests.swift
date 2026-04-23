@@ -42,7 +42,10 @@ import StorageTestSupport
         #expect(router.selectedRecordForMediumDetail?.id == record.id)
     }
 
-    @Test func editingRecordPathPersistsViaUpdate() async throws {
+    // Smoke-checks that `RecordStore.update` round-trips a name change.
+    // The `EditingSheetContent` save closure is not directly exercised by host
+    // tests; full coverage lives in the simulator XCUITest suite (T13).
+    @Test func recordStoreUpdateRoundTripsName() async throws {
         let original = Record(
             id: UUID(),
             name: "Old",
@@ -74,7 +77,10 @@ import StorageTestSupport
         #expect(env.recordStore.records.first(where: { $0.id == original.id })?.name == "New")
     }
 
-    @Test func photoSwapDeletesOldPhotoFile() async throws {
+    // Smoke-checks that `TrackingPhotoStore` records `delete` invocations correctly.
+    // The `EditingSheetContent` save closure is not directly exercised by host
+    // tests; full coverage lives in the simulator XCUITest suite (T13).
+    @Test func photoStoreDeleteRecordsInvocations() async throws {
         final class TrackingPhotoStore: PhotoStore, @unchecked Sendable {
             var deleted: [PhotoID] = []
             func save(_ data: Data) async throws -> PhotoID { PhotoID(filename: "new.jpg") }
