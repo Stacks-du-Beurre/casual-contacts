@@ -21,6 +21,10 @@ public struct RootScene: Scene {
     @State private var environment: AppEnvironment
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
+    /// Snapshot of `currentAttitude` captured the moment a card modal opens,
+    /// fed to the list behind the backdrop so its rows freeze in place while
+    /// the modal's own card continues reading the live stream.
+    @State private var frozenListAttitude = DeviceAttitude.zero
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
@@ -60,9 +64,10 @@ public struct RootScene: Scene {
         RecordsListScene(
             store: environment.recordStore,
             paths: environment.cardPathProvider,
-            attitude: currentAttitude,
+            attitude: router.tappedRecord == nil ? currentAttitude : frozenListAttitude,
             timeOfDay: currentTimeOfDay,
             onTapRecord: { record, frame in
+                frozenListAttitude = currentAttitude
                 router.tappedRecordSourceFrame = frame
                 router.tappedRecord = record
             },
@@ -189,14 +194,7 @@ public struct RootScene: Scene {
                     photoSize: photoCache.imageSize(for: tapped.photoID),
                     onEdit: { router.editingRecord = tapped },
                     onDelete: { pendingDeleteRecord = tapped },
-                    onDismiss: { router.tappedRecord = nil },
-                    onAnimating: { animating in
-                        if animating {
-                            environment.motionService.stop()
-                        } else if !reduceMotionEnabled {
-                            environment.motionService.start()
-                        }
-                    }
+                    onDismiss: { router.tappedRecord = nil }
                 )
                 .transition(.identity)
             }

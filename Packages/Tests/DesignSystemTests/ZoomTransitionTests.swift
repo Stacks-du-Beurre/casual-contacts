@@ -35,26 +35,6 @@ import Testing
         _ = host.body
     }
 
-    @Test func recordZoomIDsAreEqualByUUID() {
-        let id = UUID()
-        #expect(RecordZoomID(id) == RecordZoomID(id))
-        #expect(RecordZoomID(UUID()) != RecordZoomID(UUID()))
-    }
-
-    @Test func zoomSourceWithRecordZoomIDBuildsViewBody() {
-        let id = RecordZoomID(UUID())
-        _ = Host(view: Color.clear.zoomSource(id)).body
-        let withNS = WithInjectedNamespace { Color.clear.zoomSource(id) }
-        _ = withNS.body
-    }
-
-    @Test func zoomDestinationWithRecordZoomIDBuildsViewBody() {
-        let id = RecordZoomID(UUID())
-        _ = Host(view: Color.clear.zoomDestination(id)).body
-        let withNS = WithInjectedNamespace { Color.clear.zoomDestination(id) }
-        _ = withNS.body
-    }
-
     @Test func environmentKeyDefaultsToNil() {
         // Reading the key off EnvironmentValues initialized from scratch is
         // not possible, but the modifier smoke tests above exercise the nil

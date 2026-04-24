@@ -7,13 +7,6 @@ public struct ZoomSourceID: Hashable, Sendable {
     public static let createButton = ZoomSourceID(rawValue: "createButton")
 }
 
-public struct RecordZoomID: Hashable, Sendable {
-    public let recordID: UUID
-    public init(_ recordID: UUID) { self.recordID = recordID }
-
-    fileprivate var matchKey: String { "recordCard_\(recordID.uuidString)" }
-}
-
 private struct ZoomNamespaceKey: EnvironmentKey {
     static let defaultValue: Namespace.ID? = nil
 }
@@ -32,14 +25,6 @@ public extension View {
 
     func zoomDestination(_ id: ZoomSourceID) -> some View {
         modifier(ZoomDestinationModifier(matchKey: id.rawValue))
-    }
-
-    func zoomSource(_ id: RecordZoomID) -> some View {
-        modifier(ZoomSourceModifier(matchKey: id.matchKey))
-    }
-
-    func zoomDestination(_ id: RecordZoomID) -> some View {
-        modifier(ZoomDestinationModifier(matchKey: id.matchKey))
     }
 }
 

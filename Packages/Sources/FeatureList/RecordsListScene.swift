@@ -35,7 +35,6 @@ public struct RecordsListScene: View {
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
-    @State private var rowFrames: [Record.ID: CGRect] = [:]
     @Binding private var pendingDeleteRecord: Record?
     @Environment(\.colorScheme) private var colorScheme
 
@@ -230,41 +229,15 @@ public struct RecordsListScene: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(visibleRecords) { record in
-                            CardView(
+                            RecordCardRow(
                                 record: record,
-                                size: .small,
                                 attitude: attitude,
                                 paths: paths,
                                 photo: photoFor(record),
-                                photoSize: photoSizeFor(record)
+                                photoSize: photoSizeFor(record),
+                                isHidden: hiddenRecordID == record.id,
+                                onTap: onTapRecord
                             )
-                            .frame(height: 211)
-                            // Rasterize each card's full blend stack into a
-                            // single Metal texture per row instead of paying
-                            // ~20 offscreen passes per card per frame for the
-                            // hologram blur + blend chains. The scroll-pause
-                            // we ship at the motion-service level keeps the
-                            // texture cache valid through the gesture; outside
-                            // scroll, the throttled gyro rate (≤30 Hz) bounds
-                            // re-rasterization. opaque: false preserves the
-                            // alpha so the rounded clip below stays correct.
-                            .drawingGroup(opaque: false)
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
-                            .opacity(hiddenRecordID == record.id ? 0 : 1)
-                            .background(
-                                GeometryReader { geo in
-                                    Color.clear.preference(
-                                        key: RowFramePreferenceKey.self,
-                                        value: [record.id: geo.frame(in: .global)]
-                                    )
-                                }
-                            )
-                            .onTapGesture {
-                                let frame = rowFrames[record.id] ?? .zero
-                                onTapRecord(record, frame)
-                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -292,15 +265,53 @@ public struct RecordsListScene: View {
             .accessibilityIdentifier("createRecordButton")
             .zoomSource(.createButton)
         }
-        .onPreferenceChange(RowFramePreferenceKey.self) { rowFrames = $0 }
     }
 
 }
 
-private struct RowFramePreferenceKey: PreferenceKey {
-    static var defaultValue: [UUID: CGRect] { [:] }
-    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+/// One row of the records list. Owns its own `@State` for the card's current
+/// global frame so tap-time frame capture can't cross-contaminate between rows
+/// the way a single shared dictionary could.
+private struct RecordCardRow: View {
+    let record: Record
+    let attitude: DeviceAttitude
+    let paths: any CardPathProvider
+    let photo: Image?
+    let photoSize: CGSize?
+    let isHidden: Bool
+    let onTap: (Record, CGRect) -> Void
+
+    @State private var frame: CGRect = .zero
+
+    var body: some View {
+        CardView(
+            record: record,
+            size: .small,
+            attitude: attitude,
+            paths: paths,
+            photo: photo,
+            photoSize: photoSize
+        )
+        .frame(height: 211)
+        // Rasterize each card's full blend stack into a single Metal texture
+        // per row instead of paying ~20 offscreen passes per card per frame
+        // for the hologram blur + blend chains. opaque: false preserves the
+        // alpha so the rounded clip below stays correct.
+        .drawingGroup(opaque: false)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
+        .opacity(isHidden ? 0 : 1)
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { frame = geo.frame(in: .global) }
+                    .onChange(of: geo.frame(in: .global)) { _, new in
+                        frame = new
+                    }
+            }
+        )
+        .onTapGesture { onTap(record, frame) }
     }
 }
 

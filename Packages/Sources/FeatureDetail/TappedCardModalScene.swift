@@ -18,10 +18,6 @@ public struct TappedCardModalScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
-    /// Fires `true` when a slide/fade animation starts and `false` when it
-    /// completes. Host pauses the gyro pipeline while true so the card's
-    /// hologram layers don't fight the transform animation for frame time.
-    public let onAnimating: (Bool) -> Void
 
     public init(
         record: Record,
@@ -32,8 +28,7 @@ public struct TappedCardModalScene: View {
         photoSize: CGSize? = nil,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
-        onDismiss: @escaping () -> Void,
-        onAnimating: @escaping (Bool) -> Void = { _ in }
+        onDismiss: @escaping () -> Void
     ) {
         self.record = record
         self.sourceFrame = sourceFrame
@@ -44,7 +39,6 @@ public struct TappedCardModalScene: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
-        self.onAnimating = onAnimating
     }
 
     @State private var cardAtCenter = false
@@ -56,14 +50,27 @@ public struct TappedCardModalScene: View {
 
     public var body: some View {
         #if os(iOS)
+        // GeometryReader intentionally does NOT ignore safe area here — we
+        // need `proxy.size` and the VStack/toolbar placement to respect the
+        // home indicator. The backdrop Rectangle alone extends beyond via its
+        // own `.ignoresSafeArea()`.
         GeometryReader { proxy in
-            let cardCenter: CGPoint = cardAtCenter
-                ? CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                : CGPoint(x: sourceFrame.midX, y: sourceFrame.midY)
+            // `sourceFrame` was captured by the list in global (window) coords.
+            // `.position` inside this GeometryReader uses proxy-local coords, so
+            // translate global → local by subtracting the GeometryReader's
+            // global origin (which equals the top safe-area inset).
+            let origin = proxy.frame(in: .global).origin
+            let sourceCenterLocal = CGPoint(
+                x: sourceFrame.midX - origin.x,
+                y: sourceFrame.midY - origin.y
+            )
+            let centeredLocal = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            let cardCenter: CGPoint = cardAtCenter ? centeredLocal : sourceCenterLocal
 
             ZStack {
                 Rectangle()
                     .fill(.ultraThinMaterial)
+                    .ignoresSafeArea()
                     .opacity(chromeVisible ? 1 : 0)
                     .contentShape(Rectangle())
                     .onTapGesture { beginDismiss() }
@@ -95,7 +102,6 @@ public struct TappedCardModalScene: View {
             }
             .onAppear(perform: beginPresent)
         }
-        .ignoresSafeArea()
         #else
         EmptyView()
         #endif
@@ -127,21 +133,15 @@ public struct TappedCardModalScene: View {
     }
 
     private func beginPresent() {
-        onAnimating(true)
         withAnimation(.easeInOut(duration: Self.slideDuration)) {
             cardAtCenter = true
         }
         withAnimation(.easeOut(duration: Self.chromeDuration).delay(Self.chromeStagger)) {
             chromeVisible = true
         }
-        let total = max(Self.slideDuration, Self.chromeStagger + Self.chromeDuration)
-        DispatchQueue.main.asyncAfter(deadline: .now() + total) {
-            onAnimating(false)
-        }
     }
 
     private func beginDismiss(then completion: (() -> Void)? = nil) {
-        onAnimating(true)
         withAnimation(.easeIn(duration: Self.chromeDuration)) {
             chromeVisible = false
         }
@@ -150,7 +150,6 @@ public struct TappedCardModalScene: View {
         }
         let total = Self.slideDuration + Self.chromeStagger
         DispatchQueue.main.asyncAfter(deadline: .now() + total) {
-            onAnimating(false)
             onDismiss()
             completion?()
         }
