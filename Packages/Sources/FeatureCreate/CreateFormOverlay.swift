@@ -193,7 +193,12 @@ private struct DescriptionPill: View {
     var focus: FocusState<CreateFormField?>.Binding
 
     var body: some View {
-        TextField("Description", text: $model.description, axis: .horizontal)
+        TextField(
+            "Description",
+            text: $model.description,
+            prompt: Text("Description").foregroundStyle(CCDesign.Colors.L4),
+            axis: .horizontal
+        )
             .font(CCDesign.Typography.description)
             .tracking(CCDesign.Typography.Tracking.description)
             .foregroundStyle(CCDesign.Colors.L0)
