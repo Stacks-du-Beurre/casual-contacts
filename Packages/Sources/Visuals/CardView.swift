@@ -73,6 +73,7 @@ public struct CardView: View {
             // wider than the caller's frame.
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()
+            .contentShape(Rectangle())
             .coordinateSpace(.named(Self.cardCoordinateSpace))
         }
         .accessibilityElement(children: .ignore)
