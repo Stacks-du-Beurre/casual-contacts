@@ -112,7 +112,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
     private var addZodiacButton: some View {
         #if os(iOS)
         Button(action: { isZodiacPickerPresented = true }) {
-            Text(model.zodiacSign == nil ? "+ Add Zodiac" : "Change zodiac")
+            Text(zodiacButtonLabel)
                 .font(CCDesign.Typography.caption2)
                 .foregroundStyle(CCDesign.Colors.L0)
                 .padding(.vertical, 6)
@@ -135,10 +135,15 @@ struct CreateFormOverlay<Backdrop: View>: View {
             )
         }
         #else
-        Text("+ Add Zodiac")
+        Text(zodiacButtonLabel)
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(CCDesign.Colors.L0)
         #endif
+    }
+
+    private var zodiacButtonLabel: String {
+        guard let sign = model.zodiacSign else { return "+ Add Zodiac" }
+        return "Change zodiac - \(sign.rawValue.capitalized)"
     }
 }
 
