@@ -67,6 +67,19 @@ public struct TappedCardModalScene: View {
             let centeredLocal = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let cardCenter: CGPoint = cardAtCenter ? centeredLocal : sourceCenterLocal
 
+            // Centered card is a square sized to fit the scene minus horizontal
+            // breathing room and vertical room for the bottom toolbar. Falls
+            // back to the list-row source frame while the card is still
+            // anchored to its origin, so the slide-and-scale animation starts
+            // from the card's actual list-row footprint.
+            let centeredSquare = max(
+                0,
+                min(proxy.size.width - 48, proxy.size.height - 200)
+            )
+            let cardSize: CGSize = cardAtCenter
+                ? CGSize(width: centeredSquare, height: centeredSquare)
+                : CGSize(width: sourceFrame.width, height: sourceFrame.height)
+
             ZStack {
                 Rectangle()
                     .fill(.ultraThinMaterial)
@@ -80,13 +93,13 @@ public struct TappedCardModalScene: View {
 
                 CardView(
                     record: record,
-                    size: .small,
+                    size: .medium,
                     attitude: attitude,
                     paths: paths,
                     photo: photo,
                     photoSize: photoSize
                 )
-                .frame(width: sourceFrame.width, height: sourceFrame.height)
+                .frame(width: cardSize.width, height: cardSize.height)
                 .drawingGroup(opaque: false)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .position(cardCenter)
