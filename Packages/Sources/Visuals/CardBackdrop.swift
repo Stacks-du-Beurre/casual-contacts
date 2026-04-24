@@ -60,6 +60,7 @@ public struct CardBackdrop: View {
                 paths: GuillocheRotationLayer.swirlPaths(
                     from: paths.rotationPaths(for: renderLetter).first
                 ),
+                opacity: GuillocheRotationLayer.opacity(for: record.metadata.timeOfDay),
                 attitude: attitude,
                 reveal: reveal
             )

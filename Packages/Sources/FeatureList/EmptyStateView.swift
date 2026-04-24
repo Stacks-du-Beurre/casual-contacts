@@ -67,7 +67,7 @@ public struct EmptyStateView: View {
                 paths: GuillocheRotationLayer.swirlPaths(
                     from: paths.rotationPaths(for: "A").first
                 ),
-                opacity: 0.2,
+                opacity: GuillocheRotationLayer.opacity(for: timeOfDay),
                 tint: .white,
                 attitude: attitude,
                 usage: .emptyState
