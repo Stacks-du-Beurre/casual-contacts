@@ -244,13 +244,14 @@ private struct LocationPill<Backdrop: View>: View {
         ) {
             ZStack {
                 content
-                    .blur(radius: 2)
+                    .blur(radius: 1.25)
                     .offset(
                         x: CGFloat(attitude.roll) * 16,
                         y: CGFloat(attitude.pitch) * 16
                     )
                 content
             }
+            .clipped()
         }
         .frame(maxWidth: maxWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)

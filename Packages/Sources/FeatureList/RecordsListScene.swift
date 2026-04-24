@@ -221,7 +221,7 @@ public struct RecordsListScene: View {
                     LazyVStack(spacing: 8) {
                         ForEach(visibleRecords) { record in
                             CardView(
-                                record: displayRecord(for: record),
+                                record: record,
                                 size: .small,
                                 attitude: attitude,
                                 paths: paths,
@@ -291,45 +291,6 @@ public struct RecordsListScene: View {
         }
     }
 
-    /// Debug-only display shim: fills in location + zodiac sign when missing so
-    /// every list card exercises the full composition during visual iteration.
-    /// Deterministic per-record via the UUID byte sum, so the mocked values
-    /// stay stable across re-renders within a session.
-    private func displayRecord(for record: Record) -> Record {
-        #if DEBUG
-        var copy = record
-        let uuid = record.id.uuid
-        let seed = Int(uuid.0) &+ Int(uuid.1) &+ Int(uuid.2) &+ Int(uuid.3)
-            &+ Int(uuid.4) &+ Int(uuid.5) &+ Int(uuid.6) &+ Int(uuid.7)
-
-        if copy.location == nil {
-            let samples = [
-                "1200 Treat Ave, San Francisco",
-                "Dolores Park",
-                "Blue Bottle Coffee",
-                "Zuni Café",
-                "The Mission",
-                "Ferry Building",
-                "Ocean Beach",
-                "Twin Peaks"
-            ]
-            copy.location = LocationInfo(
-                latitude: 37.77,
-                longitude: -122.41,
-                label: samples[seed % samples.count]
-            )
-        }
-
-        if copy.zodiacSign == nil {
-            let signs = ZodiacSign.allCases
-            copy.zodiacSign = signs[seed % signs.count]
-        }
-
-        return copy
-        #else
-        return record
-        #endif
-    }
 }
 
 private struct RecordActionMenu: View {
