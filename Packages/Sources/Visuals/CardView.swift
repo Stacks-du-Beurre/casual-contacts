@@ -83,15 +83,26 @@ public struct CardView: View {
 
     @ViewBuilder
     private func backdrop() -> some View {
-        ZStack {
-            CardBackdrop(
-                record: record,
-                attitude: attitude,
-                paths: paths,
-                photo: photo,
-                photoSize: photoSize
-            )
-
+        // Use `.overlay(alignment:)` to position the constellation at the
+        // top-trailing corner of `CardBackdrop`. The previous implementation
+        // wrapped the `ZodiacLayer` in `.frame(maxWidth: .infinity, maxHeight:
+        // .infinity, alignment: .topTrailing)` to achieve the same positioning,
+        // but that infinity-frame propagated an unbounded horizontal ideal up
+        // through the `backdrop()` ZStack → through the outer `ZStack` → past
+        // the `.frame(width: geo.size.width, height: geo.size.height)` wrapper
+        // in some layout contexts (notably fullscreen covers with no upstream
+        // horizontal constraint), ballooning the card's internal layout to
+        // ~1260pt wide and pushing the chrome overlays hundreds of points
+        // off-screen. `.overlay` keeps the positioning semantics without the
+        // unbounded ideal-size propagation.
+        CardBackdrop(
+            record: record,
+            attitude: attitude,
+            paths: paths,
+            photo: photo,
+            photoSize: photoSize
+        )
+        .overlay(alignment: .topTrailing) {
             // Zodiac stars (constellation): 100×90 pinned to the right edge,
             // top inset 37pt. Part of the backdrop so hologram text / frosted
             // pills sample it through the blur.
@@ -99,7 +110,6 @@ public struct CardView: View {
                 ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation)
                     .frame(width: 100, height: 90)
                     .padding(.top, 37)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .accessibilityHidden(true)
             }
         }

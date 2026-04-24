@@ -13,9 +13,20 @@ public extension CCDesign {
         }
 
         public var body: some View {
-            Image(assetName, bundle: .module)
-                .resizable()
-                .scaledToFill()
+            // Wrap the `scaledToFill` image in a flex `Color.clear` host and
+            // clip the overflow to that host's bounds. Without the wrapper,
+            // `scaledToFill` propagates an oversized ideal width (matching the
+            // PNG's aspect) up through any ZStack it lives in, ballooning the
+            // parent's layout when the parent aspect doesn't match the
+            // gradient's. `Color.clear` is flex-flex, so the ideal size the
+            // ZStack sees is the proposed size — not the scaled image's.
+            Color.clear
+                .overlay {
+                    Image(assetName, bundle: .module)
+                        .resizable()
+                        .scaledToFill()
+                }
+                .clipped()
                 .accessibilityHidden(true)
         }
     }
