@@ -2,14 +2,22 @@ import SwiftUI
 import CoreModels
 import Visuals
 
-/// Holographic zodiac figure for the create flow. 35×32 total: a
-/// `Moon_Background` hologram frame with a 22×22 chromatic-glyph centered
-/// inside. Chromatic fill is a single neon texture, rotated by device roll,
-/// masked by the zodiac figure shape — mirrors `HolographicZodiac` on the
-/// card and tracks `ZodiacHologramTuning.shared`.
+/// Holographic zodiac figure for the create flow. 35×32 total: a horizontal-
+/// bar hologram frame with a 22×22 chromatic-glyph centered inside. Chromatic
+/// fill is a single neon texture, rotated by device roll, masked by the
+/// zodiac figure shape — mirrors `HolographicZodiac` on the card and tracks
+/// `ZodiacHologramTuning.shared`.
+///
+/// `backgroundAssetName` defaults to the dark-mode `Moon_Background` tile.
+/// The zodiac picker popover overrides this with `Moon_Background_Light`
+/// when — and only when — the presenting view observes a light system
+/// appearance; the caller resolves that condition and passes the asset name
+/// explicitly (SwiftUI's `colorScheme` environment is forced dark inside
+/// popover content, so the decision must be made by the presenter).
 struct CreateZodiacSymbolBadge: View {
     let sign: ZodiacSign
     let attitude: DeviceAttitude
+    var backgroundAssetName: String = "Moon_Background"
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Bindable private var tuning = ZodiacHologramTuning.shared
@@ -17,7 +25,7 @@ struct CreateZodiacSymbolBadge: View {
     private static let textureOverscan: CGFloat = 1.3
 
     var body: some View {
-        Image("Moon_Background", bundle: CCVisuals.bundle)
+        Image(backgroundAssetName, bundle: CCVisuals.bundle)
             .resizable()
             .scaledToFill()
             .frame(width: 35, height: 32)

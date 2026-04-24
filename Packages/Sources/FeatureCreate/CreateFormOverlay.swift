@@ -30,6 +30,11 @@ struct CreateFormOverlay<Backdrop: View>: View {
     let onSelectZodiac: (ZodiacSign) -> Void
     @ViewBuilder let backdrop: () -> Backdrop
 
+    /// Captured at the presenter so the zodiac popover can pick the right
+    /// Moon_Background asset — SwiftUI's `colorScheme` environment is forced
+    /// dark inside popover content and can't be relied on there.
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             addPhotoButton
@@ -124,6 +129,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
         ) {
             ZodiacSheet(
                 attitude: attitude,
+                isLightAppearance: colorScheme == .light,
                 onSelect: onSelectZodiac,
                 onClose: { isZodiacPickerPresented = false }
             )
