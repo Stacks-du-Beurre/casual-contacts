@@ -63,7 +63,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var toggleGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Card Backdrop") {
             ToggleRow(
                 label: "Hide card backdrop",
                 isOn: $cardBlendTuning.hideBackdrop
@@ -72,7 +72,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var opacityGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Hologram Opacity") {
             SliderRow(
                 label: "Backdrop blur",
                 value: $tuning.backdropBlurOpacity,
@@ -104,7 +104,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var motionGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Hologram Motion") {
             SliderRow(
                 label: "Translation X",
                 value: $tuning.translationScaleX,
@@ -136,7 +136,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var gradientGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Gradient & Filigree") {
             SliderRow(
                 label: "Empty-state edge reach",
                 value: $gradientTuning.edgeReach,
@@ -168,7 +168,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var zodiacGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Zodiac & Photo") {
             SliderRow(
                 label: "Zodiac rotation (degrees)",
                 value: $zodiacTuning.rotationDegrees,
@@ -193,7 +193,7 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var resetGroup: some View {
-        SettingsGroup {
+        SettingsGroup(title: "Reset") {
             SettingsRow(label: "Reset to defaults", onTap: {
                 tuning.reset()
                 gradientTuning.reset()
