@@ -81,6 +81,9 @@ public struct RootScene: Scene {
             onEditRecord: { record in
                 router.editingRecord = record
             },
+            onFullscreenRecord: { record in
+                router.selectedRecordForLargeDetail = record
+            },
             photoFor: { photoCache.image(for: $0.photoID) },
             photoSizeFor: { photoCache.imageSize(for: $0.photoID) }
         )

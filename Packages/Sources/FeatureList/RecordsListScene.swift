@@ -18,6 +18,7 @@ public struct RecordsListScene: View {
     /// stop re-evaluating the moment the user touches the list.
     public let onScrollInteractionChange: (Bool) -> Void
     public let onEditRecord: (Record) -> Void
+    public let onFullscreenRecord: (Record) -> Void
     /// Lookup for a record's photo image. Host (AppFeature) provides a cache
     /// that loads PhotoIDs via PhotoStore; default returns nil for previews.
     public let photoFor: (Record) -> Image?
@@ -43,6 +44,7 @@ public struct RecordsListScene: View {
         onTapSettings: @escaping () -> Void,
         onScrollInteractionChange: @escaping (Bool) -> Void = { _ in },
         onEditRecord: @escaping (Record) -> Void = { _ in },
+        onFullscreenRecord: @escaping (Record) -> Void = { _ in },
         photoFor: @escaping (Record) -> Image? = { _ in nil },
         photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil }
     ) {
@@ -55,6 +57,7 @@ public struct RecordsListScene: View {
         self.onTapSettings = onTapSettings
         self.onScrollInteractionChange = onScrollInteractionChange
         self.onEditRecord = onEditRecord
+        self.onFullscreenRecord = onFullscreenRecord
         self.photoFor = photoFor
         self.photoSizeFor = photoSizeFor
     }
@@ -248,6 +251,11 @@ public struct RecordsListScene: View {
                                             menuRecordID = nil
                                             onEditRecord(editing)
                                         },
+                                        onFullscreen: {
+                                            let expanding = record
+                                            menuRecordID = nil
+                                            onFullscreenRecord(expanding)
+                                        },
                                         onDelete: {
                                             menuRecordID = nil
                                             pendingDeleteRecord = record
@@ -295,6 +303,7 @@ public struct RecordsListScene: View {
 
 private struct RecordActionMenu: View {
     let onEdit: () -> Void
+    let onFullscreen: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -304,6 +313,15 @@ private struct RecordActionMenu: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("recordActionEdit")
+
+            Divider()
+                .background(Color.primary.opacity(0.12))
+
+            Button(action: onFullscreen) {
+                rowLabel("Fullscreen", role: nil)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("recordActionFullscreen")
 
             Divider()
                 .background(Color.primary.opacity(0.12))

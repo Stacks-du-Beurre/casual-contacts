@@ -44,18 +44,14 @@ public struct LargeDetailScene: View {
                 photo: photo,
                 photoSize: photoSize
             )
-                .ignoresSafeArea()
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Self.accessibilityLabel(for: record))
                 #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
+                .toolbar(.hidden, for: .navigationBar)
                 .toolbar {
-                    #if os(iOS)
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItemGroup(placement: .bottomBar) {
                         Button("Done", action: onDismiss)
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
+                        Spacer()
                         Menu {
                             Button("Edit", action: onEdit)
                             Button(role: .destructive, action: onDelete) {
@@ -65,7 +61,9 @@ public struct LargeDetailScene: View {
                             Image(systemName: "ellipsis")
                         }
                     }
-                    #else
+                }
+                #else
+                .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Done", action: onDismiss)
                     }
@@ -79,8 +77,8 @@ public struct LargeDetailScene: View {
                             Image(systemName: "ellipsis")
                         }
                     }
-                    #endif
                 }
+                #endif
         }
     }
 
