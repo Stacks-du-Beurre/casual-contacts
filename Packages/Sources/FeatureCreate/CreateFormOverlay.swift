@@ -196,7 +196,7 @@ private struct DescriptionPill: View {
         TextField(
             "Description",
             text: $model.description,
-            prompt: Text("Description").foregroundStyle(CCDesign.Colors.L4),
+            prompt: Text("Description").foregroundStyle(CCDesign.Colors.L0),
             axis: .horizontal
         )
             .font(CCDesign.Typography.description)
