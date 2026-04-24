@@ -265,6 +265,7 @@ public struct RootScene: Scene {
         }
         .sheet(isPresented: $router.showingSettings) {
             SettingsSheet(onAbout: { router.showingAbout = true })
+                .presentationCornerRadius(12)
         }
         .sheet(isPresented: $router.showingAbout) {
             NavigationStack {
