@@ -306,7 +306,7 @@ private struct RecordActionMenu: View {
             .accessibilityIdentifier("recordActionEdit")
 
             Divider()
-                .background(Color.white.opacity(0.12))
+                .background(Color.primary.opacity(0.12))
 
             Button(action: onDelete) {
                 rowLabel("Delete", role: .destructive)
@@ -320,7 +320,7 @@ private struct RecordActionMenu: View {
                 .fill(.ultraThinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                        .stroke(Color.primary.opacity(0.18), lineWidth: 0.5)
                 )
         )
         .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
@@ -330,7 +330,7 @@ private struct RecordActionMenu: View {
         Text(text.uppercased())
             .font(CCDesign.Typography.headline)
             .tracking(CCDesign.Typography.Tracking.headline)
-            .foregroundStyle(role == .destructive ? Color.red : CCDesign.Colors.L0)
+            .foregroundStyle(role == .destructive ? AnyShapeStyle(Color.red) : AnyShapeStyle(HierarchicalShapeStyle.primary))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
             .padding(.vertical, 14)

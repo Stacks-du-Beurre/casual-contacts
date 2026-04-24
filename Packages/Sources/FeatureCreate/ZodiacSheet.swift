@@ -1,5 +1,6 @@
 #if os(iOS)
 import SwiftUI
+import UIKit
 import CoreModels
 import DesignSystem
 import Visuals
@@ -11,6 +12,11 @@ import Visuals
 struct ZodiacSheet: View {
 
     let attitude: DeviceAttitude
+    /// Resolved by the presenter (outside the popover, where SwiftUI's
+    /// `colorScheme` environment still reflects the system). Controls which
+    /// `Moon_Background*` asset the picker badges render — the light variant
+    /// is only shown when this is `true`.
+    let isLightAppearance: Bool
     let onSelect: (ZodiacSign) -> Void
     let onClose: () -> Void
 
@@ -46,6 +52,10 @@ struct ZodiacSheet: View {
         }
     }
 
+    private var backgroundAssetName: String {
+        isLightAppearance ? "Moon_Background_Light" : "Moon_Background"
+    }
+
     @ViewBuilder
     private func cell(for sign: ZodiacSign) -> some View {
         Button {
@@ -53,11 +63,15 @@ struct ZodiacSheet: View {
             onClose()
         } label: {
             HStack(alignment: .center, spacing: 8) {
-                CreateZodiacSymbolBadge(sign: sign, attitude: attitude)
-                    .frame(width: 35, height: 32)
+                CreateZodiacSymbolBadge(
+                    sign: sign,
+                    attitude: attitude,
+                    backgroundAssetName: backgroundAssetName
+                )
+                .frame(width: 35, height: 32)
                 Text(sign.rawValue.capitalized)
                     .font(CCDesign.Typography.caption2)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(uiColor: .label))
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             }

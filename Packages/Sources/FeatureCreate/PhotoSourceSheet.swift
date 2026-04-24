@@ -62,20 +62,15 @@ struct PhotoSourceSheet: View {
         .disabled(!isEnabled)
     }
 
-    /// On iOS 26 the popover chrome is dark Liquid Glass, so pure white reads
-    /// cleanly. On iOS 18 the system popover chrome is light-adaptive
-    /// (translucent material that takes the system appearance), so `.primary`
-    /// / `.secondary` will pick a legible color for both dark and light mode.
+    /// Popover chrome (Liquid Glass on iOS 26, translucent material on iOS 18)
+    /// is light in light mode and dark in dark mode. Using the UIKit dynamic
+    /// `label` / `secondaryLabel` colors ensures the foreground tracks the
+    /// system appearance even when SwiftUI's environment `colorScheme` inside
+    /// the popover is not updated by the presenting chrome.
     private func tileForeground(isEnabled: Bool) -> AnyShapeStyle {
-        if #available(iOS 26.0, *) {
-            return isEnabled
-                ? AnyShapeStyle(Color.white)
-                : AnyShapeStyle(Color.white.opacity(0.5))
-        } else {
-            return isEnabled
-                ? AnyShapeStyle(HierarchicalShapeStyle.primary)
-                : AnyShapeStyle(HierarchicalShapeStyle.secondary)
-        }
+        isEnabled
+            ? AnyShapeStyle(Color(uiColor: .label))
+            : AnyShapeStyle(Color(uiColor: .secondaryLabel))
     }
 
 }
