@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreModels
+import DesignSystem
 import Visuals
 import FeatureList
 import FeatureCreate
@@ -24,6 +25,7 @@ public struct RootScene: Scene {
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
     @Environment(\.scenePhase) private var scenePhase
+    @Namespace private var zoomNamespace
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
     /// app target, or `.testing()` in previews/tests). Registering bundled fonts
@@ -43,6 +45,7 @@ public struct RootScene: Scene {
         WindowGroup {
             #if os(iOS)
             rootContent
+                .environment(\.zoomNamespace, zoomNamespace)
             #else
             Text("RootScene is iOS-only")
             #endif
@@ -169,6 +172,7 @@ public struct RootScene: Scene {
                 }
             )
             .presentationCornerRadius(12)
+            .zoomDestination(.createButton)
         }
         .sheet(item: $router.selectedRecordForMediumDetail) { record in
             MediumDetailSheet(

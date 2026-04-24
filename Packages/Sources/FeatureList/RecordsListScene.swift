@@ -288,6 +288,7 @@ public struct RecordsListScene: View {
             .padding(.bottom, 32)
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
+            .zoomSource(.createButton)
         }
     }
 
