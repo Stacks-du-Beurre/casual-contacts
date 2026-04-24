@@ -24,6 +24,7 @@ public struct RootScene: Scene {
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
+    @State private var pendingDeleteRecord: Record?
     @Environment(\.scenePhase) private var scenePhase
     @Namespace private var zoomNamespace
 
@@ -61,8 +62,9 @@ public struct RootScene: Scene {
             paths: environment.cardPathProvider,
             attitude: currentAttitude,
             timeOfDay: currentTimeOfDay,
-            onTapRecord: { record in
-                router.selectedRecordForMediumDetail = record
+            onTapRecord: { record, frame in
+                router.tappedRecordSourceFrame = frame
+                router.tappedRecord = record
             },
             onTapCreate: {
                 router.showingCreate = true
@@ -85,7 +87,9 @@ public struct RootScene: Scene {
                 router.editingRecord = record
             },
             photoFor: { photoCache.image(for: $0.photoID) },
-            photoSizeFor: { photoCache.imageSize(for: $0.photoID) }
+            photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
+            pendingDeleteRecord: $pendingDeleteRecord,
+            hiddenRecordID: router.tappedRecord?.id
         )
         .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
             Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
@@ -173,6 +177,29 @@ public struct RootScene: Scene {
             )
             .presentationCornerRadius(12)
             .zoomDestination(.createButton)
+        }
+        .overlay {
+            if let tapped = router.tappedRecord {
+                TappedCardModalScene(
+                    record: tapped,
+                    sourceFrame: router.tappedRecordSourceFrame,
+                    attitude: currentAttitude,
+                    paths: environment.cardPathProvider,
+                    photo: photoCache.image(for: tapped.photoID),
+                    photoSize: photoCache.imageSize(for: tapped.photoID),
+                    onEdit: { router.editingRecord = tapped },
+                    onDelete: { pendingDeleteRecord = tapped },
+                    onDismiss: { router.tappedRecord = nil },
+                    onAnimating: { animating in
+                        if animating {
+                            environment.motionService.stop()
+                        } else if !reduceMotionEnabled {
+                            environment.motionService.start()
+                        }
+                    }
+                )
+                .transition(.identity)
+            }
         }
         .sheet(item: $router.selectedRecordForMediumDetail) { record in
             MediumDetailSheet(

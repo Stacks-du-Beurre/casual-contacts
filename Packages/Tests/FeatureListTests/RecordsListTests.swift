@@ -57,7 +57,7 @@ struct NoopCardPathProvider: CardPathProvider {
             paths: NoopCardPathProvider(),
             attitude: .zero,
             timeOfDay: .midday,
-            onTapRecord: { _ in },
+            onTapRecord: { _, _ in },
             onTapCreate: {},
             onTapSettings: {},
             onEditRecord: { captured = $0 }

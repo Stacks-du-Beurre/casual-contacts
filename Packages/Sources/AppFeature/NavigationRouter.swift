@@ -15,6 +15,8 @@ public final class NavigationRouter {
     public var showingAbout = false
     public var selectedRecordForMediumDetail: Record?
     public var selectedRecordForLargeDetail: Record?
+    public var tappedRecord: Record?
+    public var tappedRecordSourceFrame: CGRect = .zero
     public var editingRecord: Record?
 
     public init() {}

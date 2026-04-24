@@ -9,9 +9,15 @@ public struct RecordsListScene: View {
     public let paths: any CardPathProvider
     public let attitude: DeviceAttitude
     public let timeOfDay: TimeOfDay
-    public let onTapRecord: (Record) -> Void
+    /// Fires with the tapped record and its global CGRect at the moment of the
+    /// tap. The host uses the rect as the starting position for an overlay
+    /// animation that slides the card from its row to screen center.
+    public let onTapRecord: (Record, CGRect) -> Void
     public let onTapCreate: () -> Void
     public let onTapSettings: () -> Void
+    /// While a modal overlay is presenting a tapped card, the source row is
+    /// hidden so the user doesn't see the same card in two places at once.
+    public let hiddenRecordID: Record.ID?
     /// Called with `true` when the user begins interacting with the scroll
     /// (touch-down / scrolling / decelerating) and `false` when the scroll
     /// returns to idle. Caller pauses the gyro pipeline accordingly so cards
@@ -29,8 +35,8 @@ public struct RecordsListScene: View {
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
-    @State private var menuRecordID: Record.ID?
-    @State private var pendingDeleteRecord: Record?
+    @State private var rowFrames: [Record.ID: CGRect] = [:]
+    @Binding private var pendingDeleteRecord: Record?
     @Environment(\.colorScheme) private var colorScheme
 
     public init(
@@ -38,13 +44,15 @@ public struct RecordsListScene: View {
         paths: any CardPathProvider,
         attitude: DeviceAttitude,
         timeOfDay: TimeOfDay,
-        onTapRecord: @escaping (Record) -> Void,
+        onTapRecord: @escaping (Record, CGRect) -> Void,
         onTapCreate: @escaping () -> Void,
         onTapSettings: @escaping () -> Void,
         onScrollInteractionChange: @escaping (Bool) -> Void = { _ in },
         onEditRecord: @escaping (Record) -> Void = { _ in },
         photoFor: @escaping (Record) -> Image? = { _ in nil },
-        photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil }
+        photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil },
+        pendingDeleteRecord: Binding<Record?> = .constant(nil),
+        hiddenRecordID: Record.ID? = nil
     ) {
         self.store = store
         self.paths = paths
@@ -57,6 +65,8 @@ public struct RecordsListScene: View {
         self.onEditRecord = onEditRecord
         self.photoFor = photoFor
         self.photoSizeFor = photoSizeFor
+        self._pendingDeleteRecord = pendingDeleteRecord
+        self.hiddenRecordID = hiddenRecordID
     }
 
     @MainActor
@@ -240,29 +250,21 @@ public struct RecordsListScene: View {
                             // alpha so the rounded clip below stays correct.
                             .drawingGroup(opaque: false)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .overlay {
-                                if menuRecordID == record.id {
-                                    RecordActionMenu(
-                                        onEdit: {
-                                            let editing = record
-                                            menuRecordID = nil
-                                            onEditRecord(editing)
-                                        },
-                                        onDelete: {
-                                            menuRecordID = nil
-                                            pendingDeleteRecord = record
-                                        }
-                                    )
-                                    .fixedSize()
-                                    .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .center)))
-                                }
-                            }
                             .accessibilityAddTraits(.isButton)
                             .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
+                            .opacity(hiddenRecordID == record.id ? 0 : 1)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear.preference(
+                                        key: RowFramePreferenceKey.self,
+                                        value: [record.id: geo.frame(in: .global)]
+                                    )
+                                }
+                            )
                             .onTapGesture {
-                                menuRecordID = (menuRecordID == record.id) ? nil : record.id
+                                let frame = rowFrames[record.id] ?? .zero
+                                onTapRecord(record, frame)
                             }
-                            .zIndex(menuRecordID == record.id ? 1 : 0)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -290,52 +292,15 @@ public struct RecordsListScene: View {
             .accessibilityIdentifier("createRecordButton")
             .zoomSource(.createButton)
         }
+        .onPreferenceChange(RowFramePreferenceKey.self) { rowFrames = $0 }
     }
 
 }
 
-private struct RecordActionMenu: View {
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button(action: onEdit) {
-                rowLabel("Edit", role: nil)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("recordActionEdit")
-
-            Divider()
-                .background(Color.primary.opacity(0.12))
-
-            Button(action: onDelete) {
-                rowLabel("Delete", role: .destructive)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("recordActionDelete")
-        }
-        .frame(width: 160)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.primary.opacity(0.18), lineWidth: 0.5)
-                )
-        )
-        .shadow(color: .black.opacity(0.35), radius: 14, y: 6)
-    }
-
-    private func rowLabel(_ text: String, role: ButtonRole?) -> some View {
-        Text(text.uppercased())
-            .font(CCDesign.Typography.headline)
-            .tracking(CCDesign.Typography.Tracking.headline)
-            .foregroundStyle(role == .destructive ? AnyShapeStyle(Color.red) : AnyShapeStyle(HierarchicalShapeStyle.primary))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            .contentShape(Rectangle())
+private struct RowFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] { [:] }
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
