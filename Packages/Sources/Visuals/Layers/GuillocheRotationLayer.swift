@@ -46,16 +46,14 @@ public struct GuillocheRotationLayer: View, Animatable {
         self.reveal = reveal
     }
 
-    /// Per-gradient stroke opacity for the **card** rotation guilloche. The
-    /// midday gradient is significantly brighter than the others, so the
-    /// filigree at the default 0.2 reads as washed out against it; bump to
-    /// 0.5 for readable contrast. All other times of day stay at the
-    /// baseline 0.2. The empty-state hero may need a different table; keep
-    /// this helper card-scoped and add a sibling later if so.
+    /// Per-gradient stroke opacity for the **card** rotation guilloche.
+    /// Brighter daytime gradients (dawn, sunrise, midday, sunset) wash the
+    /// 0.2 baseline out, so they get a 0.3 bump for readable contrast;
+    /// dusk, night, and midnight stay at 0.2.
     public static func cardOpacity(for timeOfDay: TimeOfDay) -> Double {
         switch timeOfDay {
-        case .midday: return 0.5
-        case .dawn, .sunrise, .sunset, .dusk, .night, .midnight: return 0.2
+        case .dawn, .sunrise, .midday, .sunset: return 0.3
+        case .dusk, .night, .midnight: return 0.2
         }
     }
 
