@@ -13,6 +13,7 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var gradientLayerTuning = GradientLayerTuning.shared
     @Bindable private var rotationTuning = GuillocheRotationTuning.shared
     @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
+    @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,6 +25,7 @@ struct DeveloperSettingsPanel: View {
                     motionGroup
                     gradientGroup
                     zodiacGroup
+                    mediumCardGroup
                     resetGroup
                 }
                 .padding(.top, 8)
@@ -192,6 +194,18 @@ struct DeveloperSettingsPanel: View {
         }
     }
 
+    private var mediumCardGroup: some View {
+        SettingsGroup(title: "Medium Card") {
+            SliderRow(
+                label: "Aspect ratio (height : width)",
+                value: $mediumCardTuning.aspectRatio,
+                range: MediumCardSizeTuning.Defaults.minAspectRatio ... MediumCardSizeTuning.Defaults.maxAspectRatio,
+                format: .ratio,
+                tick: SliderRow.Tick(value: 1.0, label: "1:1")
+            )
+        }
+    }
+
     private var resetGroup: some View {
         SettingsGroup(title: "Reset") {
             SettingsRow(label: "Reset to defaults", onTap: {
@@ -202,6 +216,7 @@ struct DeveloperSettingsPanel: View {
                 gradientLayerTuning.reset()
                 rotationTuning.reset()
                 photoFocusTuning.reset()
+                mediumCardTuning.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))
@@ -233,13 +248,19 @@ struct ToggleRow: View {
 
 struct SliderRow: View {
 
-    enum Format { case percent, decimal }
+    enum Format { case percent, decimal, ratio }
+
+    struct Tick {
+        let value: Double
+        let label: String
+    }
 
     @Environment(\.colorScheme) private var scheme
     let label: String
     @Binding var value: Double
     let range: ClosedRange<Double>
     let format: Format
+    var tick: Tick? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -256,9 +277,39 @@ struct SliderRow: View {
             }
             Slider(value: $value, in: range)
                 .tint(SettingsPalette.label(scheme))
+                .overlay(alignment: .leading) {
+                    if let tick = tick {
+                        tickOverlay(tick)
+                    }
+                }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func tickOverlay(_ tick: Tick) -> some View {
+        // Slider thumb is 28pt wide; its center travels from `thumbInset` to
+        // (trackWidth - thumbInset) so the tick aligns with where the thumb
+        // would actually sit at `tick.value`.
+        let thumbInset: CGFloat = 14
+        let normalized = (tick.value - range.lowerBound) / (range.upperBound - range.lowerBound)
+
+        return GeometryReader { proxy in
+            let usable = max(0, proxy.size.width - thumbInset * 2)
+            let x = thumbInset + usable * CGFloat(normalized)
+            ZStack(alignment: .top) {
+                Rectangle()
+                    .fill(SettingsPalette.icon(scheme))
+                    .frame(width: 1, height: 8)
+                    .offset(x: x - 0.5, y: -10)
+                Text(tick.label)
+                    .font(.custom("CormorantInfant-SemiBold", size: 11, relativeTo: .caption))
+                    .foregroundStyle(SettingsPalette.icon(scheme))
+                    .fixedSize()
+                    .offset(x: x - 12, y: -24)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private var valueText: String {
@@ -267,6 +318,8 @@ struct SliderRow: View {
             return "\(Int((value * 100).rounded()))%"
         case .decimal:
             return String(format: "%.1f", value)
+        case .ratio:
+            return String(format: "%.2f:1", value)
         }
     }
 }

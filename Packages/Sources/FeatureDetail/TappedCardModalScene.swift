@@ -43,6 +43,7 @@ public struct TappedCardModalScene: View {
 
     @State private var cardAtCenter = false
     @State private var chromeVisible = false
+    @Bindable private var sizeTuning = MediumCardSizeTuning.shared
 
     private static let slideDuration: Double = 0.38
     private static let chromeDuration: Double = 0.28
@@ -67,17 +68,18 @@ public struct TappedCardModalScene: View {
             let centeredLocal = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let cardCenter: CGPoint = cardAtCenter ? centeredLocal : sourceCenterLocal
 
-            // Centered card is a square sized to fit the scene minus horizontal
-            // breathing room and vertical room for the bottom toolbar. Falls
-            // back to the list-row source frame while the card is still
-            // anchored to its origin, so the slide-and-scale animation starts
-            // from the card's actual list-row footprint.
-            let centeredSquare = max(
-                0,
-                min(proxy.size.width - 48, proxy.size.height - 200)
-            )
+            // Centered card matches the list row's horizontal footprint
+            // (parent list uses 16pt side padding, so width = proxy.width - 32)
+            // and grows vertically into the available scene height minus room
+            // for the bottom toolbar. Height is driven by the
+            // user-tunable `aspectRatio` (height ÷ width), then capped to the
+            // available vertical space. Falls back to the list-row source
+            // frame while the card is still anchored to its origin.
+            let centeredWidth = max(0, proxy.size.width - 32)
+            let availableHeight = max(0, proxy.size.height - 200)
+            let centeredHeight = min(centeredWidth * sizeTuning.aspectRatio, availableHeight)
             let cardSize: CGSize = cardAtCenter
-                ? CGSize(width: centeredSquare, height: centeredSquare)
+                ? CGSize(width: centeredWidth, height: centeredHeight)
                 : CGSize(width: sourceFrame.width, height: sourceFrame.height)
 
             ZStack {
