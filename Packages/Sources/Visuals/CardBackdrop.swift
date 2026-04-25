@@ -61,6 +61,7 @@ public struct CardBackdrop: View {
                     from: paths.rotationPaths(for: renderLetter).first
                 ),
                 opacity: GuillocheRotationLayer.cardOpacity(for: record.metadata.timeOfDay),
+                tint: .white,
                 attitude: attitude,
                 reveal: reveal
             )
