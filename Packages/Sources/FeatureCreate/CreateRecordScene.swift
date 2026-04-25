@@ -15,6 +15,11 @@ public struct CreateRecordScene: View {
     public let onCancel: () -> Void
     public let onSave: (CreateRecordOutcome) -> Void
     public let editingRecord: Record?
+    /// Async location resolver for the create flow. Invoked from `.task`
+    /// after the sheet has presented so the user isn't blocked on a GPS fix.
+    /// Nil for the editing init (we never overwrite an existing record's
+    /// location). Default is a no-op for previews/tests.
+    private let locationProvider: (@Sendable () async -> LocationInfo?)?
 
     @State private var model: CreateRecordModel
     @FocusState private var formFocus: CreateFormField?
@@ -40,6 +45,7 @@ public struct CreateRecordScene: View {
         createdAt: Date,
         metadata: RecordMetadata,
         location: LocationInfo?,
+        locationProvider: (@Sendable () async -> LocationInfo?)? = nil,
         onCancel: @escaping () -> Void,
         onSave: @escaping (CreateRecordOutcome) -> Void
     ) {
@@ -47,6 +53,7 @@ public struct CreateRecordScene: View {
         self.paths = paths
         self.faceDetectionService = faceDetectionService
         self.editingRecord = nil
+        self.locationProvider = locationProvider
         self.onCancel = onCancel
         self.onSave = onSave
         _model = State(initialValue: CreateRecordModel(
@@ -70,6 +77,9 @@ public struct CreateRecordScene: View {
         self.paths = paths
         self.faceDetectionService = faceDetectionService
         self.editingRecord = record
+        // Edit flow never re-resolves location — the existing record's
+        // location is preserved as-is and not user-editable.
+        self.locationProvider = nil
         self.onCancel = onCancel
         self.onSave = onSave
         _model = State(initialValue: CreateRecordModel(
@@ -90,6 +100,16 @@ public struct CreateRecordScene: View {
                     .ignoresSafeArea(edges: .bottom)
             )
             .onAppear { formFocus = .name }
+            .task {
+                // Async location capture — fires once after the sheet has
+                // already presented so the user isn't blocked on a GPS fix.
+                // No-op when editing (`locationProvider` is nil) or when
+                // the model already has a value, so a stale fix can't
+                // overwrite a freshly typed record.
+                guard let locationProvider, model.location == nil else { return }
+                let resolved = await locationProvider()
+                model.setLocationIfMissing(resolved)
+            }
             #if os(iOS)
             .photosPicker(isPresented: $showingPhotosPicker, selection: $photoItem, matching: .images, photoLibrary: .shared())
             .fullScreenCover(isPresented: $showingCamera) {

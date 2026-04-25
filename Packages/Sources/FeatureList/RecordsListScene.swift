@@ -3,6 +3,19 @@ import CoreModels
 import DesignSystem
 import Visuals
 
+/// Output of `RecordsListScene.bucketed(_:from:)`. `near` is everyone within
+/// 1 mile of the origin (closest first); `far` is everyone else (closest
+/// first; nil-location records sort to the end as `.infinity`). Ungrouped
+/// orders set `near` empty.
+public struct BucketedRecords: Sendable, Equatable {
+    public let near: [Record]
+    public let far: [Record]
+    public init(near: [Record], far: [Record]) {
+        self.near = near
+        self.far = far
+    }
+}
+
 public struct RecordsListScene: View {
 
     public let store: any RecordStore
@@ -35,8 +48,17 @@ public struct RecordsListScene: View {
     @State private var searchText: String = ""
     @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
+    @State private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
     @Environment(\.colorScheme) private var colorScheme
+
+    /// Host-supplied lookup for the user's current coordinates. Returns nil
+    /// when location is unauthorized or unavailable; the distance sort row
+    /// is disabled while this is nil. Polled on appear and after the user
+    /// taps the sort button (so a fresh fix arrives before the option
+    /// picker draws). Default returns nil so previews/tests render the
+    /// distance option as disabled without seeking a real fix.
+    public let currentLocationProvider: @Sendable () async -> LocationInfo?
 
     public init(
         store: any RecordStore,
@@ -51,7 +73,8 @@ public struct RecordsListScene: View {
         photoFor: @escaping (Record) -> Image? = { _ in nil },
         photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil },
         pendingDeleteRecord: Binding<Record?> = .constant(nil),
-        hiddenRecordID: Record.ID? = nil
+        hiddenRecordID: Record.ID? = nil,
+        currentLocationProvider: @Sendable @escaping () async -> LocationInfo? = { nil }
     ) {
         self.store = store
         self.paths = paths
@@ -66,15 +89,34 @@ public struct RecordsListScene: View {
         self.photoSizeFor = photoSizeFor
         self._pendingDeleteRecord = pendingDeleteRecord
         self.hiddenRecordID = hiddenRecordID
+        self.currentLocationProvider = currentLocationProvider
     }
 
     @MainActor
     private var visibleRecords: [Record] {
         let base = searchText.isEmpty ? store.records : store.search(searchText)
-        return Self.sorted(base, by: sortOption)
+        return Self.sorted(base, by: sortOption, from: currentLocation)
     }
 
-    static func sorted(_ records: [Record], by option: SortOption) -> [Record] {
+    /// Bucketed view of `visibleRecords` for the distance sort. When the
+    /// option isn't `.distance` or no current location is available, `near`
+    /// is empty and `far` holds everything in the option's normal order so
+    /// the list renders as a single ungrouped stack.
+    @MainActor
+    private var bucketedVisibleRecords: BucketedRecords {
+        let base = searchText.isEmpty ? store.records : store.search(searchText)
+        if sortOption == .distance, let origin = currentLocation {
+            return Self.bucketed(base, from: origin)
+        } else {
+            return BucketedRecords(near: [], far: Self.sorted(base, by: sortOption, from: currentLocation))
+        }
+    }
+
+    static func sorted(
+        _ records: [Record],
+        by option: SortOption,
+        from origin: LocationInfo? = nil
+    ) -> [Record] {
         switch option {
         case .alphabetical:
             return records.sorted { lhs, rhs in
@@ -91,7 +133,49 @@ public struct RecordsListScene: View {
                 let rSeconds = (rc.hour ?? 0) * 3600 + (rc.minute ?? 0) * 60 + (rc.second ?? 0)
                 return lSeconds < rSeconds
             }
+        case .distance:
+            // Records without a fix sort to the bottom (treated as ∞). When
+            // origin is unavailable the picker should have prevented this
+            // option from being selected — fall through to alphabetical.
+            guard let origin else {
+                return Self.sorted(records, by: .alphabetical)
+            }
+            return records.sorted { lhs, rhs in
+                let lDist = lhs.location.map { $0.distanceMeters(to: origin) } ?? .infinity
+                let rDist = rhs.location.map { $0.distanceMeters(to: origin) } ?? .infinity
+                return lDist < rDist
+            }
         }
+    }
+
+    /// Splits `records` into a "within 1 mile of `origin`" group and a
+    /// "further than 1 mile or location unknown" group. Both groups are
+    /// closest-first within themselves so the stitched order reads as a
+    /// single proximity ramp once a divider is dropped between them.
+    static func bucketed(_ records: [Record], from origin: LocationInfo?) -> BucketedRecords {
+        guard let origin else {
+            return BucketedRecords(near: [], far: Self.sorted(records, by: .distance, from: nil))
+        }
+        var nearWithDistance: [(Record, Double)] = []
+        var farWithDistance: [(Record, Double)] = []
+        for record in records {
+            guard let loc = record.location else {
+                farWithDistance.append((record, .infinity))
+                continue
+            }
+            let meters = loc.distanceMeters(to: origin)
+            if meters <= LocationInfo.metersInMile {
+                nearWithDistance.append((record, meters))
+            } else {
+                farWithDistance.append((record, meters))
+            }
+        }
+        nearWithDistance.sort { $0.1 < $1.1 }
+        farWithDistance.sort { $0.1 < $1.1 }
+        return BucketedRecords(
+            near: nearWithDistance.map(\.0),
+            far: farWithDistance.map(\.0)
+        )
     }
 
     @MainActor
@@ -143,6 +227,7 @@ public struct RecordsListScene: View {
                 if isSortingSheetPresented {
                     DefaultSortingSheet(
                         selected: $sortOption,
+                        isDistanceEnabled: currentLocation != nil,
                         onAdvanced: { isSortingSheetPresented = false },
                         onDismiss: { isSortingSheetPresented = false }
                     )
@@ -150,6 +235,13 @@ public struct RecordsListScene: View {
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
+            .task {
+                // One-shot location fetch on appear so the distance sort row
+                // is enabled before the user opens the picker. The button's
+                // own action refreshes again on tap.
+                let fix = await currentLocationProvider()
+                await MainActor.run { currentLocation = fix }
+            }
             .alert(
                 "Delete contact?",
                 isPresented: Binding(
@@ -185,7 +277,21 @@ public struct RecordsListScene: View {
             HStack {
                 if !isEmpty {
                     SortingButton(
-                        action: { isSortingSheetPresented = true },
+                        action: {
+                            // Refresh on each open so a fresh fix arrives before
+                            // the picker draws — the row enables/disables based
+                            // on `currentLocation != nil`.
+                            Task {
+                                let fix = await currentLocationProvider()
+                                await MainActor.run {
+                                    currentLocation = fix
+                                    if fix == nil, sortOption == .distance {
+                                        sortOption = .alphabetical
+                                    }
+                                }
+                            }
+                            isSortingSheetPresented = true
+                        },
                         glyph: chromePrimary
                     )
                     .accessibilityLabel("Sorting")
@@ -226,9 +332,33 @@ public struct RecordsListScene: View {
             if isEmpty {
                 EmptyStateView(paths: paths, timeOfDay: timeOfDay, attitude: attitude, onTap: onTapCreate)
             } else {
+                let buckets = bucketedVisibleRecords
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(visibleRecords) { record in
+                        ForEach(buckets.near) { record in
+                            RecordCardRow(
+                                record: record,
+                                attitude: attitude,
+                                paths: paths,
+                                photo: photoFor(record),
+                                photoSize: photoSizeFor(record),
+                                isHidden: hiddenRecordID == record.id,
+                                onTap: onTapRecord
+                            )
+                        }
+                        if !buckets.near.isEmpty {
+                            // 1-mile group separator. Token color matches
+                            // Figma `Line 60` from `D_Collection_View` /
+                            // `L_Collection_View`. Spans the full list
+                            // width — the LazyVStack's 16pt horizontal
+                            // padding already insets the line to the same
+                            // edges as the cards.
+                            Rectangle()
+                                .fill(navBarBottomLineColor)
+                                .frame(height: 0.5)
+                                .accessibilityHidden(true)
+                        }
+                        ForEach(buckets.far) { record in
                             RecordCardRow(
                                 record: record,
                                 attitude: attitude,

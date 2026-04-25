@@ -46,17 +46,6 @@ public struct GuillocheRotationLayer: View, Animatable {
         self.reveal = reveal
     }
 
-    /// Per-gradient stroke opacity for the **card** rotation guilloche.
-    /// Brighter daytime gradients (dawn, sunrise, midday, sunset) wash the
-    /// 0.2 baseline out, so they get a 0.3 bump for readable contrast;
-    /// dusk, night, and midnight stay at 0.2.
-    public static func cardOpacity(for timeOfDay: TimeOfDay) -> Double {
-        switch timeOfDay {
-        case .dawn, .sunrise, .midday, .sunset: return 0.3
-        case .dusk, .night, .midnight: return 0.2
-        }
-    }
-
     public var body: some View {
         // `Color.clear` is flex-flex, so this layer reports the parent ZStack's
         // proposed size upward — no size leak from the fixed 380 child. The

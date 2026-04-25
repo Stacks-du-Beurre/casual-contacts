@@ -45,7 +45,13 @@ public final class CreateRecordModel {
     // Fixed at init — non-editable.
     public let createdAt: Date
     public let metadata: RecordMetadata
-    public let location: LocationInfo?
+    /// Capture point for the user's location at the moment they tapped `+`.
+    /// Mutable only because CoreLocation is async and the create sheet
+    /// shouldn't block on a fix — `setLocationIfMissing` is the only
+    /// supported writer and is no-op once a value is present, so the
+    /// "fixed at init" contract still holds for any flow that arrives with
+    /// a non-nil value (e.g. `editing:`).
+    public private(set) var location: LocationInfo?
 
     /// `nil` until the user explicitly picks a sign from the Add Zodiac
     /// picker. The preview card and saved record both reflect this value, so
@@ -112,6 +118,15 @@ public final class CreateRecordModel {
 
     public func clearPhoto() {
         photoState = .none
+    }
+
+    /// One-shot setter — populates `location` only if it's still nil. The
+    /// create scene's `.task` calls this after CoreLocation resolves; if the
+    /// user hit Save before the fix arrived, the resulting Record just has
+    /// no location, same as if permission were denied.
+    public func setLocationIfMissing(_ location: LocationInfo?) {
+        guard self.location == nil, let location else { return }
+        self.location = location
     }
 
     public var photoData: Data? { photoState.data }

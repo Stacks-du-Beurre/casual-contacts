@@ -7,6 +7,7 @@ public enum SortOption: Sendable, Hashable, CaseIterable {
     case alphabetical
     case dateCreated
     case timeCreated
+    case distance
 }
 
 /// Bottom-anchored action sheet matching Figma `L_Default_Sorting` (`209:9048`)
@@ -18,6 +19,11 @@ public enum SortOption: Sendable, Hashable, CaseIterable {
 /// tap Cancel calls `onDismiss`.
 struct DefaultSortingSheet: View {
     @Binding var selected: SortOption
+    /// When `false`, the "By distance" row renders dimmed and is non-tappable.
+    /// Set by `RecordsListScene` based on whether a current location fix is
+    /// available; the underlying option is unselectable in that state so the
+    /// list never has to render distance-sorted output without an origin.
+    var isDistanceEnabled: Bool = true
     let onAdvanced: () -> Void
     let onDismiss: () -> Void
 
@@ -68,10 +74,26 @@ struct DefaultSortingSheet: View {
             divider
             row("Time Created", option: .timeCreated)
             divider
+            distanceRow
+            divider
             advancedRow
         }
         .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var distanceRow: some View {
+        Button {
+            guard isDistanceEnabled else { return }
+            selected = .distance
+            onDismiss()
+        } label: {
+            rowContent(title: "By distance", isSelected: selected == .distance)
+                .opacity(isDistanceEnabled ? 1 : 0.4)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isDistanceEnabled)
+        .accessibilityAddTraits(selected == .distance ? .isSelected : [])
     }
 
     private var cancelCard: some View {

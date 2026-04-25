@@ -21,13 +21,16 @@ struct DeveloperSettingsPanel: View {
     /// `DebugRecordSeeder` fixtures. Default to no-ops so the panel
     /// previews and host-tests cleanly without seeding side effects.
     let onAddDebugRecords: () -> Void
+    let onAddNearbyDebugRecords: () -> Void
     let onRemoveDebugRecords: () -> Void
 
     init(
         onAddDebugRecords: @escaping () -> Void = {},
+        onAddNearbyDebugRecords: @escaping () -> Void = {},
         onRemoveDebugRecords: @escaping () -> Void = {}
     ) {
         self.onAddDebugRecords = onAddDebugRecords
+        self.onAddNearbyDebugRecords = onAddNearbyDebugRecords
         self.onRemoveDebugRecords = onRemoveDebugRecords
     }
 
@@ -227,6 +230,13 @@ struct DeveloperSettingsPanel: View {
         SettingsGroup(title: "Debug Data") {
             SettingsRow(label: "Add debug records", onTap: onAddDebugRecords) {
                 Image(systemName: "plus.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 44, height: 43)
+                    .accessibilityHidden(true)
+            }
+            SettingsDivider()
+            SettingsRow(label: "Add 4 nearby records", onTap: onAddNearbyDebugRecords) {
+                Image(systemName: "location.circle")
                     .font(.system(size: 18, weight: .regular))
                     .frame(width: 44, height: 43)
                     .accessibilityHidden(true)

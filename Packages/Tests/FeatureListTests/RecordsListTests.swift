@@ -36,6 +36,67 @@ struct NoopCardPathProvider: CardPathProvider {
         _ = EmptyStateView(paths: NoopCardPathProvider(), timeOfDay: .sunset).body
     }
 
+    @Test func sortByDistancePutsClosestFirst() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let near = TestRecord(name: "Near", latOffset: 0.001, lngOffset: 0)
+        let mid = TestRecord(name: "Mid", latOffset: 0.005, lngOffset: 0)
+        let far = TestRecord(name: "Far", latOffset: 0.5, lngOffset: 0)
+        let sorted = RecordsListScene.sorted(
+            [far.record(origin: origin), mid.record(origin: origin), near.record(origin: origin)],
+            by: .distance,
+            from: origin
+        )
+        #expect(sorted.map(\.name) == ["Near", "Mid", "Far"])
+    }
+
+    @Test func bucketingPutsWithin1MileFirstAndRestSecond() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let inside = TestRecord(name: "Inside", latOffset: 0.005, lngOffset: 0).record(origin: origin)
+        let outside = TestRecord(name: "Outside", latOffset: 0.5, lngOffset: 0).record(origin: origin)
+        let bucketed = RecordsListScene.bucketed([outside, inside], from: origin)
+        #expect(bucketed.near.map(\.name) == ["Inside"])
+        #expect(bucketed.far.map(\.name) == ["Outside"])
+    }
+
+    @Test func bucketingWithNoCurrentLocationReturnsAllInFar() {
+        let origin = LocationInfo(latitude: 0, longitude: 0)
+        let one = TestRecord(name: "One", latOffset: 0.001, lngOffset: 0).record(origin: origin)
+        let two = TestRecord(name: "Two", latOffset: 0.5, lngOffset: 0).record(origin: origin)
+        let bucketed = RecordsListScene.bucketed([one, two], from: nil)
+        #expect(bucketed.near.isEmpty)
+        #expect(bucketed.far.count == 2)
+    }
+
+    @Test func bucketingTreatsRecordsWithoutLocationAsFar() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let near = TestRecord(name: "Near", latOffset: 0.001, lngOffset: 0).record(origin: origin)
+        let nilLoc = Record(
+            id: UUID(),
+            name: "Unknown",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
+        let bucketed = RecordsListScene.bucketed([near, nilLoc], from: origin)
+        #expect(bucketed.near.map(\.name) == ["Near"])
+        #expect(bucketed.far.map(\.name) == ["Unknown"])
+    }
+
+    @Test func bucketingSortsClosestFirstWithinEachBucket() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let nearA = TestRecord(name: "NearA", latOffset: 0.005, lngOffset: 0).record(origin: origin)
+        let nearB = TestRecord(name: "NearB", latOffset: 0.001, lngOffset: 0).record(origin: origin)
+        let farA = TestRecord(name: "FarA", latOffset: 1.0, lngOffset: 0).record(origin: origin)
+        let farB = TestRecord(name: "FarB", latOffset: 0.5, lngOffset: 0).record(origin: origin)
+        let bucketed = RecordsListScene.bucketed([nearA, nearB, farA, farB], from: origin)
+        #expect(bucketed.near.map(\.name) == ["NearB", "NearA"])
+        #expect(bucketed.far.map(\.name) == ["FarB", "FarA"])
+    }
+
     @MainActor
     @Test func editMenuActionInvokesOnEditRecord() {
         let record = Record(
@@ -73,5 +134,28 @@ struct NoopCardPathProvider: CardPathProvider {
         // Direct invoke as a sanity check.
         (onEditRecord?.value as? (Record) -> Void)?(record)
         #expect(captured?.id == record.id)
+    }
+}
+
+private struct TestRecord {
+    let name: String
+    let latOffset: Double
+    let lngOffset: Double
+
+    func record(origin: LocationInfo) -> Record {
+        Record(
+            id: UUID(),
+            name: name,
+            description: "",
+            photoID: nil,
+            location: LocationInfo(
+                latitude: origin.latitude + latOffset,
+                longitude: origin.longitude + lngOffset
+            ),
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
     }
 }

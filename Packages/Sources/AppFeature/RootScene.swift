@@ -29,6 +29,10 @@ public struct RootScene: Scene {
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
     @State private var pendingDeleteRecord: Record?
+    /// Drives the alert shown when "Add 4 nearby records" runs without a
+    /// usable location fix (denied authorization or fix failure). Setting
+    /// this to non-nil presents the alert with the message as the body.
+    @State private var nearbyDebugError: String?
     @Environment(\.scenePhase) private var scenePhase
     @Namespace private var zoomNamespace
 
@@ -94,7 +98,11 @@ public struct RootScene: Scene {
             photoFor: { photoCache.image(for: $0.photoID) },
             photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
             pendingDeleteRecord: $pendingDeleteRecord,
-            hiddenRecordID: router.tappedRecord?.id
+            hiddenRecordID: router.tappedRecord?.id,
+            currentLocationProvider: { [locationService = environment.locationService] in
+                guard locationService.currentAuthorization() == .authorized else { return nil }
+                return try? await locationService.currentLocation()
+            }
         )
         .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
             Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
@@ -157,6 +165,10 @@ public struct RootScene: Scene {
                 createdAt: createdAt,
                 metadata: metadata,
                 location: nil,
+                locationProvider: { [locationService = environment.locationService] in
+                    guard locationService.currentAuthorization() == .authorized else { return nil }
+                    return try? await locationService.currentLocation()
+                },
                 onCancel: { router.showingCreate = false },
                 onSave: { outcome in
                     guard case let .create(draft) = outcome else { return }
@@ -267,12 +279,25 @@ public struct RootScene: Scene {
             SettingsSheet(
                 onAbout: { router.showingAbout = true },
                 onAddDebugRecords: addDebugRecords,
+                onAddNearbyDebugRecords: addNearbyDebugRecords,
                 onRemoveDebugRecords: removeDebugRecords,
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 requestLocationAuthorization: { await environment.locationService.requestAuthorization() },
                 openSystemSettings: openSystemSettings
             )
                 .presentationCornerRadius(12)
+        }
+        .alert(
+            "Location Required",
+            isPresented: Binding(
+                get: { nearbyDebugError != nil },
+                set: { if !$0 { nearbyDebugError = nil } }
+            ),
+            presenting: nearbyDebugError
+        ) { _ in
+            Button("OK", role: .cancel) { nearbyDebugError = nil }
+        } message: { message in
+            Text(message)
         }
         .sheet(isPresented: $router.showingAbout) {
             NavigationStack {
@@ -300,12 +325,47 @@ public struct RootScene: Scene {
     }
 
     /// Deletes only records whose IDs match the seeder's reserved UUID
-    /// list — production records (random UUIDs) are unaffected.
+    /// list — production records (random UUIDs) are unaffected. Cleans
+    /// both the city seeds (`DEBC1100-…`) and the nearby seeds
+    /// (`DEBC1101-…`).
     private func removeDebugRecords() {
         Task {
             let store = environment.recordStore
-            for id in DebugRecordSeeder.ids {
+            for id in DebugRecordSeeder.ids + DebugRecordSeeder.nearbyIDs {
                 try? await store.delete(id: id)
+            }
+        }
+    }
+
+    /// Resolves the user's current location and inserts four debug records
+    /// scattered randomly within 1 mile. Surfaces an alert and bails if
+    /// authorization is not granted or the fix fails — we never seed
+    /// against a synthetic origin because the point of the row is to
+    /// validate the distance sort against *real* nearby coordinates.
+    private func addNearbyDebugRecords() {
+        Task {
+            let service = environment.locationService
+            guard service.currentAuthorization() == .authorized else {
+                await MainActor.run {
+                    nearbyDebugError = "Enable location access for Casual Contacts in iOS Settings to seed nearby records."
+                }
+                return
+            }
+            let origin: LocationInfo?
+            do {
+                origin = try await service.currentLocation()
+            } catch {
+                origin = nil
+            }
+            guard let origin else {
+                await MainActor.run {
+                    nearbyDebugError = "Couldn't determine your current location. Try again with a clearer GPS signal."
+                }
+                return
+            }
+            let store = environment.recordStore
+            for record in DebugRecordSeeder.nearbyRecords(around: origin) {
+                try? await store.insert(record)
             }
         }
     }
