@@ -30,6 +30,15 @@ public final class InMemoryRecordStore: RecordStore {
         return record
     }
 
+    public func insert(_ record: Record) async throws {
+        if let existing = records.firstIndex(where: { $0.id == record.id }) {
+            records[existing] = record
+        } else {
+            records.insert(record, at: 0)
+        }
+        records.sort { $0.createdAt > $1.createdAt }
+    }
+
     public func update(_ record: Record) async throws {
         guard let index = records.firstIndex(where: { $0.id == record.id }) else {
             throw RecordStoreError.notFound(record.id)
