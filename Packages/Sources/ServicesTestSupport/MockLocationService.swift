@@ -14,6 +14,10 @@ public final class MockLocationService: LocationService, @unchecked Sendable {
         self.location = location
     }
 
+    public func currentAuthorization() -> LocationAuthorization {
+        authorization
+    }
+
     public func requestAuthorization() async -> LocationAuthorization {
         authorization
     }

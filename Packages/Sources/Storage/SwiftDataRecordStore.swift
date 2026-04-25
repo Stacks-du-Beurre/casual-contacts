@@ -53,6 +53,39 @@ public final class SwiftDataRecordStore: RecordStore {
         return created
     }
 
+    public func insert(_ record: Record) async throws {
+        let id = record.id
+        var descriptor = FetchDescriptor<PersistedRecord>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        if let existing = try context.fetch(descriptor).first {
+            context.delete(existing)
+        }
+        let persisted = PersistedRecord(
+            id: record.id,
+            name: record.name,
+            recordDescription: record.description,
+            photoFilename: record.photoID?.filename,
+            photoFocusX: record.photoFocus?.x,
+            photoFocusY: record.photoFocus?.y,
+            latitude: record.location?.latitude,
+            longitude: record.location?.longitude,
+            locationLabel: record.location?.label,
+            zodiacSignRaw: record.zodiacSign?.rawValue,
+            createdAt: record.createdAt,
+            updatedAt: record.updatedAt,
+            timeOfDayRaw: record.metadata.timeOfDay.rawValue,
+            moonPhaseRaw: record.metadata.moonPhase.rawValue,
+            guillocheShapeRaw: record.guillocheShape.rawValue
+        )
+        context.insert(persisted)
+        do {
+            try context.save()
+        } catch {
+            throw RecordStoreError.saveFailed(reason: String(describing: error))
+        }
+        reload()
+    }
+
     public func update(_ record: Record) async throws {
         let id = record.id
         var descriptor = FetchDescriptor<PersistedRecord>(predicate: #Predicate { $0.id == id })

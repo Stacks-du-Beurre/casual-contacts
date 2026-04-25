@@ -32,6 +32,10 @@ public final class CoreLocationService: NSObject, LocationService, CLLocationMan
         self.manager.delegate = self
     }
 
+    public func currentAuthorization() -> LocationAuthorization {
+        Self.map(manager.authorizationStatus)
+    }
+
     public func requestAuthorization() async -> LocationAuthorization {
         switch manager.authorizationStatus {
         case .authorizedAlways:
@@ -47,6 +51,23 @@ public final class CoreLocationService: NSObject, LocationService, CLLocationMan
                 self.authContinuation = continuation
                 self.manager.requestWhenInUseAuthorization()
             }
+        @unknown default:
+            return .notDetermined
+        }
+    }
+
+    private static func map(_ status: CLAuthorizationStatus) -> LocationAuthorization {
+        switch status {
+        case .authorizedAlways:
+            return .authorized
+        #if os(iOS) || os(watchOS) || os(tvOS) || os(visionOS)
+        case .authorizedWhenInUse:
+            return .authorized
+        #endif
+        case .denied, .restricted:
+            return .denied
+        case .notDetermined:
+            return .notDetermined
         @unknown default:
             return .notDetermined
         }

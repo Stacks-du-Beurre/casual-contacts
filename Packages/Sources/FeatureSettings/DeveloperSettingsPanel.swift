@@ -15,6 +15,22 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
     @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
 
+    /// Closures injected by the host so the panel can stay in
+    /// `FeatureSettings` (which has no `Storage` dependency). The
+    /// `AppFeature` host wires these to a `RecordStore` + the
+    /// `DebugRecordSeeder` fixtures. Default to no-ops so the panel
+    /// previews and host-tests cleanly without seeding side effects.
+    let onAddDebugRecords: () -> Void
+    let onRemoveDebugRecords: () -> Void
+
+    init(
+        onAddDebugRecords: @escaping () -> Void = {},
+        onRemoveDebugRecords: @escaping () -> Void = {}
+    ) {
+        self.onAddDebugRecords = onAddDebugRecords
+        self.onRemoveDebugRecords = onRemoveDebugRecords
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -26,6 +42,7 @@ struct DeveloperSettingsPanel: View {
                     gradientGroup
                     zodiacGroup
                     mediumCardGroup
+                    debugDataGroup
                     resetGroup
                 }
                 .padding(.top, 8)
@@ -203,6 +220,24 @@ struct DeveloperSettingsPanel: View {
                 format: .ratio,
                 tick: SliderRow.Tick(value: 1.0, label: "1:1")
             )
+        }
+    }
+
+    private var debugDataGroup: some View {
+        SettingsGroup(title: "Debug Data") {
+            SettingsRow(label: "Add debug records", onTap: onAddDebugRecords) {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 44, height: 43)
+                    .accessibilityHidden(true)
+            }
+            SettingsDivider()
+            SettingsRow(label: "Remove debug records", onTap: onRemoveDebugRecords) {
+                Image(systemName: "minus.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 44, height: 43)
+                    .accessibilityHidden(true)
+            }
         }
     }
 

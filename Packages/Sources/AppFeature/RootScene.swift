@@ -264,7 +264,14 @@ public struct RootScene: Scene {
             )
         }
         .sheet(isPresented: $router.showingSettings) {
-            SettingsSheet(onAbout: { router.showingAbout = true })
+            SettingsSheet(
+                onAbout: { router.showingAbout = true },
+                onAddDebugRecords: addDebugRecords,
+                onRemoveDebugRecords: removeDebugRecords,
+                readLocationAuthorization: { environment.locationService.currentAuthorization() },
+                requestLocationAuthorization: { await environment.locationService.requestAuthorization() },
+                openSystemSettings: openSystemSettings
+            )
                 .presentationCornerRadius(12)
         }
         .sheet(isPresented: $router.showingAbout) {
@@ -278,6 +285,37 @@ public struct RootScene: Scene {
             }
         }
         .environment(environment)
+    }
+
+    /// Bulk-inserts the seven hand-authored fixtures from
+    /// `DebugRecordSeeder` (one per `TimeOfDay`) into the live record
+    /// store. Wired to a developer-settings row for QA.
+    private func addDebugRecords() {
+        Task {
+            let store = environment.recordStore
+            for record in DebugRecordSeeder.records {
+                try? await store.insert(record)
+            }
+        }
+    }
+
+    /// Deletes only records whose IDs match the seeder's reserved UUID
+    /// list — production records (random UUIDs) are unaffected.
+    private func removeDebugRecords() {
+        Task {
+            let store = environment.recordStore
+            for id in DebugRecordSeeder.ids {
+                try? await store.delete(id: id)
+            }
+        }
+    }
+
+    /// Opens iOS Settings deep-linked to this app's permissions page so
+    /// the user can re-enable a previously-denied authorization (which
+    /// iOS otherwise won't re-prompt for in-app).
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
     #endif
 }
