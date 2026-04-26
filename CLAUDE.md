@@ -149,6 +149,14 @@ xcodebuild test \
 
 Delete the PNGs first if you want to re-record from scratch.
 
+### Inspect the motion pipeline live (DEBUG only)
+
+Settings → "Motion debug" exposes raw Euler, quaternion, gravity, every
+intermediate stage of the CoreMotion pipeline, and the throttled output
+as live numerics + 10 s sparklines. Use it to investigate gimbal-lock
+behavior near vertical or any other discontinuity in the signal.
+Disposable — gets removed once the pipeline-fix spec lands.
+
 ## Plan execution workflow
 
 We use the `superpowers:subagent-driven-development` skill. One plan per major chunk of work. Branch → execute tasks → review → merge fast-forward to main.
