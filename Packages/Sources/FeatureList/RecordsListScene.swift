@@ -295,6 +295,7 @@ public struct RecordsListScene: View {
                         glyph: chromePrimary
                     )
                     .accessibilityLabel("Sorting")
+                    .accessibilityIdentifier("sortButton")
                     .padding(.leading, 10)
                 }
                 Spacer()

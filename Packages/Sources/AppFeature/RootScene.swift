@@ -55,6 +55,10 @@ public struct RootScene: Scene {
             #if os(iOS)
             rootContent
                 .environment(\.zoomNamespace, zoomNamespace)
+                .preferredColorScheme(ScreenshotMode.appearanceOverride)
+                .task {
+                    await ScreenshotMode.seedIfNeeded(into: environment)
+                }
             #else
             Text("RootScene is iOS-only")
             #endif

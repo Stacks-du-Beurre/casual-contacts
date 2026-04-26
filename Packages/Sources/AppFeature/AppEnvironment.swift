@@ -77,6 +77,9 @@ public final class AppEnvironment {
     @MainActor
     public static func productionOrUITestReset() throws -> AppEnvironment {
         let args = ProcessInfo.processInfo.arguments
+        if ScreenshotMode.isEnabled {
+            return try screenshotEnvironment()
+        }
         if let idx = args.firstIndex(of: "-UITestReset"),
            idx + 1 < args.count,
            args[idx + 1] == "YES" {
@@ -100,6 +103,33 @@ public final class AppEnvironment {
             photoStore: FileSystemPhotoStore(rootURL: photoRoot),
             locationService: CoreLocationService(),
             motionService: CoreMotionService(),
+            metadataGenerator: SystemMetadataGenerator(),
+            cardPathProvider: RealCardPathProvider(),
+            faceDetectionService: VisionFaceDetectionService()
+        )
+    }
+
+    /// In-memory store, no real CoreLocation/CoreMotion. The motion service
+    /// emits `.zero` so cards don't tilt mid-screenshot. The location
+    /// service returns a fixed San Francisco origin so the distance sort
+    /// renders the "≤ 1 mile" divider deterministically. Time-of-day and
+    /// moon phase come baked into each seed record, so the metadata
+    /// generator's wall-clock dependence doesn't affect the captured frame.
+    @MainActor
+    private static func screenshotEnvironment() throws -> AppEnvironment {
+        let container = try ModelContainer(
+            for: PersistedRecord.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let photoRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CCScreenshotPhotos-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: photoRoot, withIntermediateDirectories: true)
+
+        return AppEnvironment(
+            recordStore: SwiftDataRecordStore(container: container),
+            photoStore: FileSystemPhotoStore(rootURL: photoRoot),
+            locationService: ScreenshotLocationService(),
+            motionService: ScreenshotMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
             faceDetectionService: VisionFaceDetectionService()
