@@ -14,7 +14,7 @@ struct MotionDebugSparkline: View {
     struct Channel {
         let label: String
         let color: Color
-        let value: (MotionDebugSample) -> Double
+        let value: @Sendable (MotionDebugSample) -> Double
     }
 
     let samples: [MotionDebugSample]
@@ -44,7 +44,15 @@ struct MotionDebugSparkline: View {
                         guard dt <= windowDuration, dt >= 0 else { continue }
                         let x = size.width * CGFloat(1 - dt / windowDuration)
                         let raw = channel.value(sample)
+                        // Non-finite (NaN / ±inf) means "no value here" — the throttled-output
+                        // row uses NaN for dropped frames. Break the path so the next finite
+                        // sample starts a new sub-path with move(to:), producing a visible gap
+                        // rather than a misleading line through the bottom edge.
+                        guard raw.isFinite else { first = true; continue }
                         let normalized = (raw - yRange.lowerBound) / (yRange.upperBound - yRange.lowerBound)
+                        // Clamp out-of-range values to the edges so pegged signals stay visible
+                        // (a ±2 input on a ±1 axis snaps to the top/bottom edge — distinguishable
+                        // from a true gap above).
                         let clamped = min(max(normalized, 0), 1)
                         let y = size.height * CGFloat(1 - clamped)
                         let point = CGPoint(x: x, y: y)
