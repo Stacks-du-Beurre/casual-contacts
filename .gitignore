@@ -47,3 +47,8 @@ Screenshots/
 # Frame compositor venv (Pillow) and rasterized SVG cache
 Tools/.venv/
 Tools/frame-templates/*.png
+
+# Designer handoff bundles — incorporated into marketing-site/ then discarded.
+# Don't commit; they're scratch space. The README equivalent lives at
+# docs/marketing-site-design.md.
+design_handoff_marketing_site*/
