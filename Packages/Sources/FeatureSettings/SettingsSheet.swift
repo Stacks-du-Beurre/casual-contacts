@@ -28,8 +28,11 @@ public struct SettingsSheet: View {
     /// page. Called when current state is `.denied` and the user wants to
     /// re-enable, since iOS doesn't allow re-prompting.
     public let openSystemSettings: () -> Void
+    /// Optional MotionService injected by the host so the #if DEBUG motion
+    /// debug screen can subscribe to `debugSamples`. nil hides the row.
+    public let motionService: (any MotionService)?
 
-    private enum Route: Hashable { case developer }
+    private enum Route: Hashable { case developer, motionDebug }
 
     public init(
         onAbout: @escaping () -> Void,
@@ -39,7 +42,8 @@ public struct SettingsSheet: View {
         onOpenLetterGallery: @escaping () -> Void = {},
         readLocationAuthorization: @escaping () -> LocationAuthorization = { .notDetermined },
         requestLocationAuthorization: @escaping () async -> LocationAuthorization = { .notDetermined },
-        openSystemSettings: @escaping () -> Void = {}
+        openSystemSettings: @escaping () -> Void = {},
+        motionService: (any MotionService)? = nil
     ) {
         self.onAbout = onAbout
         self.onAddDebugRecords = onAddDebugRecords
@@ -49,6 +53,7 @@ public struct SettingsSheet: View {
         self.readLocationAuthorization = readLocationAuthorization
         self.requestLocationAuthorization = requestLocationAuthorization
         self.openSystemSettings = openSystemSettings
+        self.motionService = motionService
     }
 
     public var body: some View {
@@ -63,6 +68,12 @@ public struct SettingsSheet: View {
                             onRemoveDebugRecords: onRemoveDebugRecords,
                             onOpenLetterGallery: onOpenLetterGallery
                         )
+                    case .motionDebug:
+                        if let motionService {
+                            MotionDebugScene(service: motionService)
+                        } else {
+                            Text("Motion service unavailable")
+                        }
                     }
                 }
         }
@@ -72,7 +83,7 @@ public struct SettingsSheet: View {
         .presentationDragIndicator(.hidden)
         .presentationBackground(SettingsPalette.sheetBackground(scheme))
         .onChange(of: path) { _, newPath in
-            detent = newPath.contains(.developer) ? .large : .medium
+            detent = newPath.contains(.developer) || newPath.contains(.motionDebug) ? .large : .medium
         }
         #endif
     }
@@ -131,6 +142,12 @@ public struct SettingsSheet: View {
                 SettingsRow(label: "Developer settings", onTap: { path.append(.developer) }) {
                     trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                 }
+                #if DEBUG
+                SettingsDivider()
+                SettingsRow(label: "Motion debug", onTap: { path.append(.motionDebug) }) {
+                    trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
+                }
+                #endif
             }
 
             SettingsGroup(title: "About") {
