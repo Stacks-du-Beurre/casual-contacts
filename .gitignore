@@ -29,9 +29,6 @@ Tools/*/.build/
 Tools/*/.swiftpm/
 Tools/*/Package.resolved
 
-# Generated SVG→Swift files (rebuilt by build tool)
-Packages/Sources/Visuals/Guilloche/Generated/
-
 # Provisioning / signing
 *.p8
 *.p12
@@ -42,3 +39,7 @@ docs/research/metrics/
 
 # Git worktrees (local-only isolated workspaces)
 .worktrees/
+Screenshots/
+
+# Claude Code per-user state (permissions, scheduled-task locks)
+.claude/

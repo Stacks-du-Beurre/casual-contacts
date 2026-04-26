@@ -13,4 +13,3 @@
 - make zodiac constellation have parallax
 - redo edit delete button layout for medium view
 - add (i) for photo cropping, removing zodiac, removing photo, changing location, changing datetimeok c
-
