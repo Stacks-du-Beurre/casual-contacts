@@ -43,3 +43,7 @@ Screenshots/
 
 # Claude Code per-user state (permissions, scheduled-task locks)
 .claude/
+
+# Frame compositor venv (Pillow) and rasterized SVG cache
+Tools/.venv/
+Tools/frame-templates/*.png

@@ -4,7 +4,12 @@
 # Runs the `ScreenshotTests` UI test class against iPhone 17 Pro Max (the
 # 6.9" required size) twice — once for light appearance, once for dark.
 # Each test attaches a named PNG to the xcresult bundle; this script
-# extracts them into `Screenshots/<appearance>/<screen>.png`.
+# extracts them into `Screenshots/<appearance>/<screen>.png` at native
+# 1320×2868 resolution. These PNGs go straight to App Store Connect.
+#
+# For the framed marketing variants, run Tools/frame-screenshots.sh
+# after this script — it operates on whatever PNGs already exist in
+# Screenshots/{light,dark}/ and is fast to iterate on independently.
 #
 # Output layout:
 #   Screenshots/
@@ -15,18 +20,6 @@
 #   Tools/generate-screenshots.sh                        # both appearances
 #   Tools/generate-screenshots.sh --appearance dark      # only dark mode
 #   Tools/generate-screenshots.sh --appearance light     # only light mode
-#   Tools/generate-screenshots.sh --framed               # also produce
-#       framed marketing variants alongside the raw PNGs (requires
-#       fastlane — `brew install fastlane`). Framed files land at
-#       Screenshots/<appearance>/<screen>_framed.png. Use the raw
-#       (un-framed) PNGs for App Store Connect uploads, the framed
-#       ones for the marketing site.
-#   Tools/generate-screenshots.sh --framed --frame-color black
-#       Override the device finish for framing. Default: silver.
-#       Other common values: black, gold, rose_gold, space_gray,
-#       white, natural_titanium, desert_titanium, white_titanium,
-#       black_titanium. Frameit validates and lists valid options
-#       if it doesn't recognize the value.
 
 set -euo pipefail
 
@@ -40,8 +33,6 @@ TMP_RESULTS_DIR="$(mktemp -d -t cc-screenshots)"
 trap 'rm -rf "$TMP_RESULTS_DIR"' EXIT
 
 appearance_filter=""
-frame_screenshots=false
-frame_color="silver"
 while [ $# -gt 0 ]; do
     case "$1" in
         --appearance)
@@ -51,18 +42,8 @@ while [ $# -gt 0 ]; do
                 *) echo "Unknown appearance: $1 (expected light or dark)" >&2; exit 1 ;;
             esac
             ;;
-        --framed)
-            frame_screenshots=true
-            ;;
-        --frame-color)
-            shift
-            if [ -z "${1:-}" ]; then
-                echo "Missing value for --frame-color" >&2; exit 1
-            fi
-            frame_color="$1"
-            ;;
         -h|--help)
-            sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -72,11 +53,6 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-
-if [ "$frame_screenshots" = "true" ] && ! command -v fastlane >/dev/null 2>&1; then
-    echo "ERROR: --framed requires fastlane. Install with: brew install fastlane" >&2
-    exit 1
-fi
 
 if ! xcrun simctl list devices available | grep -q "$SIM_NAME"; then
     echo "ERROR: simulator '$SIM_NAME' not available."
@@ -189,19 +165,8 @@ for appearance in "${APPEARANCES[@]}"; do
     if [ "$count" -lt 6 ]; then
         echo "Warning: expected 6 PNGs, got $count for $appearance." >&2
     fi
-
-    if [ "$frame_screenshots" = "true" ]; then
-        # frameit auto-detects the device by image dimensions, downloads
-        # the matching frame PNG on first run, and writes <name>_framed.png
-        # next to each input. Run from inside the appearance directory so
-        # frameit picks up exactly these files. Pipe its output through a
-        # filter so first-run "downloading frames…" noise stays quiet.
-        echo "Framing screenshots ($frame_color)…"
-        (cd "$out" && fastlane frameit "$frame_color" 2>&1 | grep -E "Framing|Created|Error|error" || true)
-        framed_count=$(find "$out" -name "*_framed.png" 2>/dev/null | wc -l | tr -d ' ')
-        echo "Framed $framed_count PNGs."
-    fi
 done
 
 echo
 echo "Done. PNGs in $OUTPUT_DIR/"
+echo "Run Tools/frame-screenshots.sh next to produce framed marketing variants."
