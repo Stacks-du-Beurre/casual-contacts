@@ -288,7 +288,8 @@ public struct RootScene: Scene {
                 onOpenLetterGallery: openLetterGallery,
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 requestLocationAuthorization: { await environment.locationService.requestAuthorization() },
-                openSystemSettings: openSystemSettings
+                openSystemSettings: openSystemSettings,
+                motionService: environment.motionService
             )
                 .presentationCornerRadius(12)
         }
