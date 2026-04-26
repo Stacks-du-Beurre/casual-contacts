@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Casual Contacts tags where you met someone, so you can find them again.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Casual Contacts uses the gyroscope to add subtle tilt animations to record cards.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
