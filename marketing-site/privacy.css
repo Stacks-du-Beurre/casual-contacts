@@ -1,0 +1,215 @@
+/* privacy.css — page-specific styles for privacy.html.
+   Loads after site.css; reuses tokens, container, topnav, section, footer. */
+
+/* Top-nav back link tweak */
+.nav-back {
+  text-decoration: none;
+  color: var(--fg-5);
+  transition: color 120ms var(--easing);
+}
+.nav-back:hover { color: var(--fg-2); }
+
+/* ----- privacy hero ----- */
+.privacy-hero {
+  padding: 96px 0 64px;
+  border-bottom: 1px solid var(--border-muted);
+}
+@media (max-width: 720px) {
+  .privacy-hero { padding: 64px 0 48px; }
+}
+
+.privacy-eyebrow {
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--fg-5);
+  margin-bottom: 32px;
+}
+
+.privacy-title {
+  margin: 0 0 32px;
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: clamp(36px, 5.6vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--fg-1);
+  max-width: 18ch;
+  text-wrap: balance;
+}
+
+.privacy-lede {
+  margin: 0 0 48px;
+  max-width: 640px;
+  font-family: var(--serif-body);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 30px;
+  letter-spacing: -0.04em;
+  color: var(--fg-3);
+}
+
+.privacy-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-muted);
+}
+.privacy-meta .meta-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.privacy-meta .meta-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-5);
+}
+.privacy-meta .meta-value {
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.privacy-meta .meta-rule {
+  flex: 0 0 24px;
+  height: 1px;
+  background: var(--border);
+}
+@media (max-width: 720px) {
+  .privacy-meta .meta-rule { display: none; }
+  .privacy-meta { gap: 16px 24px; }
+}
+
+/* ----- privacy sections ----- */
+.privacy-sec {
+  padding: 80px 0;
+}
+@media (max-width: 720px) {
+  .privacy-sec { padding: 56px 0; }
+}
+/* the first section under the hero shouldn't double-rule */
+.privacy-hero + .privacy-sec { border-top: 0; }
+
+.privacy-body {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: 0;
+  /* align with the right column of .section-head (1fr 2fr) */
+}
+@media (max-width: 720px) {
+  .privacy-body { margin-left: 0; max-width: none; }
+}
+
+.privacy-body p,
+.privacy-body li,
+.privacy-body dd {
+  font-family: var(--serif-body);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 27px;
+  letter-spacing: -0.05em;
+  color: var(--fg-3);
+}
+.privacy-body p { margin: 0 0 18px; }
+.privacy-body p:last-child { margin-bottom: 0; }
+
+.privacy-body a {
+  color: var(--fg-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border);
+  transition: text-decoration-color 120ms var(--easing);
+}
+.privacy-body a:hover {
+  text-decoration-color: var(--fg-2);
+}
+
+.privacy-body p.muted {
+  margin-top: 24px;
+  font-style: italic;
+  color: var(--fg-4);
+}
+
+/* bullet list */
+ul.privacy-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+ul.privacy-list li {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 10px;
+}
+ul.privacy-list li:last-child { margin-bottom: 0; }
+ul.privacy-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 16px;
+  height: 1px;
+  background: var(--fg-5);
+}
+
+/* permission definition list */
+dl.permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0 0 4px;
+  padding: 0;
+}
+dl.permissions > div {
+  padding-top: 18px;
+  border-top: 1px solid var(--border-muted);
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  align-items: baseline;
+}
+dl.permissions > div:first-child { padding-top: 0; border-top: 0; }
+@media (max-width: 540px) {
+  dl.permissions > div { grid-template-columns: 1fr; gap: 8px; }
+}
+dl.permissions dt {
+  margin: 0;
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+dl.permissions dt span {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: lowercase;
+  color: var(--fg-5);
+}
+dl.permissions dd {
+  margin: 0;
+}
+
+/* current-page treatment in footer */
+.cc-footer a[aria-current="page"] {
+  color: var(--fg-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--border);
+}

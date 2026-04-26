@@ -1,7 +1,10 @@
 # Handoff: Casual Contacts — Marketing Site
 
 ## Overview
-A single-page marketing site for **Casual Contacts**, an iOS app for remembering people you barely met. The page introduces the app, explains why it exists, shows a few sample generated cards and product screenshots, answers FAQs, lists credits, and routes visitors to the App Store and the open-source repo.
+A marketing site for **Casual Contacts**, an iOS app for remembering people you barely met. Two pages:
+
+1. **`index.html`** — the single-page marketing site. Introduces the app, explains why it exists, shows sample generated cards and product screenshots, answers FAQs, lists credits, and routes visitors to the App Store and the open-source repo.
+2. **`privacy.html`** — the privacy policy page. Reuses the same chrome, type system, and section pattern as the marketing page. Linked from the marketing footer's `Privacy` link.
 
 The visual direction is "field-guide / specimen sheet" — a near-white page with a deep slate foreground, set in **Cormorant** (display + body, with serif small caps used as eyebrows and a sectional numbering system §01–§05) and **IBM Plex Mono** for hairline metadata. The page is intentionally quiet: no gradients on chrome, no rounded-corner cards, no decorative iconography. The painterly card artwork and the framed product screenshots do all the visual work.
 
@@ -191,17 +194,94 @@ If marketing wants the strip to honor `prefers-color-scheme`, framed dark-mode v
 
 The bundle's HTML/JSX/CSS sources, in order of importance:
 
+### Marketing page
 - **`index.html`** — entry point. Imports React 18.3.1 + Babel standalone, then `colors_and_type.css`, `site.css`, `tweaks-panel.jsx`, `site.jsx`. The script tags use pinned versions and SRI integrity hashes; if you keep React in production, keep these pins. If you migrate to Astro/Next/etc., drop these entirely.
-- **`site.jsx`** — every page component (`TopNav`, `Hero`, `HowItWorks`, `Gallery`, `Essay`, `PhoneStrip`, `FAQ`, `Colophon`, `Footer`, `App`). Strip the `App` wrapper's tweaks state and `<TweaksPanel>` JSX before shipping.
-- **`site.css`** — all page-specific layout and typography. References tokens from `colors_and_type.css`.
-- **`colors_and_type.css`** — design system tokens and `@font-face` declarations. Keep this file as-is; it's the canonical source for both this page and the iOS app marketing.
+- **`site.jsx`** — every marketing-page component (`TopNav`, `Hero`, `HowItWorks`, `Gallery`, `Essay`, `PhoneStrip`, `FAQ`, `Colophon`, `Footer`, `App`). Strip the `App` wrapper's tweaks state and `<TweaksPanel>` JSX before shipping.
+- **`site.css`** — marketing-page layout and typography. References tokens from `colors_and_type.css`.
+
+### Privacy page
+- **`privacy.html`** — entry point for the privacy page. Same React + Babel setup as `index.html`; loads `colors_and_type.css`, `site.css` (for shared chrome), and `privacy.css` (for page-specific styling), then `privacy.jsx`.
+- **`privacy.jsx`** — page components (`PrivacyTopNav`, `PrivacyHero`, `PrivacySection`, `PrivacyFooter`, `PrivacyApp`) and the section content array. Content is inline JSX, sourced verbatim from the original `privacy.md` — do not paraphrase or shorten when porting.
+- **`privacy.css`** — privacy-page-specific styles: hero, meta row, definition list for permissions, bullet treatment. References tokens from `colors_and_type.css`.
+
+### Shared
+- **`colors_and_type.css`** — design system tokens and `@font-face` declarations. Both pages depend on this file. Keep it as-is; it's the canonical source for both this site and the iOS app marketing.
 - **`tweaks-panel.jsx`** — design-time control panel. **Do not ship.**
 - **`fonts/`** — five self-hosted font files (Cormorant Infant SemiBold + Variable, Cormorant SC Bold + SemiBold, IBM Plex Mono Regular). License-cleared OFL fonts; ship them or load from a hosted CDN.
 - **`assets/`** — everything listed in the Assets section above.
 
-## Notes for the implementer
+---
 
-- **No analytics, no cookies, no tracker scripts** are wired in. Marketing may want to add Plausible or similar — keep it lightweight and avoid anything that requires a consent banner.
+# Privacy Page (`privacy.html`)
+
+The privacy page is a second top-level route with the same chrome as the marketing page. Treat it as a sibling — not a subpage — when porting to the production framework.
+
+## Sections (in source order)
+
+Each section uses the marketing site's `.section-head` pattern: a left column with a `§ NN` numeral and an eyebrow label, and a right column with the section's H2. The body sits in a `.privacy-body` block under that, capped at ~640px max-width and aligned with the right column on desktop.
+
+| #     | Eyebrow                  | Title                                                                       | Body                                                                                              |
+|-------|--------------------------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| § 01  | the short version        | Three sentences.                                                            | Three-bullet list summarizing the policy.                                                         |
+| § 02  | what the app stores      | Names, notes, and the ambient context that draws your card.                 | Two paragraphs covering record fields, optional photo/place, and the ambient context (date/time, time-of-day, moon phase) used to render the card. |
+| § 03  | permissions              | What the app asks iOS for, and exactly why.                                 | A `<dl class="permissions">` definition list. Each `<dt>` is a permission name with an iOS scope tag (e.g. `(when in use)`); each `<dd>` is the reason. Followed by a muted note: "You can revoke any of these at any time in iOS Settings." |
+| § 04  | what we don't do         | A short, definite list.                                                     | Four-bullet list of things the app does *not* do.                                                 |
+| § 05  | children                 | Casual Contacts is not directed to children under 13.                       | One paragraph clarifying no data collection on a server because no server exists.                 |
+| § 06  | changes to this policy   | If anything material changes, the URL changes with it.                      | One paragraph; the URL stays the same but the effective date is bumped.                           |
+| § 07  | contact                  | One inbox, one person.                                                      | One paragraph with `mailto:hello@therealadammork.com`.                                            |
+
+The exact body copy is in `privacy.jsx`'s `SECTIONS` array. Treat it as final — it was reviewed by the user. Do not paraphrase.
+
+## Hero
+
+The privacy page hero replaces the marketing hero. Layout (top to bottom in a `.container`):
+
+1. Eyebrow `privacy policy` — Cormorant SC Bold, 14px, 4px tracked, uppercase, color `var(--fg-5)`.
+2. H1 `What the app does with your data.` — Cormorant SC Bold, `clamp(36px, 5.6vw, 72px)`, line-height 1.04, letter-spacing −0.02em, max-width 18ch, `text-wrap: balance`.
+3. Lede paragraph (Casual Contacts is a local-first iOS app…) — Cormorant Infant SemiBold, 19px / 30px, max-width 640px, color `var(--fg-3)`.
+4. Meta row, separated above by a 1px hairline. Three `meta-pair` items separated by short 24×1px hairlines (`.meta-rule`):
+   - `effective` / `april 25, 2026`
+   - `last updated` / `april 25, 2026`
+   - `applies to` / `casual contacts for iOS`
+   The label is mono caps (11px / 1.5px tracked, `var(--fg-5)`); the value is Cormorant SC Bold 13px / 1.5px tracked, uppercase, `var(--fg-2)`. Hairline separators hide below 720px.
+
+The hero closes with its own bottom border (`border-bottom: 1px solid var(--border-muted)`), and the first `.cc-sec.privacy-sec` under it suppresses its own top border so the rule isn't doubled.
+
+## Permissions list (`<dl.permissions>`)
+
+A custom definition list, styled in `privacy.css`:
+
+- Each row is a 2-column grid (`200px 1fr`), separated by 1px top hairlines (skipped on the first row).
+- `<dt>` is uppercase, 14px, 2px tracked, Cormorant SC Bold, `var(--fg-2)`. The iOS scope (`when in use`) is a `<span>` inside the `<dt>`, rendered on a new line in IBM Plex Mono 10px / 1.2px tracked, lowercase, `var(--fg-5)`.
+- `<dd>` uses the standard body type (Cormorant Infant SemiBold 17px / 27px, `var(--fg-3)`).
+- Below 540px the row collapses to a single column with 8px gap.
+
+Three rows in this version: Location (when in use), Motion & Fitness, Camera & Photo Library. If permissions change, edit `SECTIONS[2].body` in `privacy.jsx`.
+
+## Bullet list (`ul.privacy-list`)
+
+Used in §01 and §04. Each `<li>` has 28px left padding and a 16×1px hairline drawn at `top: 12px` via `::before`, color `var(--fg-5)`. No bullet character, no rounded marker — just a flat dash.
+
+## Top nav
+
+Same wordmark + glyph as the marketing page (links to `index.html`). The right-side meta is replaced with `← back to overview` (also linking to `index.html`), styled subtler than `.nav-meta` and color-shifting to `var(--fg-2)` on hover.
+
+## Footer
+
+Same structure as the marketing footer, with these differences:
+
+- **App column** drops "Release notes" and adds a `Source` link to the GitHub repo (`https://github.com/stacks-du-Beurre/casual-contacts`, opens in a new tab).
+- **Etc column** points `Privacy` at `privacy.html` with `aria-current="page"`, points `Contact` at `mailto:hello@therealadammork.com`, and points `FAQ` at `index.html#faq`.
+- The hero "App Store badge" block from the marketing footer is **omitted** on the privacy page — the brand block has only the wordmark and tagline.
+- `aria-current="page"` is styled in `privacy.css` (`.cc-footer a[aria-current="page"]`): color bumps to `var(--fg-1)` and an underlined hairline appears.
+
+## Wire-up from the marketing page
+
+The marketing footer's existing "Privacy" link in `site.jsx` was changed from `<a href="#">` to `<a href="privacy.html">`. No other marketing-page changes were needed.
+
+---
+
+## Notes for the implementer Marketing may want to add Plausible or similar — keep it lightweight and avoid anything that requires a consent banner.
 - **The page is responsive down to ~360px** but has not been tuned for very small screens. Verify on iPhone SE (375px) before launch.
 - **The Tweaks panel** in the prototype lets you cycle through alternate hero headlines and toggle the gallery section. None of those toggles need to ship; the canonical content is the default.
 - **Headline alternatives** (in `site.jsx` as `HEADLINE_OPTS`) are exploratory — only the canonical one is referenced by the live hero. Keep or drop based on your editorial review.
@@ -210,4 +290,4 @@ The bundle's HTML/JSX/CSS sources, in order of importance:
 ---
 
 **One-line elevator pitch for Claude Code:**
-> Recreate this static marketing page (HTML/JSX prototype in this folder) in our codebase. Keep all copy, all assets, all colors and type exact. Strip the Tweaks panel. Optimize the screenshot PNGs. The page has no dynamic state beyond a native `<details>` accordion.
+> Recreate this static marketing site (HTML/JSX prototypes in this folder — `index.html` for the landing page, `privacy.html` for the privacy policy) in our codebase. Keep all copy, all assets, all colors and type exact. Strip the Tweaks panel. Optimize the screenshot PNGs. Neither page has dynamic state beyond a native `<details>` accordion on the marketing page.
