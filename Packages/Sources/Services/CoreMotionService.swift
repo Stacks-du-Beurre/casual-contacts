@@ -46,52 +46,39 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
     private let manager = CMMotionManager()
     private let smoother = AttitudeLowPass(alpha: 0.1)
     private let throttle = AttitudeThrottle()
-    private var continuation: AsyncStream<DeviceAttitude>.Continuation?
+    private var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation?
+    private var debugContinuation: AsyncStream<MotionDebugSample>.Continuation?
 
-    // The first raw sample received after `start()` is captured as the
-    // zero-point of the motion animation. All subsequent samples are yielded
-    // relative to it, so effects rest at whatever pose the user is holding
-    // the phone in when the app opens (rather than world-flat).
     private var baseline: DeviceAttitude?
 
-    // Auto-rebase: if the user holds the phone in roughly the same pose for
-    // `settleDuration`, the zero-point animates toward the current raw pose
-    // over `rebaseTransitionDuration`. Accounts for hand / grip drift over
-    // real-world usage without resetting while the user is actively enjoying
-    // the parallax.
     private var settleReference: DeviceAttitude = .zero
     private var settledSince: Date = Date()
     private var rebaseTransitionStart: Date?
     private var rebaseTransitionFrom: DeviceAttitude?
     private var rebaseTransitionTarget: DeviceAttitude?
 
-    /// Max pitch-or-roll delta (in the smoothed, baseline-relative space) that
-    /// still counts as "settled". Above this, the settle timer resets.
     private let movementThreshold: Double = 0.05
-    /// Time the attitude must remain within `movementThreshold` before we
-    /// rebase the zero-point.
     private let settleDuration: TimeInterval = 3.5
-    /// Duration over which the baseline slews from its current value to the
-    /// new target — the animation visibly eases back to rest.
     private let rebaseTransitionDuration: TimeInterval = 1.0
 
     public let attitude: AsyncStream<DeviceAttitude>
+    public let debugSamples: AsyncStream<MotionDebugSample>
 
     public init() {
-        var continuation: AsyncStream<DeviceAttitude>.Continuation!
-        self.attitude = AsyncStream { continuation = $0 }
-        self.continuation = continuation
+        var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation!
+        self.attitude = AsyncStream { attitudeContinuation = $0 }
+        self.attitudeContinuation = attitudeContinuation
+
+        var debugContinuation: AsyncStream<MotionDebugSample>.Continuation!
+        self.debugSamples = AsyncStream { debugContinuation = $0 }
+        self.debugContinuation = debugContinuation
+
         manager.deviceMotionUpdateInterval = 1.0 / 60.0
     }
 
     public func start() {
-        // Reduce Motion bypass: if the user has Reduce Motion on at start time,
-        // yield a single `.zero` sample and don't register the CoreMotion
-        // callback at all. This avoids burning the 60 Hz delegate thread when
-        // its output is going to be clamped to zero by ReducedMotionAdapter
-        // anyway. RootScene calls `stop()` / `start()` on toggle to flip modes.
         if UIAccessibility.isReduceMotionEnabled {
-            continuation?.yield(.zero)
+            attitudeContinuation?.yield(.zero)
             return
         }
         guard manager.isDeviceMotionAvailable else { return }
@@ -122,17 +109,11 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
                 roll: raw.roll - effectiveBaseline.roll
             )
             let smoothed = self.smoother.smooth(relative)
-            // Soft-saturation: `tanh` has unity slope at zero (preserving
-            // sensitivity for small tilts) and smoothly asymptotes to ±1,
-            // preventing consumers from over-driving when the phone is tilted
-            // far from an off-center baseline.
             let shaped = DeviceAttitude(
                 pitch: tanh(smoothed.pitch),
                 roll: tanh(smoothed.roll)
             )
 
-            // Settle detection is suspended during an in-progress rebase so a
-            // fresh rebase can't fire on top of the ease-back.
             if self.rebaseTransitionStart == nil {
                 let delta = max(
                     abs(smoothed.pitch - self.settleReference.pitch),
@@ -148,27 +129,54 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
                 }
             }
 
-            // Rate-limit emission: 30 Hz while moving, ~12 Hz when stationary.
-            // CoreMotion keeps feeding us at 60 Hz so the smoother + rebase
-            // logic above stay high-resolution; only the downstream yield is
-            // throttled.
-            if let emitted = self.throttle.admit(shaped, now: now) {
-                self.continuation?.yield(emitted)
+            let emitted = self.throttle.admit(shaped, now: now)
+            if let emitted {
+                self.attitudeContinuation?.yield(emitted)
             }
+
+            #if DEBUG
+            let rebaseProgress: Double
+            if let start = self.rebaseTransitionStart {
+                rebaseProgress = min(1, max(0, now.timeIntervalSince(start) / self.rebaseTransitionDuration))
+            } else {
+                rebaseProgress = 0
+            }
+            let sample = MotionDebugSample(
+                timestamp: now,
+                rawEulerPitch: motion.attitude.pitch,
+                rawEulerRoll: motion.attitude.roll,
+                rawEulerYaw: motion.attitude.yaw,
+                rawQuaternion: SIMD4<Double>(
+                    motion.attitude.quaternion.x,
+                    motion.attitude.quaternion.y,
+                    motion.attitude.quaternion.z,
+                    motion.attitude.quaternion.w
+                ),
+                gravity: SIMD3<Double>(
+                    motion.gravity.x,
+                    motion.gravity.y,
+                    motion.gravity.z
+                ),
+                normalizedPitch: raw.pitch,
+                normalizedRoll: raw.roll,
+                baseline: effectiveBaseline,
+                baselineRelative: relative,
+                smoothed: smoothed,
+                shaped: shaped,
+                throttledOutput: emitted,
+                secondsSinceSettleReset: now.timeIntervalSince(self.settledSince),
+                isRebaseInProgress: self.rebaseTransitionStart != nil,
+                rebaseProgress: rebaseProgress
+            )
+            self.debugContinuation?.yield(sample)
+            #endif
         }
     }
 
-    /// Halts the CoreMotion callback without finishing the stream. Callers can
-    /// `start()` again later (e.g., when Reduce Motion is toggled off) and the
-    /// same `attitude` consumer loop will continue receiving samples.
     public func stop() {
         manager.stopDeviceMotionUpdates()
     }
 
-    /// Advance any in-flight rebase transition and return the baseline the
-    /// caller should use for this frame. When the transition completes, the
-    /// transition state is cleared and settle-detection is reset so we don't
-    /// immediately retrigger.
     private func stepRebaseTransition(now: Date, raw: DeviceAttitude) -> DeviceAttitude {
         guard
             let start = rebaseTransitionStart,
@@ -188,7 +196,7 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
             return target
         }
         let t = elapsed / rebaseTransitionDuration
-        let eased = 0.5 - 0.5 * cos(t * .pi)  // cosine ease-in-out
+        let eased = 0.5 - 0.5 * cos(t * .pi)
         return DeviceAttitude(
             pitch: from.pitch + (target.pitch - from.pitch) * eased,
             roll: from.roll + (target.roll - from.roll) * eased
@@ -197,3 +205,4 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
 }
 
 #endif
+
