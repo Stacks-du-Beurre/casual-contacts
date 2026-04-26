@@ -60,6 +60,17 @@ public struct EmptyStateView: View {
 
     @ViewBuilder
     private var backdrop: some View {
+        let blendPaths = paths.blendPaths(for: "A", shape: .polygon, density: .cards)
+        let blendDepthScale: CGFloat = 10.0
+        // Couple the swirl's translation to the blend stack's most-shifted
+        // path so they drift together rather than the blend swimming past a
+        // stationary swirl.
+        let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
+            pathCount: blendPaths.count,
+            attitude: attitude,
+            depthScale: blendDepthScale
+        )
+
         ZStack {
             EmptyStateGradientBackdrop(timeOfDay: timeOfDay, attitude: attitude)
 
@@ -67,12 +78,12 @@ public struct EmptyStateView: View {
                 paths: GuillocheRotationLayer.swirlPaths(
                     from: paths.rotationPaths(for: "A").first
                 ),
-                opacity: 0.2,
                 tint: .white,
                 attitude: attitude,
                 usage: .emptyState
             )
             .frame(width: 380, height: 380)
+            .offset(coupledOffset)
             .accessibilityHidden(true)
 
             // Per design spec §"How to get the deep-dive effect": each of the
@@ -80,11 +91,11 @@ public struct EmptyStateView: View {
             // driven by the gyroscope attitude — `GuillocheBlendLayer` does
             // the per-index depth-scaled offset internally.
             GuillocheBlendLayer(
-                paths: paths.blendPaths(for: "A", shape: .polygon, density: .cards),
+                paths: blendPaths,
                 density: .cards,
                 attitude: attitude,
                 tint: .white,
-                depthScale: 10.0,
+                depthScale: blendDepthScale,
                 reversed: true
             )
             .frame(width: 184, height: 160)

@@ -24,7 +24,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     /// Default depth-scaling — how many points the Nth path offsets per unit of
     /// roll/pitch. Empty-state hero uses a larger value for a pronounced
     /// deep-dive; list-card density stays subtle at 0.5.
-    public static let defaultDepthScale: CGFloat = 0.5
+    nonisolated public static let defaultDepthScale: CGFloat = 0.5
 
     public init(
         paths: [Path],
@@ -78,21 +78,58 @@ public struct GuillocheBlendLayer: View, Animatable {
         return min(max(local, 0), 1)
     }
 
-    static func offset(
+    nonisolated static func offset(
         forPathIndex index: Int,
         pathCount: Int = 0,
         attitude: DeviceAttitude,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         reversed: Bool = false
     ) -> CGSize {
-        // Default ordering: first path moves least (depth 1), last path moves most.
-        // Reversed: first path moves most, last path moves least — useful when the
-        // outer lines should appear "anchored" and the inner lines swim through them.
-        let step = reversed ? (pathCount - index) : (index + 1)
+        // The anchored end of the stack stays put; the opposite end swims by
+        // `(pathCount - 1) * depthScale`. Translation runs counter to the
+        // tilt direction so the stack appears to swim away from the lift.
+        //   reversed=false: last path is anchored, first path swims most.
+        //   reversed=true:  first path is anchored, last path swims most.
+        let step = reversed ? index : max(pathCount - 1 - index, 0)
         let depth = CGFloat(step) * depthScale
         return CGSize(
-            width: CGFloat(attitude.roll) * depth,
-            height: CGFloat(attitude.pitch) * depth
+            width: -CGFloat(attitude.roll) * depth,
+            height: -CGFloat(attitude.pitch) * depth
+        )
+    }
+
+    /// Translation that a sibling layer would receive if it were the Nth path
+    /// in the blend stack. Apply via `.offset(...)` on any view that should
+    /// read as "deeper" or "shallower" than the blend stack — moon phase,
+    /// zodiac glyph, constellation, etc.
+    ///
+    /// Layer 0 is anchored (no translation); layer N has translation
+    /// `N × depthScale × attitude`. Negative input is clamped to zero.
+    nonisolated public static func depthOffset(
+        layer: Int,
+        attitude: DeviceAttitude,
+        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale
+    ) -> CGSize {
+        let depth = CGFloat(max(layer, 0)) * depthScale
+        return CGSize(
+            width: -CGFloat(attitude.roll) * depth,
+            height: -CGFloat(attitude.pitch) * depth
+        )
+    }
+
+    /// Translation applied to the most-shifted path in the stack — the path
+    /// opposite the anchored end. Apply this to a sibling layer (e.g. the
+    /// rotation guilloche) so it drifts in lockstep with the blend's swimming
+    /// stroke instead of sitting still while the blend slides past it.
+    nonisolated public static func maxDepthOffset(
+        pathCount: Int,
+        attitude: DeviceAttitude,
+        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale
+    ) -> CGSize {
+        depthOffset(
+            layer: max(pathCount - 1, 0),
+            attitude: attitude,
+            depthScale: depthScale
         )
     }
 }

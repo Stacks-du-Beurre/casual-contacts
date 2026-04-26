@@ -14,6 +14,7 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var rotationTuning = GuillocheRotationTuning.shared
     @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
     @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
+    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
 
     /// Closures injected by the host so the panel can stay in
     /// `FeatureSettings` (which has no `Storage` dependency). The
@@ -43,6 +44,7 @@ struct DeveloperSettingsPanel: View {
                     opacityGroup
                     motionGroup
                     gradientGroup
+                    elementDepthGroup
                     zodiacGroup
                     mediumCardGroup
                     debugDataGroup
@@ -185,6 +187,42 @@ struct DeveloperSettingsPanel: View {
                 value: $rotationTuning.cardRotationDegrees,
                 range: 0...360,
                 format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Empty-state filigree opacity",
+                value: $rotationTuning.emptyStateOpacity,
+                range: 0...GuillocheRotationTuning.Defaults.opacityMax,
+                format: .percent
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Card filigree opacity",
+                value: $rotationTuning.cardOpacity,
+                range: 0...GuillocheRotationTuning.Defaults.opacityMax,
+                format: .percent
+            )
+        }
+    }
+
+    private var elementDepthGroup: some View {
+        SettingsGroup(title: "Card Element Depth") {
+            IntSliderRow(
+                label: "Moon phase depth layer",
+                value: $elementDepthTuning.moonPhaseLayer,
+                range: CardElementDepthTuning.layerRange
+            )
+            SettingsDivider()
+            IntSliderRow(
+                label: "Zodiac glyph depth layer",
+                value: $elementDepthTuning.zodiacGlyphLayer,
+                range: CardElementDepthTuning.layerRange
+            )
+            SettingsDivider()
+            IntSliderRow(
+                label: "Constellation depth layer",
+                value: $elementDepthTuning.zodiacConstellationLayer,
+                range: CardElementDepthTuning.layerRange
             )
         }
     }
@@ -366,5 +404,47 @@ struct SliderRow: View {
         case .ratio:
             return String(format: "%.2f:1", value)
         }
+    }
+}
+
+/// Stepped slider over an `Int` range. Uses `Slider`'s built-in `step:` so the
+/// thumb snaps to whole-number positions — appropriate for discrete choices
+/// like depth-layer indices.
+struct IntSliderRow: View {
+
+    @Environment(\.colorScheme) private var scheme
+    let label: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                Text(label)
+                    .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
+                    .tracking(CCDesign.Typography.Tracking.description)
+                    .foregroundStyle(SettingsPalette.label(scheme))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("\(value)")
+                    .font(.custom("CormorantInfant-SemiBold", size: 16, relativeTo: .body))
+                    .foregroundStyle(SettingsPalette.icon(scheme))
+                    .monospacedDigit()
+            }
+            Slider(
+                value: doubleBinding,
+                in: Double(range.lowerBound)...Double(range.upperBound),
+                step: 1
+            )
+            .tint(SettingsPalette.label(scheme))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private var doubleBinding: Binding<Double> {
+        Binding(
+            get: { Double(value) },
+            set: { value = Int($0.rounded()) }
+        )
     }
 }

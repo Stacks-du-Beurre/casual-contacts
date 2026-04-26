@@ -14,19 +14,69 @@ import CoreModels
     @Test func flatAttitudeKeepsAllPathsAtSamePosition() {
         // Not easily testable directly through View body — we expose the offset helper.
         for i in 0..<15 {
-            let offset = GuillocheBlendLayer.offset(forPathIndex: i, attitude: .zero)
+            let offset = GuillocheBlendLayer.offset(forPathIndex: i, pathCount: 15, attitude: .zero)
             #expect(offset.width == 0)
             #expect(offset.height == 0)
         }
     }
 
-    @Test func tiltedAttitudeSpreadsPathsByDepth() {
+    @Test func unreversedStackAnchorsLastPathFirstPathMovesMost() {
         let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
-        let innerOffset = GuillocheBlendLayer.offset(forPathIndex: 0, attitude: attitude)
-        let outerOffset = GuillocheBlendLayer.offset(forPathIndex: 14, attitude: attitude)
+        let firstOffset = GuillocheBlendLayer.offset(forPathIndex: 0, pathCount: 15, attitude: attitude)
+        let lastOffset = GuillocheBlendLayer.offset(forPathIndex: 14, pathCount: 15, attitude: attitude)
 
-        #expect(abs(outerOffset.width) > abs(innerOffset.width))
-        #expect(abs(outerOffset.height) > abs(innerOffset.height))
+        #expect(lastOffset.width == 0)
+        #expect(lastOffset.height == 0)
+        #expect(abs(firstOffset.width) > 0)
+        #expect(abs(firstOffset.height) > 0)
+    }
+
+    @Test func reversedStackAnchorsFirstPathLastPathMovesMost() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
+        let firstOffset = GuillocheBlendLayer.offset(forPathIndex: 0, pathCount: 15, attitude: attitude, reversed: true)
+        let lastOffset = GuillocheBlendLayer.offset(forPathIndex: 14, pathCount: 15, attitude: attitude, reversed: true)
+
+        #expect(firstOffset.width == 0)
+        #expect(firstOffset.height == 0)
+        #expect(abs(lastOffset.width) > 0)
+        #expect(abs(lastOffset.height) > 0)
+    }
+
+    @Test func maxDepthOffsetMatchesMostShiftedPath() {
+        let attitude = DeviceAttitude(pitch: 0.3, roll: -0.4)
+        let maxOffset = GuillocheBlendLayer.maxDepthOffset(pathCount: 15, attitude: attitude)
+        let lastOffsetReversed = GuillocheBlendLayer.offset(forPathIndex: 14, pathCount: 15, attitude: attitude, reversed: true)
+        let firstOffsetUnreversed = GuillocheBlendLayer.offset(forPathIndex: 0, pathCount: 15, attitude: attitude)
+
+        #expect(maxOffset == lastOffsetReversed)
+        #expect(maxOffset == firstOffsetUnreversed)
+    }
+
+    @Test func depthOffsetScalesLinearlyWithLayerIndex() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
+        let depthScale: CGFloat = 5.0
+        let layer0 = GuillocheBlendLayer.depthOffset(layer: 0, attitude: attitude, depthScale: depthScale)
+        let layer1 = GuillocheBlendLayer.depthOffset(layer: 1, attitude: attitude, depthScale: depthScale)
+        let layer10 = GuillocheBlendLayer.depthOffset(layer: 10, attitude: attitude, depthScale: depthScale)
+
+        #expect(layer0 == .zero)
+        #expect(layer1.width == -CGFloat(attitude.roll) * depthScale)
+        #expect(layer1.height == -CGFloat(attitude.pitch) * depthScale)
+        #expect(layer10.width == -CGFloat(attitude.roll) * depthScale * 10)
+        #expect(layer10.height == -CGFloat(attitude.pitch) * depthScale * 10)
+    }
+
+    @Test func depthOffsetClampsNegativeLayerToZero() {
+        let attitude = DeviceAttitude(pitch: 1, roll: 1)
+        let offset = GuillocheBlendLayer.depthOffset(layer: -5, attitude: attitude, depthScale: 5)
+        #expect(offset == .zero)
+    }
+
+    @Test func maxDepthOffsetDelegatesToDepthOffset() {
+        let attitude = DeviceAttitude(pitch: 0.2, roll: -0.3)
+        let viaMax = GuillocheBlendLayer.maxDepthOffset(pathCount: 15, attitude: attitude, depthScale: 5)
+        let viaDepth = GuillocheBlendLayer.depthOffset(layer: 14, attitude: attitude, depthScale: 5)
+        #expect(viaMax == viaDepth)
     }
 
     @Test @MainActor func layerInstantiatesAtEveryDensity() {

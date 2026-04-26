@@ -6,23 +6,30 @@ public struct ZodiacLayer: View {
     public let sign: ZodiacSign
     public let attitude: DeviceAttitude
     public let variant: Variant
+    public let parallax: Bool
 
     public enum Variant: Sendable {
         case figure         // illustrated sign
         case constellation  // line-art constellation
     }
 
-    public init(sign: ZodiacSign, attitude: DeviceAttitude, variant: Variant = .figure) {
+    public init(
+        sign: ZodiacSign,
+        attitude: DeviceAttitude,
+        variant: Variant = .figure,
+        parallax: Bool = true
+    ) {
         self.sign = sign
         self.attitude = attitude
         self.variant = variant
+        self.parallax = parallax
     }
 
     public var body: some View {
         Image(Self.assetName(for: sign, variant: variant), bundle: .module)
             .resizable()
             .scaledToFit()
-            .offset(Self.translation(for: attitude))
+            .offset(parallax ? Self.translation(for: attitude) : .zero)
             .accessibilityHidden(true)
     }
 

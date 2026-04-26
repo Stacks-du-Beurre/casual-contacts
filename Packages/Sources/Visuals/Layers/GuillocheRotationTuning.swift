@@ -22,11 +22,19 @@ public final class GuillocheRotationTuning {
         /// dialed in independently — the card's smaller canvas wants a
         /// subtler amount than the hero.
         public static let cardRotationDegrees: Double = 45
+        /// Stroke opacity for the card-backdrop swirl filigree.
+        public static let cardOpacity: Double = 0.2
+        /// Stroke opacity for the empty-state hero swirl filigree.
+        public static let emptyStateOpacity: Double = 0.3
+        /// Slider ceiling shared by both opacity controls in the dev panel.
+        public static let opacityMax: Double = 0.4
     }
 
     private enum Key {
         static let emptyStateRotationDegrees = "GuillocheRotationTuning.emptyStateRotationDegrees"
         static let cardRotationDegrees = "GuillocheRotationTuning.cardRotationDegrees"
+        static let cardOpacity = "GuillocheRotationTuning.cardOpacity"
+        static let emptyStateOpacity = "GuillocheRotationTuning.emptyStateOpacity"
     }
 
     public var emptyStateRotationDegrees: Double {
@@ -35,6 +43,14 @@ public final class GuillocheRotationTuning {
 
     public var cardRotationDegrees: Double {
         didSet { defaults.set(cardRotationDegrees, forKey: Key.cardRotationDegrees) }
+    }
+
+    public var cardOpacity: Double {
+        didSet { defaults.set(cardOpacity, forKey: Key.cardOpacity) }
+    }
+
+    public var emptyStateOpacity: Double {
+        didSet { defaults.set(emptyStateOpacity, forKey: Key.emptyStateOpacity) }
     }
 
     private let defaults: UserDefaults
@@ -47,11 +63,19 @@ public final class GuillocheRotationTuning {
         self.cardRotationDegrees = Self.read(
             defaults, Key.cardRotationDegrees, fallback: Defaults.cardRotationDegrees
         )
+        self.cardOpacity = Self.read(
+            defaults, Key.cardOpacity, fallback: Defaults.cardOpacity
+        )
+        self.emptyStateOpacity = Self.read(
+            defaults, Key.emptyStateOpacity, fallback: Defaults.emptyStateOpacity
+        )
     }
 
     public func reset() {
         emptyStateRotationDegrees = Defaults.emptyStateRotationDegrees
         cardRotationDegrees = Defaults.cardRotationDegrees
+        cardOpacity = Defaults.cardOpacity
+        emptyStateOpacity = Defaults.emptyStateOpacity
     }
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Double) -> Double {

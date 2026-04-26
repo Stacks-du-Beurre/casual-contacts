@@ -49,6 +49,19 @@ public struct CardBackdrop: View {
         // exit animation we freeze on the letter that was last shown so the
         // user sees "their" filigree fade out, not the default-A fallback.
         let renderLetter: Character = showsGuilloche ? accoutrements.letter : persistedLetter
+        let blendPaths = paths.blendPaths(
+            for: renderLetter,
+            shape: accoutrements.guillocheShape,
+            density: density
+        )
+        // Match the rotation swirl's translation to the blend stack's
+        // most-shifted path so the two filigrees drift together instead
+        // of the rotation sitting still while the blend slides past.
+        let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
+            pathCount: blendPaths.count,
+            attitude: attitude,
+            depthScale: blendTuning.depthScale
+        )
 
         ZStack {
             GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
@@ -64,6 +77,7 @@ public struct CardBackdrop: View {
                 attitude: attitude,
                 reveal: reveal
             )
+            .offset(coupledOffset)
 
             if let photo {
                 PhotoLayer(
@@ -75,11 +89,7 @@ public struct CardBackdrop: View {
             }
 
             GuillocheBlendLayer(
-                paths: paths.blendPaths(
-                    for: renderLetter,
-                    shape: accoutrements.guillocheShape,
-                    density: density
-                ),
+                paths: blendPaths,
                 density: density,
                 attitude: attitude,
                 tint: .white,

@@ -13,7 +13,6 @@ public struct GuillocheRotationLayer: View, Animatable {
     }
 
     public let paths: [Path]
-    public let opacity: Double
     public let tint: Color
     public let attitude: DeviceAttitude
     public let usage: Usage
@@ -32,18 +31,25 @@ public struct GuillocheRotationLayer: View, Animatable {
 
     public init(
         paths: [Path],
-        opacity: Double = 0.2,
         tint: Color = CCDesign.Colors.L4,
         attitude: DeviceAttitude = .zero,
         usage: Usage = .card,
         reveal: Double = 1.0
     ) {
         self.paths = paths
-        self.opacity = opacity
         self.tint = tint
         self.attitude = attitude
         self.usage = usage
         self.reveal = reveal
+    }
+
+    /// Stroke opacity, sourced from the per-usage tuning slider so the dev
+    /// panel can dial card vs. empty-state independently.
+    private var opacity: Double {
+        switch usage {
+        case .card: tuning.cardOpacity
+        case .emptyState: tuning.emptyStateOpacity
+        }
     }
 
     public var body: some View {

@@ -16,6 +16,7 @@ public struct CardView: View {
     public let photoSize: CGSize?
 
     @Bindable private var blendTuning = CardBlendTuning.shared
+    @Bindable private var depthTuning = CardElementDepthTuning.shared
 
     public init(
         record: Record,
@@ -106,11 +107,13 @@ public struct CardView: View {
         .overlay(alignment: .topTrailing) {
             // Zodiac stars (constellation): 100×90 pinned to the right edge,
             // top inset 37pt. Part of the backdrop so hologram text / frosted
-            // pills sample it through the blur.
+            // pills sample it through the blur. `parallax: false` cedes motion
+            // control to the depth-layer offset applied below.
             if let sign = record.zodiacSign {
-                ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation)
+                ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation, parallax: false)
                     .frame(width: 100, height: 90)
                     .padding(.top, 37)
+                    .offset(depthOffset(layer: depthTuning.zodiacConstellationLayer))
                     .accessibilityHidden(true)
             }
         }
@@ -130,13 +133,24 @@ public struct CardView: View {
                 if let sign = record.zodiacSign {
                     HolographicZodiac(sign: sign, attitude: attitude)
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 79, trailing: 54))
+                        .offset(depthOffset(layer: depthTuning.zodiacGlyphLayer))
                 }
             }
             .overlay(alignment: .bottomTrailing) {
                 // Moon phase frame: 34×56, bottom-trailing.
                 MoonPhaseLayer(phase: record.metadata.moonPhase)
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 54))
+                    .offset(depthOffset(layer: depthTuning.moonPhaseLayer))
             }
+    }
+
+    /// Depth-layer translation matching the card's blend stack physics.
+    private func depthOffset(layer: Int) -> CGSize {
+        GuillocheBlendLayer.depthOffset(
+            layer: layer,
+            attitude: attitude,
+            depthScale: blendTuning.depthScale
+        )
     }
 
     public static func accessibilityLabel(for record: Record) -> String {
