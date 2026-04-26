@@ -69,8 +69,15 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
         self.attitude = AsyncStream { attitudeContinuation = $0 }
         self.attitudeContinuation = attitudeContinuation
 
+        // Bounded buffering: when the debug screen is closed (the common case
+        // even in DEBUG runs) no one consumes the stream, so samples would
+        // otherwise accumulate at 60 Hz. `.bufferingNewest(2)` keeps the
+        // buffer trivially small while still giving a freshly-attached
+        // consumer a recent sample to render against immediately.
         var debugContinuation: AsyncStream<MotionDebugSample>.Continuation!
-        self.debugSamples = AsyncStream { debugContinuation = $0 }
+        self.debugSamples = AsyncStream(bufferingPolicy: .bufferingNewest(2)) {
+            debugContinuation = $0
+        }
         self.debugContinuation = debugContinuation
 
         manager.deviceMotionUpdateInterval = 1.0 / 60.0
