@@ -1,6 +1,10 @@
 import Foundation
 import CoreModels
 
+/// Always-zero `MotionService` for screenshot generation. Yields exactly one
+/// `.zero` attitude when started, then ignores subsequent `start()` /
+/// `stop()` calls. Cards painted with this service show no tilt or
+/// parallax — the captured frame is identical across runs.
 final class ScreenshotMotionService: MotionService, @unchecked Sendable {
 
     private var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation?
