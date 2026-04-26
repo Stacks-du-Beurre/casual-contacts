@@ -1,0 +1,243 @@
+/* ============================================================
+   Casual Contacts — Design Tokens
+   Source of truth: docs/site/DESIGN.md + tokens.json
+   ============================================================ */
+
+@font-face {
+  font-family: "Cormorant SC";
+  font-weight: 600;
+  font-style: normal;
+  src: url("./fonts/CormorantSC-SemiBold.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant SC";
+  font-weight: 700;
+  font-style: normal;
+  src: url("./fonts/CormorantSC-Bold.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Infant";
+  font-weight: 600;
+  font-style: normal;
+  src: url("./fonts/CormorantInfant-SemiBold.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Infant";
+  font-weight: 300 700;
+  font-style: normal;
+  src: url("./fonts/CormorantInfant-Variable.ttf") format("truetype-variations");
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 400;
+  font-style: normal;
+  src: url("./fonts/IBMPlexMono-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  /* ---------- BASE COLOR SCALES ----------
+     Two parallel scales lifted from the iOS app DesignSystem.
+     Light L0 → L4 (lightest → mid-light)
+     Dark D0 → D4 (mid-dark → darkest)                          */
+  --L0: #FFFFFF;
+  --L1: #F4F5FA;
+  --L2: #E9EAF1;
+  --L3: #D0D1DA;
+  --L4: #B0B2BC;
+
+  --D0: #5F6068;
+  --D1: #4A4C54;
+  --D2: #383B43;
+  --D3: #282A30;
+  --D4: #141415;
+
+  /* ---------- SEMANTIC COLORS (light theme default) ---------- */
+  --bg-page:     var(--L0);   /* page background */
+  --bg-surface:  var(--L1);   /* card / surface */
+  --bg-raised:   var(--L2);   /* nav blur, modal */
+  --border:      var(--L3);
+  --border-muted:var(--L2);
+  --fg-1:        var(--D4);   /* primary text */
+  --fg-2:        var(--D3);   /* headlines */
+  --fg-3:        var(--D2);   /* body */
+  --fg-4:        var(--D1);   /* tertiary, captions */
+  --fg-5:        var(--D0);   /* fine print, inactive */
+  --focus-ring:  var(--D4);
+
+  /* ---------- TYPE FAMILIES ---------- */
+  --serif-display: "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+  --serif-body:    "Cormorant Infant", "Cormorant", Georgia, serif;
+  --mono:          "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---------- TYPE SIZE TOKENS ---------- */
+  --fs-display-hero:  64px;   --lh-display-hero: 72px;
+  --fs-display-mob:   40px;   --lh-display-mob:  44px;
+  --fs-title:         33px;   --lh-title:        40px;
+  --fs-body:          18px;   --lh-body:         27px;
+  --fs-body-sm:       13px;   --lh-body-sm:      17px;
+  --fs-eyebrow:       12px;   --lh-eyebrow:      16px;
+  --fs-mono:          11px;   --lh-mono:         16px;
+
+  --tr-title:     0;
+  --tr-body:      -0.05em;
+  --tr-body-sm:   -0.2px;
+  --tr-eyebrow:   2.4px;
+  --tr-mono:      0;
+
+  /* ---------- SPACING (8pt baseline) ---------- */
+  --s1: 4px;  --s2: 8px;  --s3: 16px; --s4: 24px;
+  --s5: 32px; --s6: 48px; --s7: 64px; --s8: 96px;
+
+  /* ---------- RADII ----------
+     Lifted from the iOS source of truth (Figma):
+     - Cards/Full + Cards/Full_w_Photo use 4
+     - Sort sheet & list rows use 14
+     - Cards/Recommended use 50 (pill / circular)
+     Web spec adds lg/xl for the marketing card / hero card. */
+  --r-card:    4px;        /* iOS list cards (Figma 4) */
+  --r-row:     14px;       /* iOS list rows, sort sheet, modals */
+  --r-pill:    50px;       /* iOS Recommended cards — pill / circular */
+  --r-md:      12px;       /* web buttons */
+  --r-lg:      24px;       /* web card mocks */
+  --r-xl:      32px;       /* web hero card */
+  --r-icon:    22.37%;     /* iOS app-icon squircle */
+
+  /* ---------- MOTION ---------- */
+  --dur-fast:    120ms;
+  --dur-default: 200ms;
+  --easing:      cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- GRADIENT BITMAPS (paths) ---------- */
+  --grad-sunset:   url("./assets/Sunset.png");
+  --grad-night:    url("./assets/Night.png");
+  --grad-dusk:     url("./assets/Dusk.png");
+  --grad-midnight: url("./assets/Midnight.png");
+}
+
+/* ---------- DARK THEME — flip semantics ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page:     var(--D4);
+    --bg-surface:  var(--D3);
+    --bg-raised:   var(--D2);
+    --border:      var(--D2);
+    --border-muted:var(--D3);
+    --fg-1:        var(--L2);
+    --fg-2:        var(--L1);
+    --fg-3:        var(--L2);
+    --fg-4:        var(--L3);
+    --fg-5:        var(--L4);
+    --focus-ring:  var(--L0);
+  }
+}
+
+/* ============================================================
+   SEMANTIC TYPE STYLES
+   ============================================================ */
+.h1, h1.cc {
+  font-family: var(--serif-display);
+  font-weight: 600;
+  font-size: clamp(var(--fs-display-mob), 4.5vw + 16px, var(--fs-display-hero));
+  line-height: 1.12;
+  letter-spacing: var(--tr-title);
+  color: var(--fg-2);
+  text-wrap: balance;
+}
+.h2, h2.cc {
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--tr-title);
+  color: var(--fg-2);
+}
+.eyebrow {
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: var(--fs-eyebrow);
+  line-height: var(--lh-eyebrow);
+  letter-spacing: var(--tr-eyebrow);
+  color: var(--fg-5);
+  text-transform: uppercase;
+}
+.body, p.cc {
+  font-family: var(--serif-body);
+  font-weight: 600;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--tr-body);
+  color: var(--fg-3);
+  text-wrap: pretty;
+}
+.body-sm {
+  font-family: var(--serif-body);
+  font-weight: 600;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body-sm);
+  letter-spacing: var(--tr-body-sm);
+  color: var(--fg-4);
+}
+.mono, code.cc {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: var(--fs-mono);
+  line-height: var(--lh-mono);
+  letter-spacing: var(--tr-mono);
+  color: var(--fg-5);
+}
+
+/* ============================================================
+   PRIMITIVES
+   ============================================================ */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 14px 22px;
+  border-radius: var(--r-md);
+  border: 0;
+  background-image: var(--grad-sunset);
+  background-size: cover;
+  background-position: center;
+  color: #FFFFFF;
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: filter var(--dur-fast) var(--easing),
+              transform var(--dur-fast) var(--easing);
+  cursor: pointer;
+}
+.cta:hover  { filter: brightness(1.05); }
+.cta:active { transform: scale(0.985); }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 12px 20px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--fg-1);
+  background: transparent;
+  color: var(--fg-1);
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
