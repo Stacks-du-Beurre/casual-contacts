@@ -77,6 +77,9 @@ fi
 echo "Tagging $commit_sha on $branch as $tag"
 git -C "$REPO_ROOT" tag -a "$tag" -m "$message"
 
+echo "Pushing $branch to origin (so the tagged commit is reachable)…"
+git -C "$REPO_ROOT" push origin "$branch"
+
 echo "Pushing tag to origin…"
 git -C "$REPO_ROOT" push origin "$tag"
 
