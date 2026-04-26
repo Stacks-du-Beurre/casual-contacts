@@ -24,7 +24,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
+
+# iPhone 17 Pro Max screen corner radius is 53.33pt = 160px @ 3x on
+# the 1320-wide native screen. We express it as a ratio of screen
+# width so it scales correctly to whatever screen-rect size the
+# detector returns.
+SCREEN_CORNER_RADIUS_RATIO = 160 / 1320
 
 # Pixel is "opaque bezel" if its alpha is at least this. The bezel
 # anti-aliases against the surrounding canvas at the device outline,
@@ -141,6 +147,29 @@ def detect_screen_rect(frame: Image.Image) -> tuple[int, int, int, int]:
     return (screen_left, screen_top, screen_right, screen_bottom)
 
 
+def round_corners(image: Image.Image, radius: int) -> Image.Image:
+    """Return a copy of `image` with its corners rounded to `radius` pixels.
+
+    Builds a single-channel mask the same size as the image with white
+    inside the rounded rectangle and black outside, then multiplies it
+    into the existing alpha channel. Anti-aliased — corners blend
+    cleanly against whatever sits behind the framed PNG.
+    """
+    mask = Image.new("L", image.size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle((0, 0, image.size[0], image.size[1]), radius=radius, fill=255)
+    rounded = image.copy()
+    # Combine the mask with the existing alpha so transparent pixels
+    # in the source stay transparent.
+    if rounded.mode != "RGBA":
+        rounded = rounded.convert("RGBA")
+    existing_alpha = rounded.split()[3]
+    combined = Image.new("L", image.size, 0)
+    combined.paste(existing_alpha, mask=mask)
+    rounded.putalpha(combined)
+    return rounded
+
+
 def composite(screenshot_path: Path, frame: Image.Image, screen_rect: tuple[int, int, int, int]) -> Image.Image:
     """Place the screenshot inside the screen rect and overlay the frame."""
     left, top, right, bottom = screen_rect
@@ -149,8 +178,11 @@ def composite(screenshot_path: Path, frame: Image.Image, screen_rect: tuple[int,
     shot = Image.open(screenshot_path).convert("RGBA")
     shot = shot.resize((sw, sh), Image.LANCZOS)
 
+    radius = round(sw * SCREEN_CORNER_RADIUS_RATIO)
+    shot = round_corners(shot, radius)
+
     canvas = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    canvas.paste(shot, (left, top))
+    canvas.paste(shot, (left, top), mask=shot)
     canvas.alpha_composite(frame)
     return canvas
 
