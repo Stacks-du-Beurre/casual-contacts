@@ -64,7 +64,11 @@ public struct CardBackdrop: View {
         )
 
         ZStack {
-            GradientLayer(timeOfDay: record.metadata.timeOfDay, attitude: attitude)
+            GradientLayer(
+                timeOfDay: record.metadata.timeOfDay,
+                attitude: attitude,
+                mode: .balancedAtRest
+            )
 
             // Always mount both guilloche layers so the `reveal` driver can
             // animate per-path opacity into and out of view. At `reveal == 0`

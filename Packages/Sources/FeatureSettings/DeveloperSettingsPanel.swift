@@ -164,6 +164,13 @@ struct DeveloperSettingsPanel: View {
             )
             SettingsDivider()
             SliderRow(
+                label: "Save-button gradient gain",
+                value: $motionTuning.saveButtonGradientGain,
+                range: 0.5...5.0,
+                format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
                 label: "Card-blend depth",
                 value: $cardBlendTuning.depthScale,
                 range: 0...20,

@@ -22,5 +22,13 @@ public final class MotionTuning: @unchecked Sendable {
         relativeFullScaleDegrees * .pi / 180
     }
 
+    /// Sensitivity multiplier applied to `attitude.roll` before the
+    /// `GradientLayer` opacity curve in the create/update flow's SaveButton.
+    /// `1.0` matches the global pipeline full-scale (button reaches its
+    /// endpoint when the phone is rotated a full ±`relativeFullScaleDegrees`).
+    /// Higher values let the smaller, button-sized gradient swap noticeably
+    /// at much subtler tilts than the card backdrop's full visual range.
+    public var saveButtonGradientGain: Double = 2.5
+
     private init() {}
 }

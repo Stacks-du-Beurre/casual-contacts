@@ -12,6 +12,8 @@ struct SaveButton: View {
     let attitude: DeviceAttitude
     let action: () -> Void
 
+    @Bindable private var motionTuning = MotionTuning.shared
+
     init(
         label: String = "SAVE",
         isEnabled: Bool,
@@ -28,8 +30,12 @@ struct SaveButton: View {
 
     var body: some View {
         ZStack {
-            GradientLayer(timeOfDay: timeOfDay, attitude: attitude)
-                .rotationEffect(.degrees(180))
+            GradientLayer(
+                timeOfDay: timeOfDay,
+                attitude: attitude,
+                mode: .balancedAtRest,
+                gain: motionTuning.saveButtonGradientGain
+            )
 
             Text(label)
                 .font(CCDesign.Typography.headline)
