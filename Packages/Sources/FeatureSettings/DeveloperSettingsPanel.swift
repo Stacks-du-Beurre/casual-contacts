@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 import DesignSystem
 import Visuals
 
@@ -10,11 +11,11 @@ struct DeveloperSettingsPanel: View {
     @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
     @Bindable private var cardBlendTuning = CardBlendTuning.shared
     @Bindable private var zodiacTuning = ZodiacHologramTuning.shared
-    @Bindable private var gradientLayerTuning = GradientLayerTuning.shared
     @Bindable private var rotationTuning = GuillocheRotationTuning.shared
     @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
     @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
+    @Bindable private var motionTuning = MotionTuning.shared
 
     /// Closures injected by the host so the panel can stay in
     /// `FeatureSettings` (which has no `Storage` dependency). The
@@ -45,9 +46,9 @@ struct DeveloperSettingsPanel: View {
             header
             ScrollView {
                 VStack(spacing: 24) {
+                    motionGroup
                     toggleGroup
                     opacityGroup
-                    motionGroup
                     gradientGroup
                     elementDepthGroup
                     zodiacGroup
@@ -133,30 +134,37 @@ struct DeveloperSettingsPanel: View {
     }
 
     private var motionGroup: some View {
-        SettingsGroup(title: "Hologram Motion") {
+        SettingsGroup(title: "Motion") {
             SliderRow(
-                label: "Translation X",
+                label: "Pipeline full-scale (deg)",
+                value: $motionTuning.relativeFullScaleDegrees,
+                range: 10...180,
+                format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Hologram translation X",
                 value: $tuning.translationScaleX,
                 range: 0...180,
                 format: .decimal
             )
             SettingsDivider()
             SliderRow(
-                label: "Translation Y",
+                label: "Hologram translation Y",
                 value: $tuning.translationScaleY,
                 range: 0...180,
                 format: .decimal
             )
             SettingsDivider()
             SliderRow(
-                label: "Rotation (degrees)",
+                label: "Hologram rotation (deg)",
                 value: $tuning.rotationDegrees,
                 range: 0...360,
                 format: .decimal
             )
             SettingsDivider()
             SliderRow(
-                label: "Card blend depth",
+                label: "Card-blend depth",
                 value: $cardBlendTuning.depthScale,
                 range: 0...20,
                 format: .decimal
@@ -171,13 +179,6 @@ struct DeveloperSettingsPanel: View {
                 value: $gradientTuning.edgeReach,
                 range: 0...1,
                 format: .percent
-            )
-            SettingsDivider()
-            SliderRow(
-                label: "Gradient motion response",
-                value: $gradientLayerTuning.motionSensitivity,
-                range: 0...5,
-                format: .decimal
             )
             SettingsDivider()
             SliderRow(
@@ -308,7 +309,6 @@ struct DeveloperSettingsPanel: View {
                 gradientTuning.reset()
                 cardBlendTuning.reset()
                 zodiacTuning.reset()
-                gradientLayerTuning.reset()
                 rotationTuning.reset()
                 photoFocusTuning.reset()
                 mediumCardTuning.reset()

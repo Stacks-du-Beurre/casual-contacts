@@ -8,7 +8,6 @@ public struct GradientLayer: View {
     public let attitude: DeviceAttitude
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Bindable private var tuning = GradientLayerTuning.shared
 
     public init(timeOfDay: TimeOfDay, attitude: DeviceAttitude) {
         self.timeOfDay = timeOfDay
@@ -23,8 +22,7 @@ public struct GradientLayer: View {
                     .rotationEffect(.degrees(180))
                     .opacity(Self.transfusionOpacity(
                         for: attitude,
-                        reduceTransparency: false,
-                        sensitivity: tuning.motionSensitivity
+                        reduceTransparency: false
                     ))
             }
         }
@@ -50,16 +48,13 @@ public struct GradientLayer: View {
     /// At roll = 0 (resting / Reduce Motion) opacity is 0 — only the bottom
     /// gradient is visible at 100%. Tilting in either direction brings the
     /// rotated top layer up (50/50 at |roll| = 0.5, full swap at |roll| = 1).
-    /// Reduce Transparency forces 0. `sensitivity` scales roll before the abs
-    /// mapping; result is clamped to [0, 1].
+    /// Reduce Transparency forces 0.
     static func transfusionOpacity(
         for attitude: DeviceAttitude,
-        reduceTransparency: Bool,
-        sensitivity: Double = 1.0
+        reduceTransparency: Bool
     ) -> Double {
         guard !reduceTransparency else { return 0 }
-        let scaled = abs(attitude.roll * sensitivity)
-        return max(0, min(1, scaled))
+        return max(0, min(1, abs(attitude.roll)))
     }
 
     /// Legacy single-argument variant, retained for existing callers/snapshot tests.

@@ -199,15 +199,14 @@ import CoreModels
 
     /// `transfusionOpacity` is pure math called on every body evaluation of
     /// every GradientLayer on screen. Budget is extremely tight because it's
-    /// just `abs(roll * sensitivity)` + clamp — mean run ≤ 1 ms for the full
-    /// 60-sample stream. Catches accidental expensive work sneaking in.
+    /// just `abs(roll)` + clamp — mean run ≤ 1 ms for the full 60-sample
+    /// stream. Catches accidental expensive work sneaking in.
     @Test func transfusionOpacityStreamIsSubMillisecond() {
         let mean = meanDuration(iterations: 10) {
             for attitude in CardViewPerformanceTests.attitudeStream {
                 _ = GradientLayer.transfusionOpacity(
                     for: attitude,
-                    reduceTransparency: false,
-                    sensitivity: 1.0
+                    reduceTransparency: false
                 )
             }
         }
