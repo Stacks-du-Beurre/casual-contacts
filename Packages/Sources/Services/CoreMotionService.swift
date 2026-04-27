@@ -152,10 +152,18 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
                 motion.attitude.quaternion.w
             )
             self.relativeRebaser.process(quaternion: q, now: now)
+            // Low-pass the relative *angles* (in radians) at 60 Hz before
+            // scaling — same α=0.1 / ~5-frame time constant as the old
+            // pipeline, damping per-sample jitter that the slerp ease
+            // doesn't see (it only smooths during the 1 s rebase window).
+            let smoothedRelative = self.smoother.smooth(DeviceAttitude(
+                pitch: self.relativeRebaser.relativePitch,
+                roll: self.relativeRebaser.relativeTwist
+            ))
             let scale = max(MotionTuning.shared.relativeFullScaleRadians, .pi / 180)
             let production = DeviceAttitude(
-                pitch: tanh(self.relativeRebaser.relativePitch / scale),
-                roll: tanh(self.relativeRebaser.relativeTwist / scale)
+                pitch: tanh(smoothedRelative.pitch / scale),
+                roll: tanh(smoothedRelative.roll / scale)
             )
             let emitted = self.throttle.admit(production, now: now)
             if let emitted {
