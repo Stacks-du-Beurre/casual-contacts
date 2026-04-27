@@ -41,14 +41,15 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 64px;
+  padding: calc(18px + env(safe-area-inset-top)) calc(64px + env(safe-area-inset-right)) 18px calc(64px + env(safe-area-inset-left));
+  margin-top: calc(-1 * env(safe-area-inset-top));
   background: color-mix(in oklab, var(--bg-page) 80%, transparent);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border-bottom: 1px solid var(--border-muted);
 }
-@media (max-width: 880px) { .topnav { padding: 14px 32px; } }
-@media (max-width: 540px) { .topnav { padding: 12px 24px; } }
+@media (max-width: 880px) { .topnav { padding: calc(14px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) 14px calc(32px + env(safe-area-inset-left)); } }
+@media (max-width: 540px) { .topnav { padding: calc(12px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right)) 12px calc(24px + env(safe-area-inset-left)); } }
 
 .wordmark {
   display: inline-flex;
@@ -396,6 +397,9 @@ section.cc-sec:first-of-type { border-top: 0; }
 .essay aside {
   position: sticky;
   top: 96px;
+}
+@media (max-width: 880px) {
+  .essay aside { position: static; top: auto; }
 }
 .essay aside .pull {
   font-family: var(--serif-display);
