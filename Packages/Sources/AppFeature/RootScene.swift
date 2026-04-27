@@ -285,12 +285,22 @@ public struct RootScene: Scene {
                 onAddDebugRecords: addDebugRecords,
                 onAddNearbyDebugRecords: addNearbyDebugRecords,
                 onRemoveDebugRecords: removeDebugRecords,
+                onOpenLetterGallery: openLetterGallery,
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 requestLocationAuthorization: { await environment.locationService.requestAuthorization() },
                 openSystemSettings: openSystemSettings
             )
                 .presentationCornerRadius(12)
         }
+        #if DEBUG
+        .fullScreenCover(isPresented: $router.showingDebugLetterGallery) {
+            DebugLetterGalleryScene(
+                paths: environment.cardPathProvider,
+                attitude: currentAttitude,
+                onDismiss: { router.showingDebugLetterGallery = false }
+            )
+        }
+        #endif
         .alert(
             "Location Required",
             isPresented: Binding(
@@ -371,6 +381,19 @@ public struct RootScene: Scene {
             for record in DebugRecordSeeder.nearbyRecords(around: origin) {
                 try? await store.insert(record)
             }
+        }
+    }
+
+    /// Dismisses the Settings sheet and presents the 78-card letter-gallery
+    /// diagnostic. Mirrors the dismiss-then-present timing used by the
+    /// edit-from-settings flow so SwiftUI doesn't drop the second
+    /// presentation while the first is still dismissing. The fullScreenCover
+    /// itself is `#if DEBUG`-gated, so this is a no-op in release builds.
+    private func openLetterGallery() {
+        router.showingSettings = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            router.showingDebugLetterGallery = true
         }
     }
 

@@ -16,6 +16,7 @@ public struct SettingsSheet: View {
     public let onAddDebugRecords: () -> Void
     public let onAddNearbyDebugRecords: () -> Void
     public let onRemoveDebugRecords: () -> Void
+    public let onOpenLetterGallery: () -> Void
     /// Reads current OS location authorization without prompting. Called on
     /// appear and after a permission request to refresh the toggle's
     /// displayed state.
@@ -35,6 +36,7 @@ public struct SettingsSheet: View {
         onAddDebugRecords: @escaping () -> Void = {},
         onAddNearbyDebugRecords: @escaping () -> Void = {},
         onRemoveDebugRecords: @escaping () -> Void = {},
+        onOpenLetterGallery: @escaping () -> Void = {},
         readLocationAuthorization: @escaping () -> LocationAuthorization = { .notDetermined },
         requestLocationAuthorization: @escaping () async -> LocationAuthorization = { .notDetermined },
         openSystemSettings: @escaping () -> Void = {}
@@ -43,6 +45,7 @@ public struct SettingsSheet: View {
         self.onAddDebugRecords = onAddDebugRecords
         self.onAddNearbyDebugRecords = onAddNearbyDebugRecords
         self.onRemoveDebugRecords = onRemoveDebugRecords
+        self.onOpenLetterGallery = onOpenLetterGallery
         self.readLocationAuthorization = readLocationAuthorization
         self.requestLocationAuthorization = requestLocationAuthorization
         self.openSystemSettings = openSystemSettings
@@ -57,7 +60,8 @@ public struct SettingsSheet: View {
                         DeveloperSettingsPanel(
                             onAddDebugRecords: onAddDebugRecords,
                             onAddNearbyDebugRecords: onAddNearbyDebugRecords,
-                            onRemoveDebugRecords: onRemoveDebugRecords
+                            onRemoveDebugRecords: onRemoveDebugRecords,
+                            onOpenLetterGallery: onOpenLetterGallery
                         )
                     }
                 }

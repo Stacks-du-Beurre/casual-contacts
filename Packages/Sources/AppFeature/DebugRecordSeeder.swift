@@ -139,6 +139,45 @@ enum DebugRecordSeeder {
         let location: LocationInfo
     }
 
+    #if DEBUG
+    /// 78 records — 26 letters × 3 `GuillocheShape` variants — used by the
+    /// in-app letter-gallery debug screen to verify each blended-letter SVG
+    /// renders and animates in the right direction. Name's first character
+    /// drives `VisualAccoutrements.letter`; `guillocheShape` is set explicitly
+    /// so we exercise every (letter, shape) cell instead of relying on the
+    /// UUID-byte-sum default.
+    static var letterGalleryRecords: [Record] {
+        let now = Date()
+        let metadata = RecordMetadata(timeOfDay: .midday, moonPhase: .fullMoon)
+        let shapes = GuillocheShape.allCases
+        var result: [Record] = []
+        result.reserveCapacity(26 * shapes.count)
+        for letterIndex in 0..<26 {
+            let scalar = Unicode.Scalar(UInt8(0x41) + UInt8(letterIndex))
+            let letter = Character(scalar)
+            for (shapeIndex, shape) in shapes.enumerated() {
+                let flatIndex = letterIndex * shapes.count + shapeIndex
+                let stamp = now.addingTimeInterval(-Double(flatIndex))
+                result.append(
+                    Record(
+                        id: UUID(),
+                        name: "\(letter) — \(shape.rawValue.capitalized)",
+                        description: "",
+                        photoID: nil,
+                        location: nil,
+                        zodiacSign: .leo,
+                        createdAt: stamp,
+                        updatedAt: stamp,
+                        metadata: metadata,
+                        guillocheShape: shape
+                    )
+                )
+            }
+        }
+        return result
+    }
+    #endif
+
     private static let seeds: [Seed] = [
         Seed(
             id: UUID(uuidString: "DEBC1100-0000-0000-0000-000000000001")!,

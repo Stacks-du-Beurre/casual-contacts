@@ -18,6 +18,11 @@ public final class NavigationRouter {
     public var tappedRecord: Record?
     public var tappedRecordSourceFrame: CGRect = .zero
     public var editingRecord: Record?
+    /// Presents the 78-card letter/shape diagnostic gallery
+    /// (`DebugLetterGalleryScene`). Set from the developer settings panel.
+    /// The gallery scene itself is `#if DEBUG`-only, so this flag is only
+    /// ever observed in DEBUG builds.
+    public var showingDebugLetterGallery: Bool = false
 
     public init() {}
 }

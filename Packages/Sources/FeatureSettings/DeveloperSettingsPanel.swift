@@ -24,15 +24,20 @@ struct DeveloperSettingsPanel: View {
     let onAddDebugRecords: () -> Void
     let onAddNearbyDebugRecords: () -> Void
     let onRemoveDebugRecords: () -> Void
+    /// DEBUG: opens the 78-card letter-gallery diagnostic. Default no-op
+    /// keeps previews and host-tests compiling without an explicit hook.
+    let onOpenLetterGallery: () -> Void
 
     init(
         onAddDebugRecords: @escaping () -> Void = {},
         onAddNearbyDebugRecords: @escaping () -> Void = {},
-        onRemoveDebugRecords: @escaping () -> Void = {}
+        onRemoveDebugRecords: @escaping () -> Void = {},
+        onOpenLetterGallery: @escaping () -> Void = {}
     ) {
         self.onAddDebugRecords = onAddDebugRecords
         self.onAddNearbyDebugRecords = onAddNearbyDebugRecords
         self.onRemoveDebugRecords = onRemoveDebugRecords
+        self.onOpenLetterGallery = onOpenLetterGallery
     }
 
     var body: some View {
@@ -282,6 +287,13 @@ struct DeveloperSettingsPanel: View {
             SettingsDivider()
             SettingsRow(label: "Remove debug records", onTap: onRemoveDebugRecords) {
                 Image(systemName: "minus.circle")
+                    .font(.system(size: 18, weight: .regular))
+                    .frame(width: 44, height: 43)
+                    .accessibilityHidden(true)
+            }
+            SettingsDivider()
+            SettingsRow(label: "Letter gallery (78 cards)", onTap: onOpenLetterGallery) {
+                Image(systemName: "textformat.abc")
                     .font(.system(size: 18, weight: .regular))
                     .frame(width: 44, height: 43)
                     .accessibilityHidden(true)
