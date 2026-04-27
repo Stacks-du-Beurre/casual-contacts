@@ -16,6 +16,26 @@ let namespace = arguments[3]
 
 try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
+// Optional sidecar JSON next to the SVGs, keyed by SVG basename (without
+// extension), value = human-readable reason for reversal. Any basename listed
+// has its `[Path]` order flipped in the emitted `all` array — used to correct
+// designer SVGs whose layer order paints/animates the wrong direction.
+//
+// Example `path-order-overrides.json`:
+// {
+//     "A_Circle": "Source SVG layered outside-in; reverse so animation winds inward"
+// }
+let overridesURL = inputDir.appendingPathComponent("path-order-overrides.json")
+let reverseOrder: Set<String> = {
+    guard let data = try? Data(contentsOf: overridesURL),
+          let json = try? JSONSerialization.jsonObject(with: data) as? [String: String]
+    else { return [] }
+    return Set(json.keys)
+}()
+if !reverseOrder.isEmpty {
+    print("Reversing path order for: \(reverseOrder.sorted().joined(separator: ", "))")
+}
+
 let svgFiles = (try? FileManager.default.contentsOfDirectory(at: inputDir, includingPropertiesForKeys: nil))
     .map { $0.filter { $0.pathExtension.lowercased() == "svg" } } ?? []
 
@@ -40,7 +60,20 @@ for svgFile in svgFiles {
         paths.append((name: "path\(index)", commands: commands))
     }
 
-    let pathsWithContainer: [(name: String, commands: [PathCommand])] = paths
+    // Reverse path order for any basename listed in path-order-overrides.json
+    // — flipping the array also flips the per-index stagger animations and
+    // the paint order in `[Path].all`, which is how the user reverses the
+    // animation direction for SVGs whose source layers are wound the wrong
+    // way. The path constants themselves still have stable `path0…pathN`
+    // names; only the order in `all` changes. Renaming so `path0` is the
+    // first painted path keeps callers that rely on `.first` consistent
+    // with the visible ordering.
+    let pathsWithContainer: [(name: String, commands: [PathCommand])] = {
+        guard reverseOrder.contains(name) else { return paths }
+        return paths.reversed().enumerated().map { offset, element in
+            (name: "path\(offset)", commands: element.commands)
+        }
+    }()
 
     // Declare the per-file nested enum as an extension on the parent namespace,
     // then fill that nested enum with path constants via a second extension.
