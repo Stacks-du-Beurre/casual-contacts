@@ -49,7 +49,11 @@ struct CreateFormOverlay<Backdrop: View>: View {
                 backdrop: backdrop
             )
 
-            DescriptionPill(model: model, focus: formFocus)
+            DescriptionPill(
+                model: model,
+                focus: formFocus,
+                maxWidth: backdropSize.width * 0.75
+            )
 
             addZodiacButton
                 .padding(.top, -2)
@@ -191,33 +195,88 @@ private struct NamePill<Backdrop: View>: View {
     }
 }
 
+/// Preference key carrying the description text's natural single-line width.
+/// Used by `DescriptionPill` to size the TextField to fit its content,
+/// capped at the cap derived from the form overlay's width.
+private struct DescriptionNaturalWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// Glass-blur pill carrying the description `TextField`. Cormorant Infant
 /// SemiBold 18. Plain TextField (no hologram treatment on description).
+///
+/// Width behavior: the pill hugs its content up to `maxWidth` (75% of the
+/// form overlay's width), then the TextField wraps to additional lines.
+/// `TextField(axis: .vertical)` always fills the available width, so we
+/// measure the text's natural single-line width with a hidden `Text` sizer
+/// (published via preference) and apply that width — clamped to the cap —
+/// as an explicit frame on the field.
 private struct DescriptionPill: View {
     @Bindable var model: CreateRecordModel
     var focus: FocusState<CreateFormField?>.Binding
+    let maxWidth: CGFloat
+
+    @State private var naturalWidth: CGFloat = 0
+
+    private static let horizontalPadding: CGFloat = 16
+    /// Cushion added to the measured `Text` width before sizing the
+    /// `TextField`. UITextField uses an internal NSTextContainer with line
+    /// fragment padding (~5pt each side) plus space for the caret; without
+    /// the cushion, content that fits the bare `Text` sizer would prematurely
+    /// wrap inside the live field.
+    private static let editingCushion: CGFloat = 18
 
     var body: some View {
+        let displayText = model.description.isEmpty ? "Description" : model.description
+        let cap = max(0, maxWidth - Self.horizontalPadding * 2)
+        let fieldWidth = min(max(naturalWidth + Self.editingCushion, 0), cap)
+
         TextField(
             "Description",
             text: $model.description,
             prompt: Text("Description").foregroundStyle(CCDesign.Colors.L0),
-            axis: .horizontal
+            axis: .vertical
         )
-            .font(CCDesign.Typography.description)
-            .tracking(CCDesign.Typography.Tracking.description)
-            .foregroundStyle(CCDesign.Colors.L0)
-            .tint(CCDesign.Colors.L0)
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(Color.white.opacity(0.15))
-            .overlay(
-                Rectangle()
-                    .stroke(Color.white.opacity(0.45), lineWidth: 1)
-            )
-            .focused(focus, equals: .description)
-            .accessibilityIdentifier("descriptionField")
-            .fixedSize(horizontal: true, vertical: false)
+        .lineLimit(1...)
+        .font(CCDesign.Typography.description)
+        .tracking(CCDesign.Typography.Tracking.description)
+        .foregroundStyle(CCDesign.Colors.L0)
+        .tint(CCDesign.Colors.L0)
+        .textFieldStyle(.plain)
+        .frame(width: fieldWidth, alignment: .leading)
+        .background(alignment: .leading) {
+            // Sizer: a hidden, single-line Text rendered in the background so
+            // it doesn't take layout space, but reports its natural width via
+            // preference. `fixedSize` lets the Text exceed the host's clipped
+            // bounds horizontally so we always learn its true ideal width.
+            Text(displayText)
+                .font(CCDesign.Typography.description)
+                .tracking(CCDesign.Typography.Tracking.description)
+                .lineLimit(1)
+                .fixedSize()
+                .hidden()
+                .accessibilityHidden(true)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: DescriptionNaturalWidthKey.self,
+                            value: geo.size.width
+                        )
+                    }
+                )
+        }
+        .onPreferenceChange(DescriptionNaturalWidthKey.self) { naturalWidth = $0 }
+        .focused(focus, equals: .description)
+        .accessibilityIdentifier("descriptionField")
+        .padding(.horizontal, Self.horizontalPadding)
+        .padding(.vertical, 9)
+        .background(Color.white.opacity(0.15))
+        .overlay(
+            Rectangle()
+                .stroke(Color.white.opacity(0.45), lineWidth: 1)
+        )
     }
 }
