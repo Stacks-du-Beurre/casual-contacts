@@ -79,15 +79,19 @@ public struct HologramText<Backdrop: View>: View {
     }
 
     private var textStack: some View {
-        ZStack {
+        ZStack(alignment: .leading) {
             Text(text)
                 .font(font)
                 .foregroundStyle(.black)
                 .blendMode(.overlay)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
 
             Text(text)
                 .font(font)
                 .foregroundStyle(Color.black.opacity(0.2))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
     }
 

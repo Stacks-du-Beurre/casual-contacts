@@ -214,7 +214,11 @@ struct CardTextLayer<Backdrop: View>: View {
                         coordinateSpaceName: coordinateSpaceName,
                         backdrop: backdrop
                     )
-                    .fixedSize()
+                    .frame(
+                        maxWidth: max(0, layout.size.width - 32 - 60),
+                        alignment: .leading
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
 
                     if !record.description.isEmpty {
                         DescriptionPills(
