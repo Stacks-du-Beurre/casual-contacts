@@ -1,19 +1,59 @@
 import SwiftUI
 import CoreModels
 
+/// Which signal source drives the 2D dot. Each maps a `MotionDebugSample` to
+/// a unit-square position, so a developer can tap-compare them and decide
+/// which one drives the smoothest animation across the full orientation
+/// sphere — including past-vertical / upside-down where Euler-derived
+/// signals discontinuously flip.
+enum MotionDebugDotSource: String, CaseIterable, Hashable {
+    /// Quaternion-delta from a captured baseline pose. Decomposes into
+    /// signed rotation around the device X-axis (pitch) and Y-axis (twist).
+    /// No Euler singularity, linear angular response, baseline-pose
+    /// independent. Default — this is the one designed to actually work.
+    case relative
+    /// `shaped.{roll, pitch}` — current production pipeline output.
+    /// Goes erratic near pitch = ±π/2 (CoreMotion Euler singularity).
+    case rawEuler
+    /// Gravity direction in device frame, derived from `rawQuaternion`
+    /// via `g = q⁻¹ · (0,0,-1) · q`. Continuous everywhere; differs from
+    /// `.gravity` in dynamic motion (no live-accelerometer fusion noise).
+    case quaternion
+    /// `motion.gravity.{x, y}` — Apple's sensor-fused gravity direction.
+    /// Continuous everywhere, slightly noisier than `.quaternion` under
+    /// real-world acceleration because it folds in accelerometer data.
+    case gravity
+
+    var label: String {
+        switch self {
+        case .relative:   return "Relative"
+        case .rawEuler:   return "Euler"
+        case .quaternion: return "Quat"
+        case .gravity:    return "Gravity"
+        }
+    }
+}
+
 /// Pinned top region of the debug screen.
 ///
-/// Left half: a unit-square 2D plot of (shaped.pitch, shaped.roll). Origin
-/// at center, ±1 at edges. A faint trail of the last `trailDuration` seconds
-/// gives motion direction at a glance.
+/// Left: a unit-square 2D plot driven by one of three signal sources
+/// (selectable via the row of tabs beneath the dot). Origin at center,
+/// ±1 at edges. A faint trail of the last `trailDuration` seconds gives
+/// motion direction at a glance.
 ///
-/// Right half: three state chips — settle countdown, rebase progress, and
+/// Right: three state chips — settle countdown, rebase progress, and
 /// the throttled emission rate (Hz) over the last 1 s.
 struct MotionDebugPinnedRegion: View {
 
     let snapshot: MotionDebugViewModel.Snapshot
     let emissionRate: Int
     let referenceTime: Date
+    let dotSource: MotionDebugDotSource
+    let gravityRebaser: GravityRebaser
+    let relativeRebaser: RelativeRotationRebaser
+    /// Angle (in radians) from baseline that maps to the box edge in the
+    /// `.relative` mode. Tunable via the slider above the dot.
+    let relativeFullScaleRadians: Double
 
     private let trailDuration: TimeInterval = 1.0
 
@@ -54,23 +94,77 @@ struct MotionDebugPinnedRegion: View {
                 for sample in snapshot.samples {
                     let dt = referenceTime.timeIntervalSince(sample.timestamp)
                     guard dt <= trailDuration, dt >= 0 else { continue }
-                    let x = size.width * CGFloat((sample.shaped.pitch + 1) / 2)
-                    let y = size.height * CGFloat((sample.shaped.roll + 1) / 2)
-                    let point = CGPoint(x: x, y: y)
-                    if first { p.move(to: point); first = false }
-                    else { p.addLine(to: point) }
+                    let pos = position(for: sample, in: size, isLatest: false)
+                    if first { p.move(to: pos); first = false }
+                    else { p.addLine(to: pos) }
                 }
             }
             context.stroke(trail, with: .color(.accentColor.opacity(0.5)), lineWidth: 1)
 
             // Current dot
             if let latest = snapshot.latest {
-                let cx = size.width * CGFloat((latest.shaped.pitch + 1) / 2)
-                let cy = size.height * CGFloat((latest.shaped.roll + 1) / 2)
-                let dot = Path(ellipseIn: CGRect(x: cx - 4, y: cy - 4, width: 8, height: 8))
+                let pos = position(for: latest, in: size, isLatest: true)
+                let dot = Path(ellipseIn: CGRect(x: pos.x - 4, y: pos.y - 4, width: 8, height: 8))
                 context.fill(dot, with: .color(.accentColor))
             }
         }
+    }
+
+    /// Map a sample to a (x, y) point on the unit-square canvas. Each source
+    /// produces a value in roughly ±1, then we shift to [0, 1] and scale to
+    /// canvas size. Out-of-range values clip to the edges (the `min`/`max`
+    /// guards handle non-unit-magnitude gravity / quaternion-derived vectors).
+    private func position(for sample: MotionDebugSample, in size: CGSize, isLatest: Bool) -> CGPoint {
+        let (rawX, rawY): (Double, Double)
+        switch dotSource {
+        case .relative:
+            // Divide by the user-tunable full-scale: smaller value = more
+            // sensitive (less rotation drives the dot to the edge).
+            let scale = max(relativeFullScaleRadians, .pi / 180)  // floor at 1°
+            if isLatest {
+                rawX = relativeRebaser.relativeTwist / scale
+                rawY = relativeRebaser.relativePitch / scale
+            } else {
+                let (pitch, twist) = relativeRebaser.angles(forQuaternion: sample.rawQuaternion)
+                rawX = twist / scale
+                rawY = pitch / scale
+            }
+        case .rawEuler:
+            rawX = sample.shaped.roll
+            rawY = sample.shaped.pitch
+        case .quaternion:
+            // Standard formula for the gravity direction in device frame
+            // given a unit quaternion q = (x, y, z, w) representing the
+            // device's orientation in world frame. Continuous through
+            // every orientation, including past vertical.
+            let q = sample.rawQuaternion
+            let gx = 2 * (q.x * q.z - q.w * q.y)
+            let gy = 2 * (q.w * q.x + q.y * q.z)
+            rawX = gx
+            rawY = gy
+        case .gravity:
+            if isLatest {
+                // Live dot uses the rebaser's unwrapped, baseline-subtracted
+                // angles so a continuous physical rotation past upside-down
+                // pins the dot at the box edge instead of teleporting.
+                // ÷ π means 90° tilt sits halfway between center and edge.
+                rawX = gravityRebaser.relativeRoll / .pi
+                rawY = gravityRebaser.relativePitch / .pi
+            } else {
+                // Trail samples don't have unwrapped state stored per-sample;
+                // recompute principal-value relative angles. Approximate but
+                // visually fine for the 1 s history — the live dot is the
+                // continuous one.
+                let g = sample.gravity
+                let pitch = atan2(g.y, -g.z) - gravityRebaser.baselinePitch
+                let roll = atan2(g.x, -g.z) - gravityRebaser.baselineRoll
+                rawX = roll / .pi
+                rawY = pitch / .pi
+            }
+        }
+        let nx = min(max((rawX + 1) / 2, 0), 1)
+        let ny = min(max((rawY + 1) / 2, 0), 1)
+        return CGPoint(x: size.width * CGFloat(nx), y: size.height * CGFloat(ny))
     }
 
     private var settleChip: some View {

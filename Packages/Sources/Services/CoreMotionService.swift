@@ -46,6 +46,10 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
     private let manager = CMMotionManager()
     private let smoother = AttitudeLowPass(alpha: 0.1)
     private let throttle = AttitudeThrottle()
+    /// Production pipeline: quaternion-delta against a captured baseline pose,
+    /// decomposed into signed rotations around device X (pitch) and Y (twist).
+    /// No Euler singularity, no edge reversals, baseline-pose independent.
+    private let relativeRebaser = RelativeRotationRebaser()
     private var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation?
     private var debugContinuation: AsyncStream<MotionDebugSample>.Continuation?
 
@@ -136,7 +140,24 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
                 }
             }
 
-            let emitted = self.throttle.admit(shaped, now: now)
+            // Production output is now driven by the quaternion-delta rebaser:
+            // capture baseline at start (and after 3.5s settle), measure
+            // rotation FROM baseline in baseline-local coordinates, decompose
+            // into signed pitch/twist angles. tanh smoothly saturates the ÷
+            // full-scale value into ±1 so consumers never see a hard clamp.
+            let q = SIMD4<Double>(
+                motion.attitude.quaternion.x,
+                motion.attitude.quaternion.y,
+                motion.attitude.quaternion.z,
+                motion.attitude.quaternion.w
+            )
+            self.relativeRebaser.process(quaternion: q, now: now)
+            let scale = max(MotionTuning.shared.relativeFullScaleRadians, .pi / 180)
+            let production = DeviceAttitude(
+                pitch: tanh(self.relativeRebaser.relativePitch / scale),
+                roll: tanh(self.relativeRebaser.relativeTwist / scale)
+            )
+            let emitted = self.throttle.admit(production, now: now)
             if let emitted {
                 self.attitudeContinuation?.yield(emitted)
             }

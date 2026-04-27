@@ -15,34 +15,73 @@ public struct MotionDebugScene: View {
 
     @State private var viewModel = MotionDebugViewModel()
     @State private var reduceMotionActive = false
+    @State private var dotSource: MotionDebugDotSource = .relative
+    @State private var gravityRebaser = GravityRebaser()
+    @State private var relativeRebaser = RelativeRotationRebaser()
+    /// Live binding to the singleton tuning shared with `CoreMotionService`,
+    /// so dragging the slider here also tunes the production card animations.
+    @Bindable private var motionTuning = MotionTuning.shared
 
     public init(service: any MotionService) {
         self.service = service
     }
 
     public var body: some View {
-        TimelineView(.animation) { timeline in
-            let snapshot = viewModel.snapshot()
-            let now = timeline.date
-            let rate = viewModel.emissionRate(referenceTime: now)
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    if reduceMotionActive {
-                        Text("Reduce Motion is on — debug stream is suppressed.")
-                            .font(.caption)
-                            .padding(8)
-                            .frame(maxWidth: .infinity)
-                            .background(.orange.opacity(0.2))
+        VStack(spacing: 0) {
+            // Picker hoisted OUTSIDE TimelineView so its identity is stable
+            // (TimelineView re-evaluates 60Hz, which was fighting the segmented
+            // control's tap-state somehow). dotSource updates flow into the
+            // TimelineView block below by closure capture.
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Source: \(dotSource.label)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.primary)
+                Picker("Source", selection: $dotSource) {
+                    ForEach(MotionDebugDotSource.allCases, id: \.self) { source in
+                        Text(source.label).tag(source)
                     }
-                    MotionDebugPinnedRegion(
-                        snapshot: snapshot,
-                        emissionRate: rate,
-                        referenceTime: now
-                    )
-                    Divider()
-                    LazyVStack(spacing: 0) {
-                        signalRows(snapshot: snapshot, now: now)
+                }
+                .pickerStyle(.segmented)
+
+                if dotSource == .relative {
+                    HStack(spacing: 12) {
+                        Text("Full-scale: \(Int(motionTuning.relativeFullScaleDegrees))°")
+                            .font(.caption.monospacedDigit())
+                            .frame(width: 130, alignment: .leading)
+                        Slider(value: $motionTuning.relativeFullScaleDegrees, in: 10...180, step: 5)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+
+            TimelineView(.animation) { timeline in
+                let snapshot = viewModel.snapshot()
+                let now = timeline.date
+                let rate = viewModel.emissionRate(referenceTime: now)
+
+                ScrollView {
+                    VStack(spacing: 0) {
+                        if reduceMotionActive {
+                            Text("Reduce Motion is on — debug stream is suppressed.")
+                                .font(.caption)
+                                .padding(8)
+                                .frame(maxWidth: .infinity)
+                                .background(.orange.opacity(0.2))
+                        }
+                        MotionDebugPinnedRegion(
+                            snapshot: snapshot,
+                            emissionRate: rate,
+                            referenceTime: now,
+                            dotSource: dotSource,
+                            gravityRebaser: gravityRebaser,
+                            relativeRebaser: relativeRebaser,
+                            relativeFullScaleRadians: motionTuning.relativeFullScaleRadians
+                        )
+                        Divider()
+                        LazyVStack(spacing: 0) {
+                            signalRows(snapshot: snapshot, now: now)
+                        }
                     }
                 }
             }
@@ -57,6 +96,9 @@ public struct MotionDebugScene: View {
             #endif
             for await sample in service.debugSamples {
                 viewModel.append(sample)
+                let now = Date()
+                gravityRebaser.process(sample: sample, now: now)
+                relativeRebaser.process(quaternion: sample.rawQuaternion, now: now)
             }
         }
     }
