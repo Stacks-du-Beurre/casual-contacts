@@ -12,12 +12,15 @@ extension AppEnvironment {
     @MainActor
     static func testing(
         recordStore: (any RecordStore)? = nil,
-        photoStore: (any PhotoStore)? = nil
+        photoStore: (any PhotoStore)? = nil,
+        locationService: (any LocationService)? = nil,
+        locationPermissionPrimerStore: (any LocationPermissionPrimerStore)? = nil
     ) -> AppEnvironment {
         AppEnvironment(
             recordStore: recordStore ?? InMemoryRecordStore(),
             photoStore: photoStore ?? InMemoryPhotoStore(),
-            locationService: MockLocationService(),
+            locationService: locationService ?? MockLocationService(),
+            locationPermissionPrimerStore: locationPermissionPrimerStore ?? InMemoryLocationPermissionPrimerStore(),
             motionService: StaticMotionService(),
             metadataGenerator: FixedMetadataGenerator(),
             cardPathProvider: NoopCardPathProvider(),

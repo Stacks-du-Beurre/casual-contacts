@@ -21,13 +21,9 @@ public struct SettingsSheet: View {
     /// appear and after a permission request to refresh the toggle's
     /// displayed state.
     public let readLocationAuthorization: () -> LocationAuthorization
-    /// Actually triggers the OS prompt (only meaningful when current state
-    /// is `.notDetermined`). Returns the resolved status afterwards.
-    public let requestLocationAuthorization: () async -> LocationAuthorization
-    /// Opens the iOS Settings app deep-linked to this app's permissions
-    /// page. Called when current state is `.denied` and the user wants to
-    /// re-enable, since iOS doesn't allow re-prompting.
-    public let openSystemSettings: () -> Void
+    /// Delegates location-toggle intent to the host, which owns the app-level
+    /// primer, OS permission request, and iOS Settings redirect.
+    public let onLocationToggleTapped: () async -> Void
     /// Optional MotionService injected by the host so the #if DEBUG motion
     /// debug screen can subscribe to `debugSamples`. nil hides the row.
     public let motionService: (any MotionService)?
@@ -41,8 +37,7 @@ public struct SettingsSheet: View {
         onRemoveDebugRecords: @escaping () -> Void = {},
         onOpenLetterGallery: @escaping () -> Void = {},
         readLocationAuthorization: @escaping () -> LocationAuthorization = { .notDetermined },
-        requestLocationAuthorization: @escaping () async -> LocationAuthorization = { .notDetermined },
-        openSystemSettings: @escaping () -> Void = {},
+        onLocationToggleTapped: @escaping () async -> Void = {},
         motionService: (any MotionService)? = nil
     ) {
         self.onAbout = onAbout
@@ -51,8 +46,7 @@ public struct SettingsSheet: View {
         self.onRemoveDebugRecords = onRemoveDebugRecords
         self.onOpenLetterGallery = onOpenLetterGallery
         self.readLocationAuthorization = readLocationAuthorization
-        self.requestLocationAuthorization = requestLocationAuthorization
-        self.openSystemSettings = openSystemSettings
+        self.onLocationToggleTapped = onLocationToggleTapped
         self.motionService = motionService
     }
 
@@ -158,18 +152,9 @@ public struct SettingsSheet: View {
         }
     }
 
-    /// Reflects the current OS location authorization. The toggle's getter
-    /// returns `true` only when authorized; the setter NEVER flips the
-    /// underlying authorization state directly (iOS doesn't expose that to
-    /// apps) — instead it routes to the right action based on what the OS
-    /// will actually let us do:
-    /// - `.notDetermined` → call `requestAuthorization()` which surfaces
-    ///   the system permission prompt.
-    /// - `.denied`        → open the iOS Settings app deep-linked to this
-    ///   app's permissions page; iOS won't re-prompt once denied.
-    /// - `.authorized`    → already on; do nothing.
-    /// After any action we re-read state via `readLocationAuthorization()`
-    /// so the toggle's displayed position matches reality.
+    /// Reflects the current OS location authorization. The toggle's setter
+    /// delegates all permission side effects to the host because only the host
+    /// can present the app-level primer and open iOS Settings.
     private var locationToggleRow: some View {
         SettingsToggleRow(
             label: "Use my location",
@@ -181,19 +166,11 @@ public struct SettingsSheet: View {
     }
 
     private func handleLocationToggleTapped() {
-        switch locationAuthorization {
-        case .notDetermined:
-            Task {
-                let resolved = await requestLocationAuthorization()
-                await MainActor.run { locationAuthorization = resolved }
+        Task {
+            await onLocationToggleTapped()
+            await MainActor.run {
+                locationAuthorization = readLocationAuthorization()
             }
-        case .denied:
-            openSystemSettings()
-        case .authorized:
-            // Already on. The toggle UI flickers off on user tap; refresh
-            // reads the OS state back as `.authorized` and the toggle
-            // returns to the on position on the next render.
-            locationAuthorization = readLocationAuthorization()
         }
     }
 

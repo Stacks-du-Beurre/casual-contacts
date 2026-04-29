@@ -9,10 +9,17 @@ import CoreModels
 @MainActor
 @Observable
 public final class NavigationRouter {
+    public enum LocationPrimerContext: String, Identifiable {
+        case create
+        case settings
+
+        public var id: String { rawValue }
+    }
 
     public var showingCreate = false
     public var showingSettings = false
     public var showingAbout = false
+    public var locationPrimerContext: LocationPrimerContext?
     public var selectedRecordForMediumDetail: Record?
     public var selectedRecordForLargeDetail: Record?
     public var tappedRecord: Record?

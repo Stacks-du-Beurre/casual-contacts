@@ -80,7 +80,7 @@ public struct RootScene: Scene {
                 router.tappedRecord = record
             },
             onTapCreate: {
-                router.showingCreate = true
+                handleCreateTapped()
             },
             onTapSettings: {
                 router.showingSettings = true
@@ -287,11 +287,21 @@ public struct RootScene: Scene {
                 onRemoveDebugRecords: removeDebugRecords,
                 onOpenLetterGallery: openLetterGallery,
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
-                requestLocationAuthorization: { await environment.locationService.requestAuthorization() },
-                openSystemSettings: openSystemSettings,
+                onLocationToggleTapped: { await handleSettingsLocationToggleTapped() },
                 motionService: environment.motionService
             )
                 .presentationCornerRadius(12)
+        }
+        .sheet(item: $router.locationPrimerContext) { context in
+            LocationPermissionPrimer(
+                onAccept: { handleLocationPrimerAccepted(context) },
+                onDecline: { handleLocationPrimerDeclined(context) }
+            )
+            #if os(iOS)
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+            .presentationCornerRadius(12)
+            #endif
         }
         #if DEBUG
         .fullScreenCover(isPresented: $router.showingDebugLetterGallery) {
@@ -336,6 +346,63 @@ public struct RootScene: Scene {
             for record in DebugRecordSeeder.records {
                 try? await store.insert(record)
             }
+        }
+    }
+
+    private func handleCreateTapped() {
+        let action = LocationPermissionFlow.createAction(
+            authorization: environment.locationService.currentAuthorization(),
+            decision: environment.locationPermissionPrimerStore.decision
+        )
+        switch action {
+        case .openCreate, .openCreateWithoutLocationRequest:
+            router.showingCreate = true
+        case .requestAuthorizationThenOpenCreate:
+            Task {
+                _ = await environment.locationService.requestAuthorization()
+                await MainActor.run { router.showingCreate = true }
+            }
+        case .showPrimer:
+            router.locationPrimerContext = .create
+        }
+    }
+
+    private func handleSettingsLocationToggleTapped() async {
+        guard environment.locationService.currentAuthorization() != .authorized else { return }
+        router.showingSettings = false
+        try? await Task.sleep(for: .milliseconds(350))
+        router.locationPrimerContext = .settings
+    }
+
+    private func handleLocationPrimerAccepted(_ context: NavigationRouter.LocationPrimerContext) {
+        environment.locationPermissionPrimerStore.decision = .accepted
+        router.locationPrimerContext = nil
+        Task {
+            switch context {
+            case .create:
+                _ = await environment.locationService.requestAuthorization()
+                await MainActor.run { router.showingCreate = true }
+            case .settings:
+                let action = LocationPermissionFlow.settingsAcceptAction(
+                    authorization: environment.locationService.currentAuthorization()
+                )
+                switch action {
+                case .requestAuthorization:
+                    _ = await environment.locationService.requestAuthorization()
+                case .openSystemSettings:
+                    await MainActor.run { openSystemSettings() }
+                case .noAction:
+                    break
+                }
+            }
+        }
+    }
+
+    private func handleLocationPrimerDeclined(_ context: NavigationRouter.LocationPrimerContext) {
+        environment.locationPermissionPrimerStore.decision = .declined
+        router.locationPrimerContext = nil
+        if context == .create {
+            router.showingCreate = true
         }
     }
 

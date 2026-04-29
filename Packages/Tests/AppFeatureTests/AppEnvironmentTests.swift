@@ -21,5 +21,6 @@ import Services
     @Test func testFakeInitUsesInMemoryServices() {
         let env = AppEnvironment.testing()
         #expect(env.recordStore.records.isEmpty)
+        #expect(env.locationPermissionPrimerStore.decision == .notAnswered)
     }
 }

@@ -21,6 +21,7 @@ public final class AppEnvironment {
     public let recordStore: any RecordStore
     public let photoStore: any PhotoStore
     public let locationService: any LocationService
+    public let locationPermissionPrimerStore: any LocationPermissionPrimerStore
     public let motionService: any MotionService
     public let metadataGenerator: any MetadataGenerator
     public let cardPathProvider: any CardPathProvider
@@ -30,6 +31,7 @@ public final class AppEnvironment {
         recordStore: any RecordStore,
         photoStore: any PhotoStore,
         locationService: any LocationService,
+        locationPermissionPrimerStore: any LocationPermissionPrimerStore,
         motionService: any MotionService,
         metadataGenerator: any MetadataGenerator,
         cardPathProvider: any CardPathProvider,
@@ -38,6 +40,7 @@ public final class AppEnvironment {
         self.recordStore = recordStore
         self.photoStore = photoStore
         self.locationService = locationService
+        self.locationPermissionPrimerStore = locationPermissionPrimerStore
         self.motionService = motionService
         self.metadataGenerator = metadataGenerator
         self.cardPathProvider = cardPathProvider
@@ -67,6 +70,7 @@ public final class AppEnvironment {
             recordStore: SwiftDataRecordStore(container: container),
             photoStore: FileSystemPhotoStore(rootURL: photoRoot),
             locationService: CoreLocationService(),
+            locationPermissionPrimerStore: UserDefaultsLocationPermissionPrimerStore(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
@@ -102,6 +106,7 @@ public final class AppEnvironment {
             recordStore: SwiftDataRecordStore(container: container),
             photoStore: FileSystemPhotoStore(rootURL: photoRoot),
             locationService: CoreLocationService(),
+            locationPermissionPrimerStore: UserDefaultsLocationPermissionPrimerStore(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
@@ -129,6 +134,7 @@ public final class AppEnvironment {
             recordStore: SwiftDataRecordStore(container: container),
             photoStore: FileSystemPhotoStore(rootURL: photoRoot),
             locationService: ScreenshotLocationService(),
+            locationPermissionPrimerStore: InMemoryLocationPermissionPrimerStore(decision: .accepted),
             motionService: ScreenshotMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
