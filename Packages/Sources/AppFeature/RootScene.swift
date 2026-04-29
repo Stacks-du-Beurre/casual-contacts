@@ -29,6 +29,8 @@ public struct RootScene: Scene {
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
     @State private var pendingDeleteRecord: Record?
+    @State private var listSortOption: SortOption = .alphabetical
+    @State private var listCurrentLocation: LocationInfo?
     /// Drives the alert shown when "Add 4 nearby records" runs without a
     /// usable location fix (denied authorization or fix failure). Setting
     /// this to non-nil presents the alert with the message as the body.
@@ -101,12 +103,15 @@ public struct RootScene: Scene {
             },
             photoFor: { photoCache.image(for: $0.photoID) },
             photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
+            sortOption: $listSortOption,
+            currentLocation: $listCurrentLocation,
             pendingDeleteRecord: $pendingDeleteRecord,
             hiddenRecordID: router.tappedRecord?.id,
             currentLocationProvider: { [locationService = environment.locationService] in
                 guard locationService.currentAuthorization() == .authorized else { return nil }
                 return try? await locationService.currentLocation()
-            }
+            },
+            onDistanceSortRequest: handleDistanceSortRequested
         )
         .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
             Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
@@ -374,6 +379,14 @@ public struct RootScene: Scene {
         router.locationPrimerContext = .settings
     }
 
+    private func handleDistanceSortRequested() {
+        let action = LocationPermissionFlow.distanceSortAction(
+            authorization: environment.locationService.currentAuthorization(),
+            decision: environment.locationPermissionPrimerStore.decision
+        )
+        performDistanceSortAction(action)
+    }
+
     private func handleLocationPrimerAccepted(_ context: NavigationRouter.LocationPrimerContext) {
         environment.locationPermissionPrimerStore.decision = .accepted
         router.locationPrimerContext = nil
@@ -394,6 +407,14 @@ public struct RootScene: Scene {
                 case .noAction:
                     break
                 }
+            case .sortDistance:
+                let action = LocationPermissionFlow.distanceSortAction(
+                    authorization: environment.locationService.currentAuthorization(),
+                    decision: .accepted
+                )
+                await MainActor.run {
+                    performDistanceSortAction(action)
+                }
             }
         }
     }
@@ -403,6 +424,35 @@ public struct RootScene: Scene {
         router.locationPrimerContext = nil
         if context == .create {
             router.showingCreate = true
+        }
+    }
+
+    private func performDistanceSortAction(_ action: LocationPermissionFlow.DistanceSortAction) {
+        switch action {
+        case .sortWithCurrentLocation:
+            Task { await applyDistanceSortIfPossible() }
+        case .requestAuthorizationThenSort:
+            Task {
+                let authorization = await environment.locationService.requestAuthorization()
+                guard authorization == .authorized else { return }
+                await applyDistanceSortIfPossible()
+            }
+        case .showPrimer:
+            router.locationPrimerContext = .sortDistance
+        case .openSystemSettings:
+            openSystemSettings()
+        case .noAction:
+            break
+        }
+    }
+
+    private func applyDistanceSortIfPossible() async {
+        guard environment.locationService.currentAuthorization() == .authorized else { return }
+        let fix = try? await environment.locationService.currentLocation()
+        await MainActor.run {
+            guard let fix else { return }
+            listCurrentLocation = fix
+            listSortOption = .distance
         }
     }
 

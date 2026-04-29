@@ -39,4 +39,30 @@ import CoreModels
         #expect(LocationPermissionFlow.settingsAcceptAction(authorization: .denied) == .openSystemSettings)
         #expect(LocationPermissionFlow.settingsAcceptAction(authorization: .notDetermined) == .requestAuthorization)
     }
+
+    @Test func distanceSortShowsPrimerBeforePermissionRequest() {
+        #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .notDetermined,
+            decision: .notAnswered
+        ) == .showPrimer)
+        #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .notDetermined,
+            decision: .accepted
+        ) == .requestAuthorizationThenSort)
+        #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .authorized,
+            decision: .notAnswered
+        ) == .sortWithCurrentLocation)
+    }
+
+    @Test func distanceSortDeniedStateDoesNotRequestAgain() {
+        #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .denied,
+            decision: .accepted
+        ) == .openSystemSettings)
+        #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .denied,
+            decision: .declined
+        ) == .noAction)
+    }
 }

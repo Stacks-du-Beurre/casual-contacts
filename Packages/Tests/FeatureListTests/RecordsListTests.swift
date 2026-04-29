@@ -135,6 +135,27 @@ struct NoopCardPathProvider: CardPathProvider {
         (onEditRecord?.value as? (Record) -> Void)?(record)
         #expect(captured?.id == record.id)
     }
+
+    @Test func recordsListAcceptsDistanceSortRequestCallback() {
+        var requested = false
+        let scene = RecordsListScene(
+            store: InMemoryRecordStore(seed: []),
+            paths: NoopCardPathProvider(),
+            attitude: .zero,
+            timeOfDay: .midday,
+            onTapRecord: { _, _ in },
+            onTapCreate: {},
+            onTapSettings: {},
+            onDistanceSortRequest: { requested = true }
+        )
+        _ = scene.body
+
+        let mirror = Mirror(reflecting: scene)
+        let callback = mirror.children.first { $0.label == "onDistanceSortRequest" }
+        #expect(callback != nil)
+        (callback?.value as? () -> Void)?()
+        #expect(requested)
+    }
 }
 
 private struct TestRecord {

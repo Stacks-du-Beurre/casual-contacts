@@ -19,11 +19,11 @@ public enum SortOption: Sendable, Hashable, CaseIterable {
 /// tap Cancel calls `onDismiss`.
 struct DefaultSortingSheet: View {
     @Binding var selected: SortOption
-    /// When `false`, the "By distance" row renders dimmed and is non-tappable.
-    /// Set by `RecordsListScene` based on whether a current location fix is
-    /// available; the underlying option is unselectable in that state so the
-    /// list never has to render distance-sorted output without an origin.
+    /// When `false`, tapping "By distance" delegates to the host so it can
+    /// present the app-level location primer and OS permission request before
+    /// enabling the distance sort.
     var isDistanceEnabled: Bool = true
+    let onDistanceUnavailable: () -> Void
     let onAdvanced: () -> Void
     let onDismiss: () -> Void
 
@@ -84,15 +84,16 @@ struct DefaultSortingSheet: View {
 
     private var distanceRow: some View {
         Button {
-            guard isDistanceEnabled else { return }
-            selected = .distance
+            if isDistanceEnabled {
+                selected = .distance
+            } else {
+                onDistanceUnavailable()
+            }
             onDismiss()
         } label: {
             rowContent(title: "By distance", isSelected: selected == .distance)
-                .opacity(isDistanceEnabled ? 1 : 0.4)
         }
         .buttonStyle(.plain)
-        .disabled(!isDistanceEnabled)
         .accessibilityAddTraits(selected == .distance ? .isSelected : [])
     }
 

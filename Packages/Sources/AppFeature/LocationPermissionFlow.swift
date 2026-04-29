@@ -14,6 +14,14 @@ public enum LocationPermissionFlow {
         case noAction
     }
 
+    public enum DistanceSortAction: Sendable, Equatable {
+        case sortWithCurrentLocation
+        case requestAuthorizationThenSort
+        case showPrimer
+        case openSystemSettings
+        case noAction
+    }
+
     public static func createAction(
         authorization: LocationAuthorization,
         decision: LocationPermissionPrimerDecision
@@ -45,6 +53,34 @@ public enum LocationPermissionFlow {
             return .requestAuthorization
         case .denied:
             return .openSystemSettings
+        }
+    }
+
+    public static func distanceSortAction(
+        authorization: LocationAuthorization,
+        decision: LocationPermissionPrimerDecision
+    ) -> DistanceSortAction {
+        switch authorization {
+        case .authorized:
+            return .sortWithCurrentLocation
+        case .notDetermined:
+            switch decision {
+            case .notAnswered:
+                return .showPrimer
+            case .accepted:
+                return .requestAuthorizationThenSort
+            case .declined:
+                return .noAction
+            }
+        case .denied:
+            switch decision {
+            case .accepted:
+                return .openSystemSettings
+            case .notAnswered:
+                return .showPrimer
+            case .declined:
+                return .noAction
+            }
         }
     }
 }

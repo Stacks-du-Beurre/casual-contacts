@@ -12,6 +12,7 @@ public final class NavigationRouter {
     public enum LocationPrimerContext: String, Identifiable {
         case create
         case settings
+        case sortDistance
 
         public var id: String { rawValue }
     }

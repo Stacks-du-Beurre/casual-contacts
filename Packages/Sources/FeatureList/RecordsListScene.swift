@@ -46,9 +46,9 @@ public struct RecordsListScene: View {
     public let photoSizeFor: (Record) -> CGSize?
 
     @State private var searchText: String = ""
-    @State private var sortOption: SortOption = .alphabetical
     @State private var isSortingSheetPresented: Bool = false
-    @State private var currentLocation: LocationInfo?
+    @Binding private var sortOption: SortOption
+    @Binding private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
     @Environment(\.colorScheme) private var colorScheme
 
@@ -59,6 +59,10 @@ public struct RecordsListScene: View {
     /// picker draws). Default returns nil so previews/tests render the
     /// distance option as disabled without seeking a real fix.
     public let currentLocationProvider: @Sendable () async -> LocationInfo?
+    /// Called when the user explicitly asks for distance sorting but the list
+    /// does not yet have a usable current-location fix. The app host owns the
+    /// primer and OS permission request, then updates the bindings above.
+    public let onDistanceSortRequest: () -> Void
 
     public init(
         store: any RecordStore,
@@ -72,9 +76,12 @@ public struct RecordsListScene: View {
         onEditRecord: @escaping (Record) -> Void = { _ in },
         photoFor: @escaping (Record) -> Image? = { _ in nil },
         photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil },
+        sortOption: Binding<SortOption> = .constant(.alphabetical),
+        currentLocation: Binding<LocationInfo?> = .constant(nil),
         pendingDeleteRecord: Binding<Record?> = .constant(nil),
         hiddenRecordID: Record.ID? = nil,
-        currentLocationProvider: @Sendable @escaping () async -> LocationInfo? = { nil }
+        currentLocationProvider: @Sendable @escaping () async -> LocationInfo? = { nil },
+        onDistanceSortRequest: @escaping () -> Void = {}
     ) {
         self.store = store
         self.paths = paths
@@ -87,9 +94,12 @@ public struct RecordsListScene: View {
         self.onEditRecord = onEditRecord
         self.photoFor = photoFor
         self.photoSizeFor = photoSizeFor
+        self._sortOption = sortOption
+        self._currentLocation = currentLocation
         self._pendingDeleteRecord = pendingDeleteRecord
         self.hiddenRecordID = hiddenRecordID
         self.currentLocationProvider = currentLocationProvider
+        self.onDistanceSortRequest = onDistanceSortRequest
     }
 
     @MainActor
@@ -228,6 +238,7 @@ public struct RecordsListScene: View {
                     DefaultSortingSheet(
                         selected: $sortOption,
                         isDistanceEnabled: currentLocation != nil,
+                        onDistanceUnavailable: onDistanceSortRequest,
                         onAdvanced: { isSortingSheetPresented = false },
                         onDismiss: { isSortingSheetPresented = false }
                     )
@@ -458,4 +469,3 @@ private struct ConditionalSearchable: ViewModifier {
         }
     }
 }
-
