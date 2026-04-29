@@ -20,6 +20,7 @@ public final class NavigationRouter {
     public var showingCreate = false
     public var showingSettings = false
     public var showingAbout = false
+    public var showingInListDeveloperSettings = false
     public var locationPrimerContext: LocationPrimerContext?
     public var selectedRecordForMediumDetail: Record?
     public var selectedRecordForLargeDetail: Record?

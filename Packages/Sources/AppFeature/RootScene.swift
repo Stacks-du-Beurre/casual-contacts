@@ -113,6 +113,17 @@ public struct RootScene: Scene {
             },
             onDistanceSortRequest: handleDistanceSortRequested
         )
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if router.showingInListDeveloperSettings {
+                InListDeveloperSettingsPanel(
+                    onClose: { router.showingInListDeveloperSettings = false },
+                    onAddDebugRecords: addDebugRecords,
+                    onAddNearbyDebugRecords: addNearbyDebugRecords,
+                    onRemoveDebugRecords: removeDebugRecords,
+                    onOpenLetterGallery: openLetterGallery
+                )
+            }
+        }
         .onChange(of: environment.recordStore.records.map(\.photoID)) { _, _ in
             Task { await photoCache.preload(environment.recordStore.records, using: environment.photoStore) }
         }
@@ -291,6 +302,7 @@ public struct RootScene: Scene {
                 onAddNearbyDebugRecords: addNearbyDebugRecords,
                 onRemoveDebugRecords: removeDebugRecords,
                 onOpenLetterGallery: openLetterGallery,
+                onShowInListDeveloperSettings: showInListDeveloperSettings,
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 onLocationToggleTapped: { await handleSettingsLocationToggleTapped() },
                 motionService: environment.motionService
@@ -377,6 +389,11 @@ public struct RootScene: Scene {
         router.showingSettings = false
         try? await Task.sleep(for: .milliseconds(350))
         router.locationPrimerContext = .settings
+    }
+
+    private func showInListDeveloperSettings() {
+        router.showingSettings = false
+        router.showingInListDeveloperSettings = true
     }
 
     private func handleDistanceSortRequested() {

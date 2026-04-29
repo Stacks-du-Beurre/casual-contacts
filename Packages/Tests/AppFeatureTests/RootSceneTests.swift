@@ -20,6 +20,7 @@ import StorageTestSupport
         #expect(router.showingCreate == false)
         #expect(router.showingSettings == false)
         #expect(router.showingAbout == false)
+        #expect(router.showingInListDeveloperSettings == false)
         #expect(router.locationPrimerContext == nil)
         #expect(router.selectedRecordForMediumDetail == nil)
         #expect(router.selectedRecordForLargeDetail == nil)

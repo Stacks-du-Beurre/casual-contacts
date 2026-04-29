@@ -7,15 +7,6 @@ struct DeveloperSettingsPanel: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
-    @Bindable private var tuning = HologramTuning.shared
-    @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
-    @Bindable private var cardBlendTuning = CardBlendTuning.shared
-    @Bindable private var zodiacTuning = ZodiacHologramTuning.shared
-    @Bindable private var rotationTuning = GuillocheRotationTuning.shared
-    @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
-    @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
-    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
-    @Bindable private var motionTuning = MotionTuning.shared
 
     /// Closures injected by the host so the panel can stay in
     /// `FeatureSettings` (which has no `Storage` dependency). The
@@ -44,21 +35,12 @@ struct DeveloperSettingsPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            ScrollView {
-                VStack(spacing: 24) {
-                    motionGroup
-                    toggleGroup
-                    opacityGroup
-                    gradientGroup
-                    elementDepthGroup
-                    zodiacGroup
-                    mediumCardGroup
-                    debugDataGroup
-                    resetGroup
-                }
-                .padding(.top, 8)
-                .padding(.bottom, 24)
-            }
+            DeveloperSettingsContent(
+                onAddDebugRecords: onAddDebugRecords,
+                onAddNearbyDebugRecords: onAddNearbyDebugRecords,
+                onRemoveDebugRecords: onRemoveDebugRecords,
+                onOpenLetterGallery: onOpenLetterGallery
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(SettingsPalette.sheetBackground(scheme))
@@ -90,6 +72,113 @@ struct DeveloperSettingsPanel: View {
             }
         }
         .frame(height: 56)
+    }
+}
+
+public struct InListDeveloperSettingsPanel: View {
+
+    @Environment(\.colorScheme) private var scheme
+
+    private let onClose: () -> Void
+    private let onAddDebugRecords: () -> Void
+    private let onAddNearbyDebugRecords: () -> Void
+    private let onRemoveDebugRecords: () -> Void
+    private let onOpenLetterGallery: () -> Void
+
+    public init(
+        onClose: @escaping () -> Void,
+        onAddDebugRecords: @escaping () -> Void = {},
+        onAddNearbyDebugRecords: @escaping () -> Void = {},
+        onRemoveDebugRecords: @escaping () -> Void = {},
+        onOpenLetterGallery: @escaping () -> Void = {}
+    ) {
+        self.onClose = onClose
+        self.onAddDebugRecords = onAddDebugRecords
+        self.onAddNearbyDebugRecords = onAddNearbyDebugRecords
+        self.onRemoveDebugRecords = onRemoveDebugRecords
+        self.onOpenLetterGallery = onOpenLetterGallery
+    }
+
+    public var body: some View {
+        VStack(spacing: 0) {
+            header
+            DeveloperSettingsContent(
+                onAddDebugRecords: onAddDebugRecords,
+                onAddNearbyDebugRecords: onAddNearbyDebugRecords,
+                onRemoveDebugRecords: onRemoveDebugRecords,
+                onOpenLetterGallery: onOpenLetterGallery,
+                bottomPadding: 16
+            )
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 320)
+        .background(SettingsPalette.sheetBackground(scheme))
+        .overlay(alignment: .top) {
+            SettingsPalette.border(scheme)
+                .frame(height: 0.5)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var header: some View {
+        ZStack {
+            Text("Developer")
+                .font(CCDesign.Typography.headline)
+                .tracking(CCDesign.Typography.Tracking.headline)
+                .textCase(.uppercase)
+                .foregroundStyle(SettingsPalette.label(scheme))
+                .accessibilityAddTraits(.isHeader)
+
+            HStack {
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(SettingsPalette.icon(scheme))
+                        .frame(width: 44, height: 43)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close in-list developer settings")
+            }
+        }
+        .frame(height: 48)
+    }
+}
+
+private struct DeveloperSettingsContent: View {
+
+    @Bindable private var tuning = HologramTuning.shared
+    @Bindable private var gradientTuning = EmptyStateGradientTuning.shared
+    @Bindable private var cardBlendTuning = CardBlendTuning.shared
+    @Bindable private var zodiacTuning = ZodiacHologramTuning.shared
+    @Bindable private var rotationTuning = GuillocheRotationTuning.shared
+    @Bindable private var photoFocusTuning = PhotoFocusTuning.shared
+    @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
+    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
+    @Bindable private var motionTuning = MotionTuning.shared
+
+    let onAddDebugRecords: () -> Void
+    let onAddNearbyDebugRecords: () -> Void
+    let onRemoveDebugRecords: () -> Void
+    let onOpenLetterGallery: () -> Void
+    var bottomPadding: CGFloat = 24
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                motionGroup
+                toggleGroup
+                opacityGroup
+                gradientGroup
+                elementDepthGroup
+                zodiacGroup
+                mediumCardGroup
+                debugDataGroup
+                resetGroup
+            }
+            .padding(.top, 8)
+            .padding(.bottom, bottomPadding)
+        }
     }
 
     private var toggleGroup: some View {
