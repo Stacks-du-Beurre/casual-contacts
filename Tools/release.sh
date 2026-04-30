@@ -1,24 +1,21 @@
 #!/usr/bin/env bash
-# Cut a release: optionally bump MARKETING_VERSION, always bump
+# Cut a release: optionally bump MARKETING_VERSION, update
 # CURRENT_PROJECT_VERSION (build number), commit, tag the resulting
 # commit with `v-<name>`, and push.
 #
 # Branch-agnostic. Refuses to run on a dirty tree so the tag corresponds
 # to a real, committed state we can later reproduce.
 #
-# Every `v-` tag points at a commit with a unique, monotonically
-# increasing build number — App Store Connect rejects uploads whose
-# CFBundleVersion isn't strictly greater than any prior upload, so the
-# build bump keeps every release snapshot eligible for submission.
 # Pass `--version X.Y.Z` when cutting a new marketing version (e.g. when
-# moving from 1.0.2 to 1.0.3); omit it to ship another build of the
-# current marketing version (common case for fixing a beta).
+# moving from 1.0.2 to 1.0.3); this resets the build number to 1. Omit
+# it to ship another build of the current marketing version, which bumps
+# the build number by 1.
 #
 # Usage:
 #   Tools/release.sh                            # bump build only, auto-name tag
 #   Tools/release.sh some-name                  # bump build only, tag v-some-name
-#   Tools/release.sh -v 1.0.3                   # bump marketing to 1.0.3 + build, tag v-1.0.3
-#   Tools/release.sh -v 1.0.3 rc1               # bump marketing + build, tag v-rc1
+#   Tools/release.sh -v 1.0.3                   # bump marketing to 1.0.3 + reset build to 1, tag v-1.0.3
+#   Tools/release.sh -v 1.0.3 rc1               # bump marketing + reset build to 1, tag v-rc1
 #   Tools/release.sh -m "fixes save button"     # add an annotated tag message
 #
 # After running, the tag is pushed to origin so it's reachable from CI
@@ -27,7 +24,7 @@
 # To undo (only safe if no one's pulled the tag yet):
 #   git push origin :refs/tags/<tag>
 #   git tag -d <tag>
-#   git reset --hard HEAD~1   # drop the build/marketing bump commit
+#   git reset --hard HEAD~1   # drop the version/build bump commit
 
 set -euo pipefail
 
@@ -117,7 +114,6 @@ if ! [[ "$current_build" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-new_build=$((current_build + 1))
 current_marketing="$(grep -m1 'MARKETING_VERSION = ' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([^;]+);.*/\1/')"
 
 if [ -n "$new_marketing" ]; then
@@ -126,6 +122,7 @@ if [ -n "$new_marketing" ]; then
         exit 1
     fi
     marketing_version="$new_marketing"
+    new_build=1
     echo "Bumping MARKETING_VERSION: $current_marketing → $new_marketing"
     sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $new_marketing;/g" "$PBXPROJ"
     if ! grep -q "MARKETING_VERSION = $new_marketing;" "$PBXPROJ"; then
@@ -134,6 +131,7 @@ if [ -n "$new_marketing" ]; then
     fi
 else
     marketing_version="$current_marketing"
+    new_build=$((current_build + 1))
 fi
 
 echo "Bumping CURRENT_PROJECT_VERSION: $current_build → $new_build (MARKETING_VERSION $marketing_version)"
