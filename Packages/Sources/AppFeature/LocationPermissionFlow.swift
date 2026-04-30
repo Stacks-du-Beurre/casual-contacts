@@ -33,12 +33,10 @@ public enum LocationPermissionFlow {
             return .openCreateWithoutLocationRequest
         case .notDetermined:
             switch decision {
-            case .notAnswered:
+            case .notAnswered, .declined:
                 return .showPrimer
             case .accepted:
                 return .requestAuthorizationThenOpenCreate
-            case .declined:
-                return .openCreateWithoutLocationRequest
             }
         }
     }
@@ -65,21 +63,17 @@ public enum LocationPermissionFlow {
             return .sortWithCurrentLocation
         case .notDetermined:
             switch decision {
-            case .notAnswered:
+            case .notAnswered, .declined:
                 return .showPrimer
             case .accepted:
                 return .requestAuthorizationThenSort
-            case .declined:
-                return .noAction
             }
         case .denied:
             switch decision {
             case .accepted:
                 return .openSystemSettings
-            case .notAnswered:
+            case .notAnswered, .declined:
                 return .showPrimer
-            case .declined:
-                return .noAction
             }
         }
     }

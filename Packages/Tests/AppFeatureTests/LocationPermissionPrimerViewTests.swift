@@ -5,6 +5,6 @@ import SwiftUI
 @MainActor
 @Suite struct LocationPermissionPrimerViewTests {
     @Test func primerViewInstantiates() {
-        _ = LocationPermissionPrimer(onAccept: {}, onDecline: {}).body
+        _ = LocationPermissionPrimer(onContinue: {}).body
     }
 }

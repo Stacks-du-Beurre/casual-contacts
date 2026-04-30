@@ -16,7 +16,7 @@ import CoreModels
         #expect(store.decision == .declined)
     }
 
-    @Test func createGateShowsPrimerOnlyForUndecidedAuthAndUnansweredPrimer() {
+    @Test func createGateShowsPrimerWhenAuthorizationIsUndecidedAndPrimerWasNotAccepted() {
         #expect(LocationPermissionFlow.createAction(
             authorization: .notDetermined,
             decision: .notAnswered
@@ -24,7 +24,7 @@ import CoreModels
         #expect(LocationPermissionFlow.createAction(
             authorization: .notDetermined,
             decision: .declined
-        ) == .openCreateWithoutLocationRequest)
+        ) == .showPrimer)
         #expect(LocationPermissionFlow.createAction(
             authorization: .notDetermined,
             decision: .accepted
@@ -50,6 +50,10 @@ import CoreModels
             decision: .accepted
         ) == .requestAuthorizationThenSort)
         #expect(LocationPermissionFlow.distanceSortAction(
+            authorization: .notDetermined,
+            decision: .declined
+        ) == .showPrimer)
+        #expect(LocationPermissionFlow.distanceSortAction(
             authorization: .authorized,
             decision: .notAnswered
         ) == .sortWithCurrentLocation)
@@ -63,6 +67,6 @@ import CoreModels
         #expect(LocationPermissionFlow.distanceSortAction(
             authorization: .denied,
             decision: .declined
-        ) == .noAction)
+        ) == .showPrimer)
     }
 }

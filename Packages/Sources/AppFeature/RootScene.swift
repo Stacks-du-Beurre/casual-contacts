@@ -311,12 +311,12 @@ public struct RootScene: Scene {
         }
         .sheet(item: $router.locationPrimerContext) { context in
             LocationPermissionPrimer(
-                onAccept: { handleLocationPrimerAccepted(context) },
-                onDecline: { handleLocationPrimerDeclined(context) }
+                onContinue: { handleLocationPrimerAccepted(context) }
             )
             #if os(iOS)
             .presentationDetents([.medium])
             .presentationDragIndicator(.hidden)
+            .interactiveDismissDisabled()
             .presentationCornerRadius(12)
             #endif
         }
@@ -433,14 +433,6 @@ public struct RootScene: Scene {
                     performDistanceSortAction(action)
                 }
             }
-        }
-    }
-
-    private func handleLocationPrimerDeclined(_ context: NavigationRouter.LocationPrimerContext) {
-        environment.locationPermissionPrimerStore.decision = .declined
-        router.locationPrimerContext = nil
-        if context == .create {
-            router.showingCreate = true
         }
     }
 

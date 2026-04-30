@@ -4,21 +4,18 @@ import DesignSystem
 public struct LocationPermissionPrimer: View {
     @Environment(\.colorScheme) private var scheme
 
-    private let onAccept: () -> Void
-    private let onDecline: () -> Void
+    private let onContinue: () -> Void
 
     public init(
-        onAccept: @escaping () -> Void,
-        onDecline: @escaping () -> Void
+        onContinue: @escaping () -> Void
     ) {
-        self.onAccept = onAccept
-        self.onDecline = onDecline
+        self.onContinue = onContinue
     }
 
     public var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 18) {
-                Text("USE LOCATION?")
+                Text("LOCATION ACCESS")
                     .font(CCDesign.Typography.headline)
                     .tracking(CCDesign.Typography.Tracking.headline)
                     .textCase(.uppercase)
@@ -35,8 +32,8 @@ public struct LocationPermissionPrimer: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(spacing: 10) {
-                    Button(action: onAccept) {
-                        Text("Use Location")
+                    Button(action: onContinue) {
+                        Text("Continue")
                             .font(CCDesign.Typography.description)
                             .tracking(CCDesign.Typography.Tracking.description)
                             .frame(maxWidth: .infinity)
@@ -46,24 +43,7 @@ public struct LocationPermissionPrimer: View {
                     .foregroundStyle(primaryButtonTextColor)
                     .background(primaryButtonColor)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .accessibilityIdentifier("locationPrimerAcceptButton")
-
-                    Button(action: onDecline) {
-                        Text("Not Now")
-                            .font(CCDesign.Typography.description)
-                            .tracking(CCDesign.Typography.Tracking.description)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 46)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(labelColor)
-                    .background(secondaryButtonColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(borderColor, lineWidth: 1)
-                    }
-                    .accessibilityIdentifier("locationPrimerDeclineButton")
+                    .accessibilityIdentifier("locationPrimerContinueButton")
                 }
                 .padding(.top, 4)
             }
@@ -107,7 +87,4 @@ public struct LocationPermissionPrimer: View {
         scheme == .dark ? CCDesign.Colors.D4 : CCDesign.Colors.L2
     }
 
-    private var secondaryButtonColor: Color {
-        scheme == .dark ? CCDesign.Colors.D3 : CCDesign.Colors.L2
-    }
 }
