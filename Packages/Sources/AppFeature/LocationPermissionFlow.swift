@@ -69,12 +69,20 @@ public enum LocationPermissionFlow {
                 return .requestAuthorizationThenSort
             }
         case .denied:
-            switch decision {
-            case .accepted:
-                return .openSystemSettings
-            case .notAnswered, .declined:
-                return .showPrimer
-            }
+            return .showPrimer
+        }
+    }
+
+    public static func distanceSortPrimerAcceptAction(
+        authorization: LocationAuthorization
+    ) -> DistanceSortAction {
+        switch authorization {
+        case .authorized:
+            return .sortWithCurrentLocation
+        case .notDetermined:
+            return .requestAuthorizationThenSort
+        case .denied:
+            return .openSystemSettings
         }
     }
 }

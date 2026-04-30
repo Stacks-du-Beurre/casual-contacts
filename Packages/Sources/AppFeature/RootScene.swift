@@ -425,9 +425,8 @@ public struct RootScene: Scene {
                     break
                 }
             case .sortDistance:
-                let action = LocationPermissionFlow.distanceSortAction(
-                    authorization: environment.locationService.currentAuthorization(),
-                    decision: .accepted
+                let action = LocationPermissionFlow.distanceSortPrimerAcceptAction(
+                    authorization: environment.locationService.currentAuthorization()
                 )
                 await MainActor.run {
                     performDistanceSortAction(action)
