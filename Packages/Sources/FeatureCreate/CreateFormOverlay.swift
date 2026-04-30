@@ -178,16 +178,18 @@ private struct NamePill<Backdrop: View>: View {
             )
 
             // Input layer — invisible TextField overlaid exactly on top.
-            TextField("Name", text: $model.name)
+            TextField("Name", text: $model.name, axis: .vertical)
                 .font(Self.nameFont)
                 .foregroundStyle(.clear)
                 .tint(.black)
                 .textFieldStyle(.plain)
+                .lineLimit(2, reservesSpace: false)
                 .padding(.horizontal, 6)
                 .focused(focus, equals: .name)
                 .accessibilityIdentifier("nameField")
         }
-        .fixedSize(horizontal: true, vertical: false)
+        .frame(maxWidth: max(0, backdropSize.width - 32 - 60), alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var displayName: String {
