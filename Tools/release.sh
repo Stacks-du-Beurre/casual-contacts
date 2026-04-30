@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cut a release: bump MARKETING_VERSION, reset CURRENT_PROJECT_VERSION
-# (build number), commit, tag the resulting commit with `v-<name>`, and
-# push.
+# (build number), update the marketing-site app version, commit, tag the
+# resulting commit with `v-<name>`, and push.
 #
 # Branch-agnostic. Refuses to run on a dirty tree so the tag corresponds
 # to a real, committed state we can later reproduce.
@@ -32,6 +32,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PBXPROJ="$REPO_ROOT/CasualContacts/CasualContacts.xcodeproj/project.pbxproj"
+MARKETING_INDEX="$REPO_ROOT/marketing-site/index.html"
 
 name=""
 message=""
@@ -161,10 +162,22 @@ if git -C "$REPO_ROOT" rev-parse "$tag" >/dev/null 2>&1; then
 fi
 
 if [ "$marketing_version" != "$current_marketing" ]; then
+    if [ ! -f "$MARKETING_INDEX" ]; then
+        echo "ERROR: marketing site index not found at $MARKETING_INDEX" >&2
+        exit 1
+    fi
+
     echo "Bumping MARKETING_VERSION: $current_marketing → $new_marketing"
     sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $new_marketing;/g" "$PBXPROJ"
     if ! grep -q "MARKETING_VERSION = $new_marketing;" "$PBXPROJ"; then
         echo "ERROR: failed to update MARKETING_VERSION in pbxproj" >&2
+        exit 1
+    fi
+
+    echo "Updating marketing-site app version: v$new_marketing"
+    MARKETING_VERSION="$new_marketing" perl -0pi -e 's{(<span class="nav-meta" data-app-version>v)\d+\.\d+(?:\.\d+)?(</span>)}{$1$ENV{MARKETING_VERSION}$2}g' "$MARKETING_INDEX"
+    if ! grep -q "<span class=\"nav-meta\" data-app-version>v$new_marketing</span>" "$MARKETING_INDEX"; then
+        echo "ERROR: failed to update marketing-site app version in $MARKETING_INDEX" >&2
         exit 1
     fi
 fi
@@ -177,7 +190,11 @@ if ! grep -q "CURRENT_PROJECT_VERSION = $new_build;" "$PBXPROJ"; then
     exit 1
 fi
 
-git -C "$REPO_ROOT" add "$PBXPROJ"
+if [ "$build_only" = true ]; then
+    git -C "$REPO_ROOT" add "$PBXPROJ"
+else
+    git -C "$REPO_ROOT" add "$PBXPROJ" "$MARKETING_INDEX"
+fi
 if [ "$build_only" = true ]; then
     commit_subject="chore(release): bump build to $new_build for $tag"
 else

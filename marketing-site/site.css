@@ -677,6 +677,11 @@ section.cc-sec:first-of-type { border-top: 0; }
   width: 36px; height: 36px;
   color: var(--fg-2);
 }
+@media (prefers-color-scheme: dark) {
+  .privacy-note .glyph img {
+    filter: brightness(0) invert(1);
+  }
+}
 .privacy-note .copy {
   font-family: var(--serif-body);
   font-weight: 600;
