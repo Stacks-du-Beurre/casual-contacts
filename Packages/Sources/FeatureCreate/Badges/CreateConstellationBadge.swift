@@ -15,7 +15,6 @@ struct CreateConstellationBadge: View {
             .resizable()
             .scaledToFit()
             .frame(width: 100, height: 90)
-            .offset(Self.translation(for: attitude))
             .accessibilityHidden(true)
     }
 
@@ -25,11 +24,4 @@ struct CreateConstellationBadge: View {
         "\(sign.rawValue)_constellation"
     }
 
-    /// 4pt max parallax on tilt — matches the card's `ZodiacLayer` feel.
-    private static func translation(for attitude: DeviceAttitude) -> CGSize {
-        CGSize(
-            width: CGFloat(attitude.roll) * 4,
-            height: CGFloat(attitude.pitch) * 4
-        )
-    }
 }

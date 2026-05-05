@@ -187,6 +187,11 @@ private struct DeveloperSettingsContent: View {
                 label: "Hide card backdrop",
                 isOn: $cardBlendTuning.hideBackdrop
             )
+            SettingsDivider()
+            ToggleRow(
+                label: "Reverse depth order",
+                isOn: $cardBlendTuning.reverseDepthOrder
+            )
         }
     }
 

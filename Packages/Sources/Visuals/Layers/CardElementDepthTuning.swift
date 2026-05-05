@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Per-element depth-layer assignment for ornaments composited on top of the
 /// card backdrop (moon phase, zodiac glyph, zodiac constellation). Each
-/// element's translation under tilt = `layer × cardBlendDepthScale × attitude`,
-/// matching the math the blend stack uses internally so ornaments read as if
-/// they're sitting on a specific path of the guilloche.
+/// element's translation under tilt uses the same perspective projection as the
+/// blend stack, so ornaments read as if they're sitting on a specific path of
+/// the guilloche.
 ///
 /// Layer 0 = anchored (no movement), layer 14 = deepest blend path / rotation
 /// guilloche level, layer 15 = one step beyond the deepest blend path. Sliders

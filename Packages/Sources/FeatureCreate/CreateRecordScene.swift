@@ -24,6 +24,8 @@ public struct CreateRecordScene: View {
     @State private var model: CreateRecordModel
     @FocusState private var formFocus: CreateFormField?
     @State private var suspendedFocus: CreateFormField?
+    @Bindable private var blendTuning = CardBlendTuning.shared
+    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
 
     @State private var showingPhotoChooser = false
     @State private var showingZodiacPicker = false
@@ -268,6 +270,7 @@ public struct CreateRecordScene: View {
             if let sign = model.zodiacSign {
                 CreateConstellationBadge(sign: sign, attitude: attitude)
                     .frame(width: 100, height: 90)
+                    .offset(depthOffset(layer: elementDepthTuning.zodiacConstellationLayer))
             } else {
                 // Reserve the constellation's slot so the moon-phase row stays
                 // pinned to its anchor when no zodiac sign is selected.
@@ -278,14 +281,26 @@ public struct CreateRecordScene: View {
                 if let sign = model.zodiacSign {
                     CreateZodiacSymbolBadge(sign: sign, attitude: attitude)
                         .frame(width: 35, height: 32)
+                        .offset(depthOffset(layer: elementDepthTuning.zodiacGlyphLayer))
                 }
 
                 CreateMoonPhaseBadge(phase: model.metadata.moonPhase)
                     .frame(width: 35, height: 32)
+                    .offset(depthOffset(layer: elementDepthTuning.moonPhaseLayer))
             }
             .padding(.trailing, 8)
         }
         .allowsHitTesting(false)
+    }
+
+    private func depthOffset(layer: Int) -> CGSize {
+        GuillocheBlendLayer.depthOffset(
+            layer: layer,
+            attitude: attitude,
+            depthScale: blendTuning.depthScale,
+            maxLayer: CardElementDepthTuning.layerRange.upperBound,
+            reverseDepthOrder: blendTuning.reverseDepthOrder
+        )
     }
 
     private var photoImageAndSize: (image: Image, size: CGSize)? {

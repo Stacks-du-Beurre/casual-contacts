@@ -10,6 +10,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let tint: Color
     public let depthScale: CGFloat
     public let reversed: Bool
+    public let reverseDepthOrder: Bool
     public var reveal: Double
 
     /// `Animatable` hook — SwiftUI interpolates `reveal` per frame so each
@@ -22,9 +23,13 @@ public struct GuillocheBlendLayer: View, Animatable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Default depth-scaling — how many points the Nth path offsets per unit of
-    /// roll/pitch. Empty-state hero uses a larger value for a pronounced
-    /// deep-dive; list-card density stays subtle at 0.5.
+    /// roll/pitch at the maximum depth. Empty-state hero uses a larger value for
+    /// a pronounced deep-dive; list-card density stays subtler.
     nonisolated public static let defaultDepthScale: CGFloat = 0.5
+    nonisolated public static let defaultMaxDepthLayer: Int = 15
+
+    nonisolated private static let perspectiveCameraDistance: CGFloat = 2.0
+    nonisolated private static let perspectiveMaxZ: CGFloat = 1.0
 
     public init(
         paths: [Path],
@@ -33,6 +38,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         tint: Color = CCDesign.Colors.L4,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         reversed: Bool = false,
+        reverseDepthOrder: Bool = false,
         reveal: Double = 1.0
     ) {
         self.paths = paths
@@ -41,6 +47,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.tint = tint
         self.depthScale = depthScale
         self.reversed = reversed
+        self.reverseDepthOrder = reverseDepthOrder
         self.reveal = reveal
     }
 
@@ -54,7 +61,8 @@ public struct GuillocheBlendLayer: View, Animatable {
                         pathCount: paths.count,
                         attitude: attitude,
                         depthScale: depthScale,
-                        reversed: reversed
+                        reversed: reversed,
+                        reverseDepthOrder: reverseDepthOrder
                     ))
             }
         }
@@ -83,15 +91,22 @@ public struct GuillocheBlendLayer: View, Animatable {
         pathCount: Int = 0,
         attitude: DeviceAttitude,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
-        reversed: Bool = false
+        reversed: Bool = false,
+        reverseDepthOrder: Bool = false
     ) -> CGSize {
         // The anchored end of the stack stays put; the opposite end swims by
-        // `(pathCount - 1) * depthScale`. Translation runs counter to the
-        // tilt direction so the stack appears to swim away from the lift.
+        // the perspective-projected maximum depth. Translation runs counter to
+        // the tilt direction so the stack appears to swim away from the lift.
         //   reversed=false: last path is anchored, first path swims most.
         //   reversed=true:  first path is anchored, last path swims most.
-        let step = reversed ? index : max(pathCount - 1 - index, 0)
-        let depth = CGFloat(step) * depthScale
+        let maxLayer = max(pathCount - 1, 0)
+        let step = reversed ? index : max(maxLayer - index, 0)
+        let depth = perspectiveDepth(
+            layer: step,
+            maxLayer: maxLayer,
+            depthScale: depthScale,
+            reverseDepthOrder: reverseDepthOrder
+        )
         return CGSize(
             width: -CGFloat(attitude.roll) * depth,
             height: -CGFloat(attitude.pitch) * depth
@@ -103,14 +118,22 @@ public struct GuillocheBlendLayer: View, Animatable {
     /// read as "deeper" or "shallower" than the blend stack — moon phase,
     /// zodiac glyph, constellation, etc.
     ///
-    /// Layer 0 is anchored (no translation); layer N has translation
-    /// `N × depthScale × attitude`. Negative input is clamped to zero.
+    /// Layer 0 is anchored (no translation); higher layers use a perspective
+    /// projection so foreground layers separate faster than background layers.
+    /// Negative input is clamped to zero.
     nonisolated public static func depthOffset(
         layer: Int,
         attitude: DeviceAttitude,
-        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale
+        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
+        maxLayer: Int = GuillocheBlendLayer.defaultMaxDepthLayer,
+        reverseDepthOrder: Bool = false
     ) -> CGSize {
-        let depth = CGFloat(max(layer, 0)) * depthScale
+        let depth = perspectiveDepth(
+            layer: layer,
+            maxLayer: maxLayer,
+            depthScale: depthScale,
+            reverseDepthOrder: reverseDepthOrder
+        )
         return CGSize(
             width: -CGFloat(attitude.roll) * depth,
             height: -CGFloat(attitude.pitch) * depth
@@ -124,12 +147,36 @@ public struct GuillocheBlendLayer: View, Animatable {
     nonisolated public static func maxDepthOffset(
         pathCount: Int,
         attitude: DeviceAttitude,
-        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale
+        depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
+        reverseDepthOrder: Bool = false
     ) -> CGSize {
-        depthOffset(
-            layer: max(pathCount - 1, 0),
+        let maxLayer = max(pathCount - 1, 0)
+        return depthOffset(
+            layer: reverseDepthOrder ? 0 : maxLayer,
             attitude: attitude,
-            depthScale: depthScale
+            depthScale: depthScale,
+            maxLayer: maxLayer,
+            reverseDepthOrder: reverseDepthOrder
         )
+    }
+
+    nonisolated private static func perspectiveDepth(
+        layer: Int,
+        maxLayer: Int,
+        depthScale: CGFloat,
+        reverseDepthOrder: Bool
+    ) -> CGFloat {
+        guard maxLayer > 0 else { return 0 }
+
+        let clampedLayer = min(max(layer, 0), maxLayer)
+        let effectiveLayer = reverseDepthOrder ? maxLayer - clampedLayer : clampedLayer
+        guard effectiveLayer > 0 else { return 0 }
+
+        let t = CGFloat(effectiveLayer) / CGFloat(maxLayer)
+        let z = t * perspectiveMaxZ
+        let projected = z / max(perspectiveCameraDistance - z, .leastNonzeroMagnitude)
+        let maxProjected = perspectiveMaxZ / (perspectiveCameraDistance - perspectiveMaxZ)
+        let normalized = projected / maxProjected
+        return normalized * CGFloat(maxLayer) * depthScale
     }
 }

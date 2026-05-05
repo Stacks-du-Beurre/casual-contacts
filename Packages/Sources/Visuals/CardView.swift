@@ -149,7 +149,9 @@ public struct CardView: View {
         GuillocheBlendLayer.depthOffset(
             layer: layer,
             attitude: attitude,
-            depthScale: blendTuning.depthScale
+            depthScale: blendTuning.depthScale,
+            maxLayer: CardElementDepthTuning.layerRange.upperBound,
+            reverseDepthOrder: blendTuning.reverseDepthOrder
         )
     }
 

@@ -60,7 +60,8 @@ public struct CardBackdrop: View {
         let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
             pathCount: blendPaths.count,
             attitude: attitude,
-            depthScale: blendTuning.depthScale
+            depthScale: blendTuning.depthScale,
+            reverseDepthOrder: blendTuning.reverseDepthOrder
         )
 
         ZStack {
@@ -99,6 +100,7 @@ public struct CardBackdrop: View {
                 tint: .white,
                 depthScale: blendTuning.depthScale,
                 reversed: true,
+                reverseDepthOrder: blendTuning.reverseDepthOrder,
                 reveal: reveal
             )
             .frame(width: 184, height: 160)

@@ -10,6 +10,8 @@ public struct EmptyStateView: View {
     public let attitude: DeviceAttitude
     public let onTap: () -> Void
 
+    @Bindable private var blendTuning = CardBlendTuning.shared
+
     public init(
         paths: any CardPathProvider,
         timeOfDay: TimeOfDay,
@@ -68,7 +70,8 @@ public struct EmptyStateView: View {
         let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
             pathCount: blendPaths.count,
             attitude: attitude,
-            depthScale: blendDepthScale
+            depthScale: blendDepthScale,
+            reverseDepthOrder: blendTuning.reverseDepthOrder
         )
 
         ZStack {
@@ -96,7 +99,8 @@ public struct EmptyStateView: View {
                 attitude: attitude,
                 tint: .white,
                 depthScale: blendDepthScale,
-                reversed: true
+                reversed: true,
+                reverseDepthOrder: blendTuning.reverseDepthOrder
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)

@@ -52,18 +52,20 @@ import CoreModels
         #expect(maxOffset == firstOffsetUnreversed)
     }
 
-    @Test func depthOffsetScalesLinearlyWithLayerIndex() {
+    @Test func depthOffsetUsesPerspectiveCurveBetweenAnchorAndMaxLayer() {
         let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
         let depthScale: CGFloat = 5.0
         let layer0 = GuillocheBlendLayer.depthOffset(layer: 0, attitude: attitude, depthScale: depthScale)
-        let layer1 = GuillocheBlendLayer.depthOffset(layer: 1, attitude: attitude, depthScale: depthScale)
+        let layer5 = GuillocheBlendLayer.depthOffset(layer: 5, attitude: attitude, depthScale: depthScale)
         let layer10 = GuillocheBlendLayer.depthOffset(layer: 10, attitude: attitude, depthScale: depthScale)
+        let layer15 = GuillocheBlendLayer.depthOffset(layer: 15, attitude: attitude, depthScale: depthScale)
 
         #expect(layer0 == .zero)
-        #expect(layer1.width == -CGFloat(attitude.roll) * depthScale)
-        #expect(layer1.height == -CGFloat(attitude.pitch) * depthScale)
-        #expect(layer10.width == -CGFloat(attitude.roll) * depthScale * 10)
-        #expect(layer10.height == -CGFloat(attitude.pitch) * depthScale * 10)
+        #expect(abs(layer5.width) < CGFloat(attitude.roll) * depthScale * 5)
+        #expect(abs(layer10.width) < CGFloat(attitude.roll) * depthScale * 10)
+        #expect(layer15.width == -CGFloat(attitude.roll) * depthScale * 15)
+        #expect(layer15.height == -CGFloat(attitude.pitch) * depthScale * 15)
+        #expect(abs(layer10.width - layer5.width) < abs(layer15.width - layer10.width))
     }
 
     @Test func depthOffsetClampsNegativeLayerToZero() {
@@ -72,10 +74,34 @@ import CoreModels
         #expect(offset == .zero)
     }
 
+    @Test func reverseDepthOrderSwapsAnchoredAndMostMobileLayers() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
+        let depthScale: CGFloat = 5.0
+
+        let layer0 = GuillocheBlendLayer.depthOffset(
+            layer: 0,
+            attitude: attitude,
+            depthScale: depthScale,
+            maxLayer: 15,
+            reverseDepthOrder: true
+        )
+        let layer15 = GuillocheBlendLayer.depthOffset(
+            layer: 15,
+            attitude: attitude,
+            depthScale: depthScale,
+            maxLayer: 15,
+            reverseDepthOrder: true
+        )
+
+        #expect(layer0.width == -CGFloat(attitude.roll) * depthScale * 15)
+        #expect(layer0.height == -CGFloat(attitude.pitch) * depthScale * 15)
+        #expect(layer15 == .zero)
+    }
+
     @Test func maxDepthOffsetDelegatesToDepthOffset() {
         let attitude = DeviceAttitude(pitch: 0.2, roll: -0.3)
         let viaMax = GuillocheBlendLayer.maxDepthOffset(pathCount: 15, attitude: attitude, depthScale: 5)
-        let viaDepth = GuillocheBlendLayer.depthOffset(layer: 14, attitude: attitude, depthScale: 5)
+        let viaDepth = GuillocheBlendLayer.depthOffset(layer: 14, attitude: attitude, depthScale: 5, maxLayer: 14)
         #expect(viaMax == viaDepth)
     }
 
