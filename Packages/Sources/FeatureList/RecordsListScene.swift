@@ -16,6 +16,12 @@ public struct BucketedRecords: Sendable, Equatable {
     }
 }
 
+enum RecordsListRenderState: Sendable, Equatable {
+    case emptyStore
+    case noVisibleMatches
+    case showingRecords
+}
+
 public struct RecordsListScene: View {
 
     public let store: any RecordStore
@@ -44,9 +50,12 @@ public struct RecordsListScene: View {
     /// by `PhotoLayer` to offset the image so the detected face sits at the
     /// container center.
     public let photoSizeFor: (Record) -> CGSize?
+    private let onDeleteRecord: @MainActor (Record) async throws -> Void
 
     @State private var searchText: String = ""
     @State private var isSortingSheetPresented: Bool = false
+    @State private var deletingRecordIDs: Set<Record.ID> = []
+    @State private var deleteErrorMessage: String?
     @Binding private var sortOption: SortOption
     @Binding private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
@@ -76,6 +85,7 @@ public struct RecordsListScene: View {
         onEditRecord: @escaping (Record) -> Void = { _ in },
         photoFor: @escaping (Record) -> Image? = { _ in nil },
         photoSizeFor: @escaping (Record) -> CGSize? = { _ in nil },
+        onDeleteRecord: (@MainActor (Record) async throws -> Void)? = nil,
         sortOption: Binding<SortOption> = .constant(.alphabetical),
         currentLocation: Binding<LocationInfo?> = .constant(nil),
         pendingDeleteRecord: Binding<Record?> = .constant(nil),
@@ -94,6 +104,9 @@ public struct RecordsListScene: View {
         self.onEditRecord = onEditRecord
         self.photoFor = photoFor
         self.photoSizeFor = photoSizeFor
+        self.onDeleteRecord = onDeleteRecord ?? { [store] record in
+            try await store.delete(id: record.id)
+        }
         self._sortOption = sortOption
         self._currentLocation = currentLocation
         self._pendingDeleteRecord = pendingDeleteRecord
@@ -104,7 +117,7 @@ public struct RecordsListScene: View {
 
     @MainActor
     private var visibleRecords: [Record] {
-        let base = searchText.isEmpty ? store.records : store.search(searchText)
+        let base = Self.filtered(store.records, searchText: searchText)
         return Self.sorted(base, by: sortOption, from: currentLocation)
     }
 
@@ -114,12 +127,29 @@ public struct RecordsListScene: View {
     /// the list renders as a single ungrouped stack.
     @MainActor
     private var bucketedVisibleRecords: BucketedRecords {
-        let base = searchText.isEmpty ? store.records : store.search(searchText)
+        let base = Self.filtered(store.records, searchText: searchText)
         if sortOption == .distance, let origin = currentLocation {
             return Self.bucketed(base, from: origin)
         } else {
             return BucketedRecords(near: [], far: Self.sorted(base, by: sortOption, from: currentLocation))
         }
+    }
+
+    @MainActor
+    private var renderState: RecordsListRenderState {
+        Self.renderState(records: store.records, searchText: searchText)
+    }
+
+    static func filtered(_ records: [Record], searchText: String) -> [Record] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return records }
+        let lowered = trimmed.lowercased()
+        return records.filter { $0.name.lowercased().contains(lowered) }
+    }
+
+    static func renderState(records: [Record], searchText: String) -> RecordsListRenderState {
+        guard !records.isEmpty else { return .emptyStore }
+        return filtered(records, searchText: searchText).isEmpty ? .noVisibleMatches : .showingRecords
     }
 
     static func sorted(
@@ -189,7 +219,7 @@ public struct RecordsListScene: View {
     }
 
     @MainActor
-    private var isEmpty: Bool { store.records.isEmpty }
+    private var isStoreEmpty: Bool { store.records.isEmpty }
 
     /// Chrome inverts per mode — L2 on dark, D4 on light.
     /// Used for nav title, FAB fill, and right-item circle fill.
@@ -225,7 +255,7 @@ public struct RecordsListScene: View {
                 NavigationStack {
                     listContent
                         .background(populatedBackground.ignoresSafeArea())
-                        .modifier(ConditionalSearchable(text: $searchText, isActive: !isEmpty))
+                        .modifier(ConditionalSearchable(text: $searchText, isActive: !isStoreEmpty))
                         #if os(iOS)
                         .toolbar(.hidden, for: .navigationBar)
                         #endif
@@ -262,8 +292,7 @@ public struct RecordsListScene: View {
                 presenting: pendingDeleteRecord
             ) { record in
                 Button("Delete", role: .destructive) {
-                    pendingDeleteRecord = nil
-                    Task { try? await store.delete(id: record.id) }
+                    Task { await performDelete(record) }
                 }
                 Button("Cancel", role: .cancel) {
                     pendingDeleteRecord = nil
@@ -272,13 +301,25 @@ public struct RecordsListScene: View {
                 let name = record.name.isEmpty ? "This contact" : record.name.capitalized
                 Text("\(name) will be permanently removed.")
             }
+            .alert(
+                "Couldn't delete contact",
+                isPresented: Binding(
+                    get: { deleteErrorMessage != nil },
+                    set: { if !$0 { deleteErrorMessage = nil } }
+                ),
+                presenting: deleteErrorMessage
+            ) { _ in
+                Button("OK", role: .cancel) { deleteErrorMessage = nil }
+            } message: { message in
+                Text(message)
+            }
         }
     }
 
     private func customNavBar(scale: CGFloat) -> some View {
         // Empty state sits on the time-of-day gradient in both modes, so the
         // title stays L2; only the populated-list title inverts.
-        let titleColor: Color = isEmpty ? CCDesign.Colors.L2 : chromePrimary
+        let titleColor: Color = isStoreEmpty ? CCDesign.Colors.L2 : chromePrimary
         return ZStack {
             Text("MY CONTACTS")
                 .font(.custom("CormorantSC-Bold", size: 17 * scale, relativeTo: .headline))
@@ -286,7 +327,7 @@ public struct RecordsListScene: View {
                 .foregroundStyle(titleColor)
 
             HStack {
-                if !isEmpty {
+                if !isStoreEmpty {
                     SortingButton(
                         action: {
                             // Refresh on each open so a fresh fix arrives before
@@ -325,12 +366,12 @@ public struct RecordsListScene: View {
         // inside the chrome instead of overflowing it.
         .frame(height: 44 * scale)
         .background {
-            if !isEmpty {
+            if !isStoreEmpty {
                 populatedBackground.ignoresSafeArea(edges: .top)
             }
         }
         .overlay(alignment: .bottom) {
-            if !isEmpty {
+            if !isStoreEmpty {
                 Rectangle()
                     .fill(navBarBottomLineColor)
                     .frame(height: 0.5)
@@ -341,9 +382,12 @@ public struct RecordsListScene: View {
     @ViewBuilder
     private var listContent: some View {
         ZStack(alignment: .bottomTrailing) {
-            if isEmpty {
+            switch renderState {
+            case .emptyStore:
                 EmptyStateView(paths: paths, timeOfDay: timeOfDay, attitude: attitude, onTap: onTapCreate)
-            } else {
+            case .noVisibleMatches:
+                noVisibleMatchesContent
+            case .showingRecords:
                 let buckets = bucketedVisibleRecords
                 ScrollView {
                     LazyVStack(spacing: 8) {
@@ -406,6 +450,35 @@ public struct RecordsListScene: View {
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
             .zoomSource(.createButton)
+        }
+    }
+
+    private var noVisibleMatchesContent: some View {
+        VStack {
+            Spacer()
+            Text("NO MATCHES")
+                .font(.custom("CormorantSC-Bold", size: 17, relativeTo: .headline))
+                .tracking(CCDesign.Typography.Tracking.headline)
+                .foregroundStyle(chromePrimary)
+                .accessibilityIdentifier("noVisibleMatchesTitle")
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(populatedBackground.ignoresSafeArea())
+    }
+
+    @MainActor
+    private func performDelete(_ record: Record) async {
+        guard !deletingRecordIDs.contains(record.id) else { return }
+        deletingRecordIDs.insert(record.id)
+        defer { deletingRecordIDs.remove(record.id) }
+
+        do {
+            try await onDeleteRecord(record)
+            pendingDeleteRecord = nil
+        } catch {
+            let name = record.name.isEmpty ? "this contact" : record.name
+            deleteErrorMessage = "Couldn't delete \(name). Try again."
         }
     }
 

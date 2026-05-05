@@ -34,4 +34,21 @@ public final class NavigationRouter {
     public var showingDebugLetterGallery: Bool = false
 
     public init() {}
+
+    public func clearSelections<S: Sequence>(keeping ids: S) where S.Element == Record.ID {
+        let kept = Set(ids)
+        if let record = selectedRecordForMediumDetail, !kept.contains(record.id) {
+            selectedRecordForMediumDetail = nil
+        }
+        if let record = selectedRecordForLargeDetail, !kept.contains(record.id) {
+            selectedRecordForLargeDetail = nil
+        }
+        if let record = tappedRecord, !kept.contains(record.id) {
+            tappedRecord = nil
+            tappedRecordSourceFrame = .zero
+        }
+        if let record = editingRecord, !kept.contains(record.id) {
+            editingRecord = nil
+        }
+    }
 }

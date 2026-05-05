@@ -44,6 +44,44 @@ import StorageTestSupport
         #expect(router.selectedRecordForMediumDetail?.id == record.id)
     }
 
+    @Test func navigationRouterClearsSelectionsForDeletedRecords() {
+        let router = NavigationRouter()
+        let kept = Record(
+            id: UUID(),
+            name: "Kept",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .newMoon)
+        )
+        let deleted = Record(
+            id: UUID(),
+            name: "Deleted",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .newMoon)
+        )
+
+        router.selectedRecordForMediumDetail = deleted
+        router.selectedRecordForLargeDetail = kept
+        router.tappedRecord = deleted
+        router.editingRecord = deleted
+
+        router.clearSelections(keeping: [kept.id])
+
+        #expect(router.selectedRecordForMediumDetail == nil)
+        #expect(router.selectedRecordForLargeDetail?.id == kept.id)
+        #expect(router.tappedRecord == nil)
+        #expect(router.editingRecord == nil)
+    }
+
     // Smoke-checks that `RecordStore.update` round-trips a name change.
     // The `EditingSheetContent` save closure is not directly exercised by host
     // tests; full coverage lives in the simulator XCUITest suite (T13).

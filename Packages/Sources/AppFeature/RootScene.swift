@@ -31,6 +31,8 @@ public struct RootScene: Scene {
     @State private var pendingDeleteRecord: Record?
     @State private var listSortOption: SortOption = .alphabetical
     @State private var listCurrentLocation: LocationInfo?
+    @State private var deletingRecordIDs: Set<Record.ID> = []
+    @State private var deleteErrorMessage: String?
     /// Drives the alert shown when "Add 4 nearby records" runs without a
     /// usable location fix (denied authorization or fix failure). Setting
     /// this to non-nil presents the alert with the message as the body.
@@ -103,6 +105,9 @@ public struct RootScene: Scene {
             },
             photoFor: { photoCache.image(for: $0.photoID) },
             photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
+            onDeleteRecord: { record in
+                try await environment.recordStore.delete(id: record.id)
+            },
             sortOption: $listSortOption,
             currentLocation: $listCurrentLocation,
             pendingDeleteRecord: $pendingDeleteRecord,
@@ -113,6 +118,13 @@ public struct RootScene: Scene {
             },
             onDistanceSortRequest: handleDistanceSortRequested
         )
+        .onChange(of: environment.recordStore.records.map(\.id)) { _, ids in
+            let kept = Set(ids)
+            router.clearSelections(keeping: kept)
+            if let record = pendingDeleteRecord, !kept.contains(record.id) {
+                pendingDeleteRecord = nil
+            }
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if router.showingInListDeveloperSettings {
                 InListDeveloperSettingsPanel(
@@ -253,8 +265,7 @@ public struct RootScene: Scene {
                     }
                 },
                 onDelete: {
-                    Task {
-                        try? await environment.recordStore.delete(id: record.id)
+                    deletePresentedRecord(record) {
                         router.selectedRecordForMediumDetail = nil
                     }
                 },
@@ -285,8 +296,7 @@ public struct RootScene: Scene {
                     router.selectedRecordForLargeDetail = nil
                 },
                 onDelete: {
-                    Task {
-                        try? await environment.recordStore.delete(id: record.id)
+                    deletePresentedRecord(record) {
                         router.selectedRecordForLargeDetail = nil
                     }
                 },
@@ -341,6 +351,18 @@ public struct RootScene: Scene {
         } message: { message in
             Text(message)
         }
+        .alert(
+            "Couldn't delete contact",
+            isPresented: Binding(
+                get: { deleteErrorMessage != nil },
+                set: { if !$0 { deleteErrorMessage = nil } }
+            ),
+            presenting: deleteErrorMessage
+        ) { _ in
+            Button("OK", role: .cancel) { deleteErrorMessage = nil }
+        } message: { message in
+            Text(message)
+        }
         .sheet(isPresented: $router.showingAbout) {
             NavigationStack {
                 AboutView()
@@ -362,6 +384,22 @@ public struct RootScene: Scene {
             let store = environment.recordStore
             for record in DebugRecordSeeder.records {
                 try? await store.insert(record)
+            }
+        }
+    }
+
+    @MainActor
+    private func deletePresentedRecord(_ record: Record, afterSuccess: @escaping @MainActor () -> Void) {
+        guard !deletingRecordIDs.contains(record.id) else { return }
+        deletingRecordIDs.insert(record.id)
+        Task {
+            defer { deletingRecordIDs.remove(record.id) }
+            do {
+                try await environment.recordStore.delete(id: record.id)
+                afterSuccess()
+            } catch {
+                let name = record.name.isEmpty ? "this contact" : record.name
+                deleteErrorMessage = "Couldn't delete \(name). Try again."
             }
         }
     }

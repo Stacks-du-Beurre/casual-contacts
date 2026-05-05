@@ -156,6 +156,24 @@ struct NoopCardPathProvider: CardPathProvider {
         (callback?.value as? () -> Void)?()
         #expect(requested)
     }
+
+    @Test func renderStateDistinguishesEmptyStoreFromEmptySearchResults() {
+        let jane = Record(
+            id: UUID(),
+            name: "Jane",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
+
+        #expect(RecordsListScene.renderState(records: [], searchText: "") == .emptyStore)
+        #expect(RecordsListScene.renderState(records: [jane], searchText: "zzzz") == .noVisibleMatches)
+        #expect(RecordsListScene.renderState(records: [jane], searchText: "jan") == .showingRecords)
+    }
 }
 
 private struct TestRecord {
