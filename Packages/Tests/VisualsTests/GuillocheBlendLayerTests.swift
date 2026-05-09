@@ -109,6 +109,46 @@ import CoreModels
         #expect(abs(layer10.width - layer5.width) < abs(layer15.width - layer10.width))
     }
 
+    @Test func perspectiveAmountControlsDepthCurveWithoutChangingMaxLayer() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
+        let depthScale: CGFloat = 5.0
+        let linearMid = GuillocheBlendLayer.depthOffset(
+            layer: 5,
+            attitude: attitude,
+            depthScale: depthScale,
+            perspectiveAmount: 0
+        )
+        let currentMid = GuillocheBlendLayer.depthOffset(
+            layer: 5,
+            attitude: attitude,
+            depthScale: depthScale,
+            perspectiveAmount: 1
+        )
+        let strongerMid = GuillocheBlendLayer.depthOffset(
+            layer: 5,
+            attitude: attitude,
+            depthScale: depthScale,
+            perspectiveAmount: 2
+        )
+        let linearMax = GuillocheBlendLayer.depthOffset(
+            layer: 15,
+            attitude: attitude,
+            depthScale: depthScale,
+            perspectiveAmount: 0
+        )
+        let currentMax = GuillocheBlendLayer.depthOffset(
+            layer: 15,
+            attitude: attitude,
+            depthScale: depthScale,
+            perspectiveAmount: 1
+        )
+
+        #expect(linearMid.width == CGFloat(attitude.roll) * depthScale * 5)
+        #expect(abs(strongerMid.width) < abs(currentMid.width))
+        #expect(abs(currentMid.width) < abs(linearMid.width))
+        #expect(linearMax == currentMax)
+    }
+
     @Test func depthOffsetClampsNegativeLayerToZero() {
         let attitude = DeviceAttitude(pitch: 1, roll: 1)
         let offset = GuillocheBlendLayer.depthOffset(layer: -5, attitude: attitude, depthScale: 5)

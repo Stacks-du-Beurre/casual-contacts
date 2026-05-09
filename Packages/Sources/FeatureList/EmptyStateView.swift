@@ -11,6 +11,7 @@ public struct EmptyStateView: View {
     public let onTap: () -> Void
 
     @Bindable private var blendTuning = CardBlendTuning.shared
+    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
 
     public init(
         paths: any CardPathProvider,
@@ -72,7 +73,8 @@ public struct EmptyStateView: View {
             attitude: attitude,
             depthScale: blendDepthScale,
             reverseDepthOrder: blendTuning.reverseDepthOrder,
-            reverseMotionDirection: blendTuning.reverseMotionDirection
+            reverseMotionDirection: blendTuning.reverseMotionDirection,
+            perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
 
         ZStack {
@@ -102,7 +104,8 @@ public struct EmptyStateView: View {
                 depthScale: blendDepthScale,
                 reversed: true,
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
-                reverseMotionDirection: blendTuning.reverseMotionDirection
+                reverseMotionDirection: blendTuning.reverseMotionDirection,
+                perspectiveAmount: elementDepthTuning.perspectiveAmount
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)

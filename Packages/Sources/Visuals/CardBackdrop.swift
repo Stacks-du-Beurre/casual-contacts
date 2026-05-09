@@ -15,6 +15,7 @@ public struct CardBackdrop: View {
     public let showsGuilloche: Bool
 
     @Bindable private var blendTuning = CardBlendTuning.shared
+    @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
     @State private var reveal: Double = 0
     /// Letter last used to seed the blend paths while the guilloche was
     /// visible. Held across the exit animation so deleting the final letter
@@ -62,7 +63,8 @@ public struct CardBackdrop: View {
             attitude: attitude,
             depthScale: blendTuning.depthScale,
             reverseDepthOrder: blendTuning.reverseDepthOrder,
-            reverseMotionDirection: blendTuning.reverseMotionDirection
+            reverseMotionDirection: blendTuning.reverseMotionDirection,
+            perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
 
         ZStack {
@@ -103,6 +105,7 @@ public struct CardBackdrop: View {
                 reversed: true,
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
                 reverseMotionDirection: blendTuning.reverseMotionDirection,
+                perspectiveAmount: elementDepthTuning.perspectiveAmount,
                 reveal: reveal
             )
             .frame(width: 184, height: 160)

@@ -300,7 +300,8 @@ public struct CreateRecordScene: View {
             depthScale: blendTuning.depthScale,
             maxLayer: CardElementDepthTuning.layerRange.upperBound,
             reverseDepthOrder: blendTuning.reverseDepthOrder,
-            reverseMotionDirection: blendTuning.reverseMotionDirection
+            reverseMotionDirection: blendTuning.reverseMotionDirection,
+            perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
     }
 

@@ -338,6 +338,14 @@ private struct DeveloperSettingsContent: View {
 
     private var elementDepthGroup: some View {
         SettingsGroup(title: "Card Element Depth") {
+            SliderRow(
+                label: "Depth perspective amount",
+                value: $elementDepthTuning.perspectiveAmount,
+                range: CardElementDepthTuning.Defaults.perspectiveAmountMin...CardElementDepthTuning.Defaults.perspectiveAmountMax,
+                format: .decimal,
+                tick: SliderRow.Tick(value: CardElementDepthTuning.Defaults.perspectiveAmount, label: "1")
+            )
+            SettingsDivider()
             IntSliderRow(
                 label: "Moon phase depth layer",
                 value: $elementDepthTuning.moonPhaseLayer,
