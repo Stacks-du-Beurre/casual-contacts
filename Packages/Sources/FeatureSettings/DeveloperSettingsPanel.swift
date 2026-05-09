@@ -199,6 +199,11 @@ private struct DeveloperSettingsContent: View {
                 label: "Reverse motion direction",
                 isOn: $cardBlendTuning.reverseMotionDirection
             )
+            SettingsDivider()
+            ToggleRow(
+                label: "Move rotation guilloche instead of rotate",
+                isOn: $cardBlendTuning.rotationGuillocheMovesInsteadOfRotates
+            )
         }
     }
 

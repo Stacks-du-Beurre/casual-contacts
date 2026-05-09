@@ -55,9 +55,9 @@ public struct CardBackdrop: View {
             shape: accoutrements.guillocheShape,
             density: density
         )
-        // Match the rotation swirl's translation to the blend stack's
-        // most-shifted path so the two filigrees drift together instead
-        // of the rotation sitting still while the blend slides past.
+        // In translate mode, match the rotation swirl's x/y movement to the
+        // blend stack's most-shifted path. In rotate mode, keep it anchored so
+        // it does not fight the attitude-driven rotation.
         let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
             pathCount: blendPaths.count,
             attitude: attitude,
@@ -66,6 +66,9 @@ public struct CardBackdrop: View {
             reverseMotionDirection: blendTuning.reverseMotionDirection,
             perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
+        let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
+        let rotationGuillocheAttitude: DeviceAttitude = movesRotationGuilloche ? .zero : attitude
+        let rotationGuillocheOffset: CGSize = movesRotationGuilloche ? coupledOffset : .zero
 
         ZStack {
             GradientLayer(
@@ -82,10 +85,10 @@ public struct CardBackdrop: View {
                     from: paths.rotationPaths(for: renderLetter).first
                 ),
                 tint: .white,
-                attitude: attitude,
+                attitude: rotationGuillocheAttitude,
                 reveal: reveal
             )
-            .offset(coupledOffset)
+            .offset(rotationGuillocheOffset)
 
             if let photo {
                 PhotoLayer(

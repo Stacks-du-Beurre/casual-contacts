@@ -65,9 +65,9 @@ public struct EmptyStateView: View {
     private var backdrop: some View {
         let blendPaths = paths.blendPaths(for: "A", shape: .polygon, density: .cards)
         let blendDepthScale: CGFloat = 10.0
-        // Couple the swirl's translation to the blend stack's most-shifted
-        // path so they drift together rather than the blend swimming past a
-        // stationary swirl.
+        // In translate mode, couple the swirl's x/y movement to the blend
+        // stack's most-shifted path. In rotate mode, keep it anchored so it
+        // does not fight the attitude-driven rotation.
         let coupledOffset = GuillocheBlendLayer.maxDepthOffset(
             pathCount: blendPaths.count,
             attitude: attitude,
@@ -76,6 +76,9 @@ public struct EmptyStateView: View {
             reverseMotionDirection: blendTuning.reverseMotionDirection,
             perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
+        let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
+        let rotationGuillocheAttitude: DeviceAttitude = movesRotationGuilloche ? .zero : attitude
+        let rotationGuillocheOffset: CGSize = movesRotationGuilloche ? coupledOffset : .zero
 
         ZStack {
             EmptyStateGradientBackdrop(timeOfDay: timeOfDay, attitude: attitude)
@@ -85,11 +88,11 @@ public struct EmptyStateView: View {
                     from: paths.rotationPaths(for: "A").first
                 ),
                 tint: .white,
-                attitude: attitude,
+                attitude: rotationGuillocheAttitude,
                 usage: .emptyState
             )
             .frame(width: 380, height: 380)
-            .offset(coupledOffset)
+            .offset(rotationGuillocheOffset)
             .accessibilityHidden(true)
 
             // Per design spec §"How to get the deep-dive effect": each of the

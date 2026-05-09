@@ -18,6 +18,7 @@ public final class CardBlendTuning {
         public static let hideBackdrop: Bool = false
         public static let reverseDepthOrder: Bool = false
         public static let reverseMotionDirection: Bool = false
+        public static let rotationGuillocheMovesInsteadOfRotates: Bool = false
     }
 
     private enum Key {
@@ -25,6 +26,7 @@ public final class CardBlendTuning {
         static let hideBackdrop = "CardBlendTuning.hideBackdrop"
         static let reverseDepthOrder = "CardBlendTuning.reverseDepthOrder"
         static let reverseMotionDirection = "CardBlendTuning.reverseMotionDirection"
+        static let rotationGuillocheMovesInsteadOfRotates = "CardBlendTuning.rotationGuillocheMovesInsteadOfRotates"
     }
 
     public var depthScale: Double {
@@ -53,6 +55,18 @@ public final class CardBlendTuning {
         didSet { defaults.set(reverseMotionDirection, forKey: Key.reverseMotionDirection) }
     }
 
+    /// Chooses the rotation-guilloche motion mode. Defaults to rotating in
+    /// place; when enabled, the layer follows the x/y depth offset and stops
+    /// applying its attitude-driven rotation.
+    public var rotationGuillocheMovesInsteadOfRotates: Bool {
+        didSet {
+            defaults.set(
+                rotationGuillocheMovesInsteadOfRotates,
+                forKey: Key.rotationGuillocheMovesInsteadOfRotates
+            )
+        }
+    }
+
     public var motionDirectionMultiplier: Double {
         reverseMotionDirection ? -1 : 1
     }
@@ -69,6 +83,11 @@ public final class CardBlendTuning {
             Key.reverseMotionDirection,
             fallback: Defaults.reverseMotionDirection
         )
+        self.rotationGuillocheMovesInsteadOfRotates = Self.readBool(
+            defaults,
+            Key.rotationGuillocheMovesInsteadOfRotates,
+            fallback: Defaults.rotationGuillocheMovesInsteadOfRotates
+        )
     }
 
     public func reset() {
@@ -76,6 +95,7 @@ public final class CardBlendTuning {
         hideBackdrop = Defaults.hideBackdrop
         reverseDepthOrder = Defaults.reverseDepthOrder
         reverseMotionDirection = Defaults.reverseMotionDirection
+        rotationGuillocheMovesInsteadOfRotates = Defaults.rotationGuillocheMovesInsteadOfRotates
     }
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Double) -> Double {

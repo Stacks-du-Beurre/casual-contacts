@@ -55,4 +55,25 @@ import Foundation
         #expect(tuning.reverseMotionDirection == false)
         #expect(tuning.motionDirectionMultiplier == 1)
     }
+
+    @Test func rotationGuillocheModeDefaultsToRotateOnlyAndPersists() {
+        let defaults = scratchDefaults()
+        let first = CardBlendTuning(defaults: defaults)
+
+        #expect(first.rotationGuillocheMovesInsteadOfRotates == false)
+
+        first.rotationGuillocheMovesInsteadOfRotates = true
+
+        let second = CardBlendTuning(defaults: defaults)
+        #expect(second.rotationGuillocheMovesInsteadOfRotates == true)
+    }
+
+    @Test func resetRestoresRotationGuillocheModeDefault() {
+        let tuning = CardBlendTuning(defaults: scratchDefaults())
+        tuning.rotationGuillocheMovesInsteadOfRotates = true
+
+        tuning.reset()
+
+        #expect(tuning.rotationGuillocheMovesInsteadOfRotates == false)
+    }
 }
