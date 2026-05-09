@@ -156,6 +156,7 @@ private struct DeveloperSettingsContent: View {
     @Bindable private var mediumCardTuning = MediumCardSizeTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
     @Bindable private var motionTuning = MotionTuning.shared
+    @Bindable private var cardAnimationDiagnostics = CardAnimationDiagnostics.shared
 
     let onAddDebugRecords: () -> Void
     let onAddNearbyDebugRecords: () -> Void
@@ -168,6 +169,7 @@ private struct DeveloperSettingsContent: View {
             VStack(spacing: 24) {
                 motionGroup
                 toggleGroup
+                diagnosticsGroup
                 opacityGroup
                 gradientGroup
                 elementDepthGroup
@@ -191,6 +193,15 @@ private struct DeveloperSettingsContent: View {
             ToggleRow(
                 label: "Reverse depth order",
                 isOn: $cardBlendTuning.reverseDepthOrder
+            )
+        }
+    }
+
+    private var diagnosticsGroup: some View {
+        SettingsGroup(title: "Diagnostics") {
+            ToggleRow(
+                label: "Show card animation counter",
+                isOn: $cardAnimationDiagnostics.showsOverlay
             )
         }
     }
@@ -413,6 +424,7 @@ private struct DeveloperSettingsContent: View {
                 rotationTuning.reset()
                 photoFocusTuning.reset()
                 mediumCardTuning.reset()
+                cardAnimationDiagnostics.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 18, weight: .regular))

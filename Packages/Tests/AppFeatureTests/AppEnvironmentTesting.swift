@@ -14,13 +14,15 @@ extension AppEnvironment {
         recordStore: (any RecordStore)? = nil,
         photoStore: (any PhotoStore)? = nil,
         locationService: (any LocationService)? = nil,
-        locationPermissionPrimerStore: (any LocationPermissionPrimerStore)? = nil
+        locationPermissionPrimerStore: (any LocationPermissionPrimerStore)? = nil,
+        listSortPreferenceStore: (any ListSortPreferenceStore)? = nil
     ) -> AppEnvironment {
         AppEnvironment(
             recordStore: recordStore ?? InMemoryRecordStore(),
             photoStore: photoStore ?? InMemoryPhotoStore(),
             locationService: locationService ?? MockLocationService(),
             locationPermissionPrimerStore: locationPermissionPrimerStore ?? InMemoryLocationPermissionPrimerStore(),
+            listSortPreferenceStore: listSortPreferenceStore ?? InMemoryListSortPreferenceStore(),
             motionService: StaticMotionService(),
             metadataGenerator: FixedMetadataGenerator(),
             cardPathProvider: NoopCardPathProvider(),

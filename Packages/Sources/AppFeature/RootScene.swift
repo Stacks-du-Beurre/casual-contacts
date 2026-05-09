@@ -45,6 +45,10 @@ public struct RootScene: Scene {
     /// is idempotent, so we do it here rather than in the app target.
     public init(environment: AppEnvironment) {
         _environment = State(initialValue: environment)
+        _listSortOption = State(initialValue: ListSortPreferenceResolver.initialSortOption(
+            stored: environment.listSortPreferenceStore.sortOption,
+            authorization: environment.locationService.currentAuthorization()
+        ))
         // Seed the current time-of-day from the metadata generator so the
         // empty-state gradient paints the correct PNG on first frame. Refreshed
         // on every `.active` scene phase so it stays accurate across dawn/dusk
@@ -112,9 +116,8 @@ public struct RootScene: Scene {
             currentLocation: $listCurrentLocation,
             pendingDeleteRecord: $pendingDeleteRecord,
             hiddenRecordID: router.tappedRecord?.id,
-            currentLocationProvider: { [locationService = environment.locationService] in
-                guard locationService.currentAuthorization() == .authorized else { return nil }
-                return try? await locationService.currentLocation()
+            onSortOptionSelected: { option in
+                environment.listSortPreferenceStore.sortOption = option
             },
             onDistanceSortRequest: handleDistanceSortRequested
         )
@@ -141,6 +144,9 @@ public struct RootScene: Scene {
         }
         .task {
             await photoCache.preload(environment.recordStore.records, using: environment.photoStore)
+        }
+        .task {
+            await refreshListCurrentLocationIfAuthorized()
         }
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
@@ -181,6 +187,9 @@ public struct RootScene: Scene {
                     at: Date(),
                     location: nil
                 ).timeOfDay
+                Task {
+                    await refreshListCurrentLocationIfAuthorized()
+                }
             case .inactive, .background:
                 environment.motionService.stop()
             @unknown default:
@@ -499,6 +508,27 @@ public struct RootScene: Scene {
             guard let fix else { return }
             listCurrentLocation = fix
             listSortOption = .distance
+            environment.listSortPreferenceStore.sortOption = .distance
+        }
+    }
+
+    private func refreshListCurrentLocationIfAuthorized() async {
+        guard environment.locationService.currentAuthorization() == .authorized else {
+            await MainActor.run {
+                listCurrentLocation = nil
+                if listSortOption == .distance {
+                    listSortOption = .alphabetical
+                }
+            }
+            return
+        }
+
+        let fix = try? await environment.locationService.currentLocation()
+        await MainActor.run {
+            listCurrentLocation = fix
+            if fix == nil, listSortOption == .distance {
+                listSortOption = .alphabetical
+            }
         }
     }
 

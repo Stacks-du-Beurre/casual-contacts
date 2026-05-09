@@ -3,7 +3,7 @@ import DesignSystem
 
 /// Sort option backing the Default Sorting sheet. `advanced` is surfaced in the
 /// sheet but its destination screen (`L_Advanced_Sorting`) is deferred to v1.1+.
-public enum SortOption: Sendable, Hashable, CaseIterable {
+public enum SortOption: String, Sendable, Hashable, CaseIterable {
     case alphabetical
     case dateCreated
     case timeCreated
@@ -23,6 +23,8 @@ struct DefaultSortingSheet: View {
     /// present the app-level location primer and OS permission request before
     /// enabling the distance sort.
     var isDistanceEnabled: Bool = true
+    var onSelectionChanged: (SortOption) -> Void = { _ in }
+    let onSelectionCompleted: () -> Void
     let onDistanceUnavailable: () -> Void
     let onAdvanced: () -> Void
     let onDismiss: () -> Void
@@ -84,12 +86,7 @@ struct DefaultSortingSheet: View {
 
     private var distanceRow: some View {
         Button {
-            if isDistanceEnabled {
-                selected = .distance
-            } else {
-                onDistanceUnavailable()
-            }
-            onDismiss()
+            selectDistance()
         } label: {
             rowContent(title: "By distance", isSelected: selected == .distance)
         }
@@ -115,8 +112,7 @@ struct DefaultSortingSheet: View {
 
     private func row(_ title: String, option: SortOption) -> some View {
         Button {
-            selected = option
-            onDismiss()
+            select(option)
         } label: {
             rowContent(title: title, isSelected: selected == option)
         }
@@ -156,5 +152,23 @@ struct DefaultSortingSheet: View {
     private var divider: some View {
         dividerColor
             .frame(height: 1)
+    }
+
+    func select(_ option: SortOption) {
+        selected = option
+        onSelectionChanged(option)
+        onSelectionCompleted()
+        onDismiss()
+    }
+
+    func selectDistance() {
+        if isDistanceEnabled {
+            selected = .distance
+            onSelectionChanged(.distance)
+        } else {
+            onDistanceUnavailable()
+        }
+        onSelectionCompleted()
+        onDismiss()
     }
 }

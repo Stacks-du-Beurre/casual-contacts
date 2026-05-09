@@ -1,5 +1,7 @@
+import Foundation
 import Testing
 import CoreModels
+import FeatureList
 @testable import AppFeature
 
 @Suite struct LocationPermissionPrimerTests {
@@ -14,6 +16,77 @@ import CoreModels
         #expect(store.decision == .accepted)
         store.decision = .declined
         #expect(store.decision == .declined)
+    }
+
+    @Test func listSortStoreDefaultsToNoSavedChoice() {
+        let store = InMemoryListSortPreferenceStore()
+        #expect(store.sortOption == nil)
+    }
+
+    @Test func listSortStorePersistsSelectedChoice() {
+        let store = InMemoryListSortPreferenceStore()
+        store.sortOption = .timeCreated
+        #expect(store.sortOption == .timeCreated)
+        store.sortOption = .distance
+        #expect(store.sortOption == .distance)
+    }
+
+    @Test func userDefaultsListSortStoreRoundTripsAcrossInstances() throws {
+        let suiteName = "UserDefaultsListSortPreferenceStore.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = UserDefaultsListSortPreferenceStore(defaults: defaults, key: "sort")
+        #expect(store.sortOption == nil)
+
+        store.sortOption = .timeCreated
+        let reloaded = UserDefaultsListSortPreferenceStore(defaults: defaults, key: "sort")
+        #expect(reloaded.sortOption == .timeCreated)
+
+        reloaded.sortOption = nil
+        #expect(store.sortOption == nil)
+    }
+
+    @Test func userDefaultsListSortStoreIgnoresUnknownSavedValues() throws {
+        let suiteName = "UserDefaultsListSortPreferenceStore.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set("nearestFirst", forKey: "sort")
+
+        let store = UserDefaultsListSortPreferenceStore(defaults: defaults, key: "sort")
+        #expect(store.sortOption == nil)
+    }
+
+    @Test func listSortDefaultsToDistanceWhenLocationIsAuthorizedAndNoChoiceIsSaved() {
+        #expect(ListSortPreferenceResolver.initialSortOption(
+            stored: nil,
+            authorization: .authorized
+        ) == .distance)
+    }
+
+    @Test func listSortDefaultsToAlphabeticalWhenLocationIsUnavailableAndNoChoiceIsSaved() {
+        #expect(ListSortPreferenceResolver.initialSortOption(
+            stored: nil,
+            authorization: .notDetermined
+        ) == .alphabetical)
+        #expect(ListSortPreferenceResolver.initialSortOption(
+            stored: nil,
+            authorization: .denied
+        ) == .alphabetical)
+    }
+
+    @Test func listSortSavedChoiceOverridesLocationDefault() {
+        #expect(ListSortPreferenceResolver.initialSortOption(
+            stored: .dateCreated,
+            authorization: .authorized
+        ) == .dateCreated)
+    }
+
+    @Test func savedDistanceChoiceRequiresAuthorizedLocationOnLaunch() {
+        #expect(ListSortPreferenceResolver.initialSortOption(
+            stored: .distance,
+            authorization: .denied
+        ) == .alphabetical)
     }
 
     @Test func createGateShowsPrimerWhenAuthorizationIsUndecidedAndPrimerWasNotAccepted() {

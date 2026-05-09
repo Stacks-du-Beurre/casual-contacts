@@ -157,6 +157,61 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(requested)
     }
 
+    @Test func sortingSheetSelectionReportsCompletionBeforeDismiss() {
+        var selected = SortOption.alphabetical
+        var reportedSelection: SortOption?
+        var completedCount = 0
+        var dismissedCount = 0
+
+        let sheet = DefaultSortingSheet(
+            selected: Binding(
+                get: { selected },
+                set: { selected = $0 }
+            ),
+            onSelectionChanged: { reportedSelection = $0 },
+            onSelectionCompleted: { completedCount += 1 },
+            onDistanceUnavailable: {},
+            onAdvanced: {},
+            onDismiss: { dismissedCount += 1 }
+        )
+
+        sheet.select(.dateCreated)
+
+        #expect(selected == .dateCreated)
+        #expect(reportedSelection == .dateCreated)
+        #expect(completedCount == 1)
+        #expect(dismissedCount == 1)
+    }
+
+    @Test func sortingSheetDistanceUnavailableStillReportsCompletion() {
+        var selected = SortOption.alphabetical
+        var reportedSelection: SortOption?
+        var requestedCount = 0
+        var completedCount = 0
+        var dismissedCount = 0
+
+        let sheet = DefaultSortingSheet(
+            selected: Binding(
+                get: { selected },
+                set: { selected = $0 }
+            ),
+            isDistanceEnabled: false,
+            onSelectionChanged: { reportedSelection = $0 },
+            onSelectionCompleted: { completedCount += 1 },
+            onDistanceUnavailable: { requestedCount += 1 },
+            onAdvanced: {},
+            onDismiss: { dismissedCount += 1 }
+        )
+
+        sheet.selectDistance()
+
+        #expect(selected == .alphabetical)
+        #expect(reportedSelection == nil)
+        #expect(requestedCount == 1)
+        #expect(completedCount == 1)
+        #expect(dismissedCount == 1)
+    }
+
     @Test func renderStateDistinguishesEmptyStoreFromEmptySearchResults() {
         let jane = Record(
             id: UUID(),
@@ -173,6 +228,143 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(RecordsListScene.renderState(records: [], searchText: "") == .emptyStore)
         #expect(RecordsListScene.renderState(records: [jane], searchText: "zzzz") == .noVisibleMatches)
         #expect(RecordsListScene.renderState(records: [jane], searchText: "jan") == .showingRecords)
+    }
+
+    @Test func sortCacheDoesNotRecomputeWhenOnlyCardAttitudeChanges() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let records = [
+            TestRecord(name: "Far", latOffset: 0.5, lngOffset: 0).record(origin: origin),
+            TestRecord(name: "Near", latOffset: 0.001, lngOffset: 0).record(origin: origin)
+        ]
+        let cache = RecordsListSortCache()
+        var computeCount = 0
+
+        let first = cache.bucketed(
+            records: records,
+            searchText: "",
+            sortOption: .distance,
+            currentLocation: origin
+        ) { query in
+            computeCount += 1
+            return RecordsListSortCache.compute(query)
+        }
+
+        let second = cache.bucketed(
+            records: records,
+            searchText: "",
+            sortOption: .distance,
+            currentLocation: origin
+        ) { query in
+            computeCount += 1
+            return RecordsListSortCache.compute(query)
+        }
+
+        #expect(first == second)
+        #expect(computeCount == 1)
+    }
+
+    @Test func sortCacheRecomputesWhenLocationSnapshotChanges() {
+        let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
+        let movedOrigin = LocationInfo(latitude: 37.7849, longitude: -122.4194)
+        let records = [
+            TestRecord(name: "A", latOffset: 0.001, lngOffset: 0).record(origin: origin),
+            TestRecord(name: "B", latOffset: 0.5, lngOffset: 0).record(origin: origin)
+        ]
+        let cache = RecordsListSortCache()
+        var computeCount = 0
+
+        _ = cache.bucketed(
+            records: records,
+            searchText: "",
+            sortOption: .distance,
+            currentLocation: origin,
+            compute: { query in
+                computeCount += 1
+                return RecordsListSortCache.compute(query)
+            }
+        )
+        _ = cache.bucketed(
+            records: records,
+            searchText: "",
+            sortOption: .distance,
+            currentLocation: movedOrigin,
+            compute: { query in
+                computeCount += 1
+                return RecordsListSortCache.compute(query)
+            }
+        )
+
+        #expect(computeCount == 2)
+    }
+
+    @Test func cardAnimationVisibilityIncludesViewportAndPrewarmMargin() {
+        #expect(CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: 20, width: 100, height: 200),
+            viewportHeight: 600,
+            prewarmMargin: 100
+        ))
+        #expect(CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: -90, width: 100, height: 80),
+            viewportHeight: 600,
+            prewarmMargin: 100
+        ))
+        #expect(CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: 650, width: 100, height: 80),
+            viewportHeight: 600,
+            prewarmMargin: 100
+        ))
+    }
+
+    @Test func cardAnimationVisibilityExcludesRowsBeyondPrewarmMargin() {
+        #expect(!CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: -220, width: 100, height: 80),
+            viewportHeight: 600,
+            prewarmMargin: 100
+        ))
+        #expect(!CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: 720, width: 100, height: 80),
+            viewportHeight: 600,
+            prewarmMargin: 100
+        ))
+        #expect(!CardAnimationVisibility.isActive(
+            rowFrame: CGRect(x: 0, y: 20, width: 100, height: 80),
+            viewportHeight: 0,
+            prewarmMargin: 100
+        ))
+    }
+
+    @Test func cardAnimationDiagnosticsTracksMountedAndActiveCounts() throws {
+        let suiteName = "CardAnimationDiagnostics.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let diagnostics = CardAnimationDiagnostics(defaults: defaults, key: "showsOverlay")
+        let first = UUID()
+        let second = UUID()
+
+        diagnostics.registerMountedCard(id: first)
+        diagnostics.registerMountedCard(id: second)
+        diagnostics.updateCardAnimation(id: first, isActive: true)
+
+        #expect(diagnostics.mountedCardCount == 2)
+        #expect(diagnostics.activeAnimatingCardCount == 1)
+
+        diagnostics.updateCardAnimation(id: first, isActive: false)
+        diagnostics.unregisterMountedCard(id: second)
+
+        #expect(diagnostics.mountedCardCount == 1)
+        #expect(diagnostics.activeAnimatingCardCount == 0)
+    }
+
+    @Test func cardAnimationDiagnosticsPersistsOverlayToggle() throws {
+        let suiteName = "CardAnimationDiagnostics.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let diagnostics = CardAnimationDiagnostics(defaults: defaults, key: "showsOverlay")
+        diagnostics.showsOverlay = true
+
+        let reloaded = CardAnimationDiagnostics(defaults: defaults, key: "showsOverlay")
+        #expect(reloaded.showsOverlay)
     }
 }
 

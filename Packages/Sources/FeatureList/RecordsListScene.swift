@@ -56,18 +56,17 @@ public struct RecordsListScene: View {
     @State private var isSortingSheetPresented: Bool = false
     @State private var deletingRecordIDs: Set<Record.ID> = []
     @State private var deleteErrorMessage: String?
+    @State private var sortCache = RecordsListSortCache()
     @Binding private var sortOption: SortOption
     @Binding private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
+    @Bindable private var diagnostics = CardAnimationDiagnostics.shared
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Host-supplied lookup for the user's current coordinates. Returns nil
-    /// when location is unauthorized or unavailable; the distance sort row
-    /// is disabled while this is nil. Polled on appear and after the user
-    /// taps the sort button (so a fresh fix arrives before the option
-    /// picker draws). Default returns nil so previews/tests render the
-    /// distance option as disabled without seeking a real fix.
-    public let currentLocationProvider: @Sendable () async -> LocationInfo?
+    private static let scrollCoordinateSpace = "RecordsListScroll"
+
+    /// Called when the user explicitly picks a sort row in the sheet.
+    public let onSortOptionSelected: (SortOption) -> Void
     /// Called when the user explicitly asks for distance sorting but the list
     /// does not yet have a usable current-location fix. The app host owns the
     /// primer and OS permission request, then updates the bindings above.
@@ -90,7 +89,7 @@ public struct RecordsListScene: View {
         currentLocation: Binding<LocationInfo?> = .constant(nil),
         pendingDeleteRecord: Binding<Record?> = .constant(nil),
         hiddenRecordID: Record.ID? = nil,
-        currentLocationProvider: @Sendable @escaping () async -> LocationInfo? = { nil },
+        onSortOptionSelected: @escaping (SortOption) -> Void = { _ in },
         onDistanceSortRequest: @escaping () -> Void = {}
     ) {
         self.store = store
@@ -111,7 +110,7 @@ public struct RecordsListScene: View {
         self._currentLocation = currentLocation
         self._pendingDeleteRecord = pendingDeleteRecord
         self.hiddenRecordID = hiddenRecordID
-        self.currentLocationProvider = currentLocationProvider
+        self.onSortOptionSelected = onSortOptionSelected
         self.onDistanceSortRequest = onDistanceSortRequest
     }
 
@@ -127,12 +126,12 @@ public struct RecordsListScene: View {
     /// the list renders as a single ungrouped stack.
     @MainActor
     private var bucketedVisibleRecords: BucketedRecords {
-        let base = Self.filtered(store.records, searchText: searchText)
-        if sortOption == .distance, let origin = currentLocation {
-            return Self.bucketed(base, from: origin)
-        } else {
-            return BucketedRecords(near: [], far: Self.sorted(base, by: sortOption, from: currentLocation))
-        }
+        sortCache.bucketed(
+            records: store.records,
+            searchText: searchText,
+            sortOption: sortOption,
+            currentLocation: currentLocation
+        )
     }
 
     @MainActor
@@ -268,6 +267,10 @@ public struct RecordsListScene: View {
                     DefaultSortingSheet(
                         selected: $sortOption,
                         isDistanceEnabled: currentLocation != nil,
+                        onSelectionChanged: onSortOptionSelected,
+                        onSelectionCompleted: {
+                            onScrollInteractionChange(false)
+                        },
                         onDistanceUnavailable: onDistanceSortRequest,
                         onAdvanced: { isSortingSheetPresented = false },
                         onDismiss: { isSortingSheetPresented = false }
@@ -276,13 +279,6 @@ public struct RecordsListScene: View {
                 }
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
-            .task {
-                // One-shot location fetch on appear so the distance sort row
-                // is enabled before the user opens the picker. The button's
-                // own action refreshes again on tap.
-                let fix = await currentLocationProvider()
-                await MainActor.run { currentLocation = fix }
-            }
             .alert(
                 "Delete contact?",
                 isPresented: Binding(
@@ -330,18 +326,6 @@ public struct RecordsListScene: View {
                 if !isStoreEmpty {
                     SortingButton(
                         action: {
-                            // Refresh on each open so a fresh fix arrives before
-                            // the picker draws — the row enables/disables based
-                            // on `currentLocation != nil`.
-                            Task {
-                                let fix = await currentLocationProvider()
-                                await MainActor.run {
-                                    currentLocation = fix
-                                    if fix == nil, sortOption == .distance {
-                                        sortOption = .alphabetical
-                                    }
-                                }
-                            }
                             isSortingSheetPresented = true
                         },
                         glyph: chromePrimary
@@ -389,55 +373,62 @@ public struct RecordsListScene: View {
                 noVisibleMatchesContent
             case .showingRecords:
                 let buckets = bucketedVisibleRecords
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(buckets.near) { record in
-                            RecordCardRow(
-                                record: record,
-                                attitude: attitude,
-                                paths: paths,
-                                photo: photoFor(record),
-                                photoSize: photoSizeFor(record),
-                                isHidden: hiddenRecordID == record.id,
-                                onTap: onTapRecord
-                            )
+                GeometryReader { listProxy in
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(buckets.near) { record in
+                                RecordCardRow(
+                                    record: record,
+                                    attitude: attitude,
+                                    paths: paths,
+                                    photo: photoFor(record),
+                                    photoSize: photoSizeFor(record),
+                                    isHidden: hiddenRecordID == record.id,
+                                    viewportHeight: listProxy.size.height,
+                                    scrollCoordinateSpace: Self.scrollCoordinateSpace,
+                                    onTap: onTapRecord
+                                )
+                            }
+                            if !buckets.near.isEmpty {
+                                // 1-mile group separator. Token color matches
+                                // Figma `Line 60` from `D_Collection_View` /
+                                // `L_Collection_View`. Spans the full list
+                                // width — the LazyVStack's 16pt horizontal
+                                // padding already insets the line to the same
+                                // edges as the cards.
+                                Rectangle()
+                                    .fill(navBarBottomLineColor)
+                                    .frame(height: 0.5)
+                                    .accessibilityHidden(true)
+                            }
+                            ForEach(buckets.far) { record in
+                                RecordCardRow(
+                                    record: record,
+                                    attitude: attitude,
+                                    paths: paths,
+                                    photo: photoFor(record),
+                                    photoSize: photoSizeFor(record),
+                                    isHidden: hiddenRecordID == record.id,
+                                    viewportHeight: listProxy.size.height,
+                                    scrollCoordinateSpace: Self.scrollCoordinateSpace,
+                                    onTap: onTapRecord
+                                )
+                            }
                         }
-                        if !buckets.near.isEmpty {
-                            // 1-mile group separator. Token color matches
-                            // Figma `Line 60` from `D_Collection_View` /
-                            // `L_Collection_View`. Spans the full list
-                            // width — the LazyVStack's 16pt horizontal
-                            // padding already insets the line to the same
-                            // edges as the cards.
-                            Rectangle()
-                                .fill(navBarBottomLineColor)
-                                .frame(height: 0.5)
-                                .accessibilityHidden(true)
-                        }
-                        ForEach(buckets.far) { record in
-                            RecordCardRow(
-                                record: record,
-                                attitude: attitude,
-                                paths: paths,
-                                photo: photoFor(record),
-                                photoSize: photoSizeFor(record),
-                                isHidden: hiddenRecordID == record.id,
-                                onTap: onTapRecord
-                            )
-                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .coordinateSpace(name: Self.scrollCoordinateSpace)
+                    #if os(iOS)
+                    // `.interacting` fires the moment the user touches the scroll
+                    // surface (before any movement is detected), so the gyro
+                    // pipeline pauses on touch-down — not just once scrolling
+                    // begins. `.idle` after lift+decel resumes it.
+                    .onScrollPhaseChange { _, phase in
+                        onScrollInteractionChange(phase != .idle)
+                    }
+                    #endif
                 }
-                #if os(iOS)
-                // `.interacting` fires the moment the user touches the scroll
-                // surface (before any movement is detected), so the gyro
-                // pipeline pauses on touch-down — not just once scrolling
-                // begins. `.idle` after lift+decel resumes it.
-                .onScrollPhaseChange { _, phase in
-                    onScrollInteractionChange(phase != .idle)
-                }
-                #endif
             }
 
             AddButton(
@@ -450,6 +441,17 @@ public struct RecordsListScene: View {
             .accessibilityLabel("Add new contact")
             .accessibilityIdentifier("createRecordButton")
             .zoomSource(.createButton)
+
+            if diagnostics.showsOverlay {
+                CardAnimationDiagnosticsOverlay(
+                    activeCount: diagnostics.activeAnimatingCardCount,
+                    mountedCount: diagnostics.mountedCardCount
+                )
+                .padding(.trailing, 12)
+                .padding(.bottom, 104)
+                .transition(.opacity)
+                .zIndex(2)
+            }
         }
     }
 
@@ -494,15 +496,19 @@ private struct RecordCardRow: View {
     let photo: Image?
     let photoSize: CGSize?
     let isHidden: Bool
+    let viewportHeight: CGFloat
+    let scrollCoordinateSpace: String
     let onTap: (Record, CGRect) -> Void
 
+    @Bindable private var diagnostics = CardAnimationDiagnostics.shared
     @State private var frame: CGRect = .zero
+    @State private var isActiveForAnimation = false
 
     var body: some View {
         CardView(
             record: record,
             size: .small,
-            attitude: attitude,
+            attitude: isActiveForAnimation ? attitude : .zero,
             paths: paths,
             photo: photo,
             photoSize: photoSize
@@ -520,13 +526,127 @@ private struct RecordCardRow: View {
         .background(
             GeometryReader { geo in
                 Color.clear
-                    .onAppear { frame = geo.frame(in: .global) }
+                    .onAppear {
+                        diagnostics.registerMountedCard(id: record.id)
+                        updateFrames(
+                            globalFrame: geo.frame(in: .global),
+                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
+                        )
+                    }
                     .onChange(of: geo.frame(in: .global)) { _, new in
-                        frame = new
+                        updateFrames(
+                            globalFrame: new,
+                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
+                        )
+                    }
+                    .onChange(of: viewportHeight) { _, _ in
+                        updateFrames(
+                            globalFrame: geo.frame(in: .global),
+                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
+                        )
                     }
             }
         )
+        .onDisappear {
+            isActiveForAnimation = false
+            diagnostics.unregisterMountedCard(id: record.id)
+        }
         .onTapGesture { onTap(record, frame) }
+    }
+
+    private func updateFrames(globalFrame: CGRect, scrollFrame: CGRect) {
+        frame = globalFrame
+        let isActive = CardAnimationVisibility.isActive(
+            rowFrame: scrollFrame,
+            viewportHeight: viewportHeight
+        )
+        isActiveForAnimation = isActive
+        diagnostics.updateCardAnimation(id: record.id, isActive: isActive)
+    }
+}
+
+struct CardAnimationVisibility {
+    static let prewarmMargin: CGFloat = 160
+
+    static func isActive(
+        rowFrame: CGRect,
+        viewportHeight: CGFloat,
+        prewarmMargin: CGFloat = Self.prewarmMargin
+    ) -> Bool {
+        guard viewportHeight > 0, !rowFrame.isNull, !rowFrame.isInfinite else { return false }
+        return rowFrame.maxY >= -prewarmMargin
+            && rowFrame.minY <= viewportHeight + prewarmMargin
+    }
+}
+
+private struct CardAnimationDiagnosticsOverlay: View {
+    let activeCount: Int
+    let mountedCount: Int
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("ACTIVE \(activeCount)")
+            Text("MOUNTED \(mountedCount)")
+        }
+        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 6))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Active card animations \(activeCount), mounted card rows \(mountedCount)")
+    }
+}
+
+struct RecordsListSortQuery: Equatable {
+    let records: [Record]
+    let searchText: String
+    let sortOption: SortOption
+    let currentLocation: LocationInfo?
+}
+
+@MainActor
+final class RecordsListSortCache {
+    private var cachedQuery: RecordsListSortQuery?
+    private var cachedBuckets: BucketedRecords?
+
+    func bucketed(
+        records: [Record],
+        searchText: String,
+        sortOption: SortOption,
+        currentLocation: LocationInfo?,
+        compute: @MainActor (RecordsListSortQuery) -> BucketedRecords = RecordsListSortCache.compute
+    ) -> BucketedRecords {
+        let query = RecordsListSortQuery(
+            records: records,
+            searchText: searchText,
+            sortOption: sortOption,
+            currentLocation: currentLocation
+        )
+        if let cachedQuery, cachedQuery == query, let cachedBuckets {
+            return cachedBuckets
+        }
+
+        let buckets = compute(query)
+        cachedQuery = query
+        cachedBuckets = buckets
+        return buckets
+    }
+
+    static func compute(_ query: RecordsListSortQuery) -> BucketedRecords {
+        let base = RecordsListScene.filtered(query.records, searchText: query.searchText)
+        if query.sortOption == .distance, let origin = query.currentLocation {
+            return RecordsListScene.bucketed(base, from: origin)
+        } else {
+            return BucketedRecords(
+                near: [],
+                far: RecordsListScene.sorted(
+                    base,
+                    by: query.sortOption,
+                    from: query.currentLocation
+                )
+            )
+        }
     }
 }
 
