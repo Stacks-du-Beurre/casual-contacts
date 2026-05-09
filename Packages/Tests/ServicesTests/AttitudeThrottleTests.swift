@@ -14,6 +14,21 @@ import CoreModels
         #expect(emitted == DeviceAttitude(pitch: 0.1, roll: 0.2))
     }
 
+    @Test func resetMakesNextSampleEmitImmediately() {
+        let throttle = AttitudeThrottle(
+            baseInterval: 1.0 / 30.0,
+            idleInterval: 1.0 / 12.0,
+            movementThreshold: 0.01
+        )
+        let start = Date()
+        _ = throttle.admit(DeviceAttitude(pitch: 0.2, roll: 0.2), now: start)
+
+        throttle.reset()
+
+        let emitted = throttle.admit(.zero, now: start.addingTimeInterval(0.001))
+        #expect(emitted == .zero)
+    }
+
     // MARK: - Base interval (moving)
 
     @Test func dropsSamplesFasterThanBaseIntervalWhenMoving() {

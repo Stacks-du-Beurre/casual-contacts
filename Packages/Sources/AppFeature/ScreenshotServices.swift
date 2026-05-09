@@ -29,6 +29,10 @@ final class ScreenshotMotionService: MotionService, @unchecked Sendable {
         attitudeContinuation?.yield(.zero)
     }
 
+    func resetZeroPoint() {
+        attitudeContinuation?.yield(.zero)
+    }
+
     func stop() {
         attitudeContinuation?.finish()
         attitudeContinuation = nil

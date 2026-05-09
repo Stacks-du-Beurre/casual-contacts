@@ -151,7 +151,8 @@ public struct CardView: View {
             attitude: attitude,
             depthScale: blendTuning.depthScale,
             maxLayer: CardElementDepthTuning.layerRange.upperBound,
-            reverseDepthOrder: blendTuning.reverseDepthOrder
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection
         )
     }
 
@@ -265,7 +266,10 @@ private struct LocationPill<Backdrop: View>: View {
     let attitude: DeviceAttitude
     @ViewBuilder let backdrop: () -> Backdrop
 
+    @Bindable private var blendTuning = CardBlendTuning.shared
+
     var body: some View {
+        let direction = CGFloat(blendTuning.motionDirectionMultiplier)
         BackdropBlurPill(
             fill: Color(red: 40 / 255, green: 60 / 255, blue: 85 / 255).opacity(0.1),
             blurRadius: 1.25,
@@ -277,8 +281,8 @@ private struct LocationPill<Backdrop: View>: View {
                 content
                     .blur(radius: 1.25)
                     .offset(
-                        x: CGFloat(attitude.roll) * 16,
-                        y: CGFloat(attitude.pitch) * 16
+                        x: direction * CGFloat(attitude.roll) * 16,
+                        y: direction * CGFloat(attitude.pitch) * 16
                     )
                 content
             }

@@ -71,7 +71,8 @@ public struct EmptyStateView: View {
             pathCount: blendPaths.count,
             attitude: attitude,
             depthScale: blendDepthScale,
-            reverseDepthOrder: blendTuning.reverseDepthOrder
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection
         )
 
         ZStack {
@@ -100,7 +101,8 @@ public struct EmptyStateView: View {
                 tint: .white,
                 depthScale: blendDepthScale,
                 reversed: true,
-                reverseDepthOrder: blendTuning.reverseDepthOrder
+                reverseDepthOrder: blendTuning.reverseDepthOrder,
+                reverseMotionDirection: blendTuning.reverseMotionDirection
             )
             .frame(width: 184, height: 160)
             .accessibilityHidden(true)

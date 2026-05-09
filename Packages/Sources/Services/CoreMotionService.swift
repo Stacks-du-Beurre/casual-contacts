@@ -35,6 +35,10 @@ public final class AttitudeLowPass: @unchecked Sendable {
         state = mixed
         return mixed
     }
+
+    public func reset() {
+        state = nil
+    }
 }
 
 // MARK: - Production service
@@ -61,8 +65,6 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
     private var rebaseTransitionFrom: DeviceAttitude?
     private var rebaseTransitionTarget: DeviceAttitude?
 
-    private let movementThreshold: Double = 0.05
-    private let settleDuration: TimeInterval = 3.5
     private let rebaseTransitionDuration: TimeInterval = 1.0
 
     public let attitude: AsyncStream<DeviceAttitude>
@@ -93,12 +95,6 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
             return
         }
         guard manager.isDeviceMotionAvailable else { return }
-        baseline = nil
-        rebaseTransitionStart = nil
-        rebaseTransitionFrom = nil
-        rebaseTransitionTarget = nil
-        settleReference = .zero
-        settledSince = Date()
 
         manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
             guard let self, let motion else { return }
@@ -126,14 +122,15 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
             )
 
             if self.rebaseTransitionStart == nil {
+                let tuning = MotionTuning.shared
                 let delta = max(
                     abs(smoothed.pitch - self.settleReference.pitch),
                     abs(smoothed.roll - self.settleReference.roll)
                 )
-                if delta > self.movementThreshold {
+                if delta > tuning.zeroPointMovementThresholdRadians {
                     self.settleReference = smoothed
                     self.settledSince = now
-                } else if now.timeIntervalSince(self.settledSince) >= self.settleDuration {
+                } else if now.timeIntervalSince(self.settledSince) >= tuning.zeroPointSettleDuration {
                     self.rebaseTransitionStart = now
                     self.rebaseTransitionFrom = self.baseline ?? raw
                     self.rebaseTransitionTarget = raw
@@ -201,6 +198,19 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
         }
     }
 
+    public func resetZeroPoint() {
+        baseline = nil
+        rebaseTransitionStart = nil
+        rebaseTransitionFrom = nil
+        rebaseTransitionTarget = nil
+        settleReference = .zero
+        settledSince = Date()
+        smoother.reset()
+        throttle.reset()
+        relativeRebaser.resetBaseline()
+        attitudeContinuation?.yield(.zero)
+    }
+
     public func stop() {
         manager.stopDeviceMotionUpdates()
     }
@@ -233,4 +243,3 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
 }
 
 #endif
-

@@ -45,6 +45,8 @@ enum MotionDebugDotSource: String, CaseIterable, Hashable {
 /// the throttled emission rate (Hz) over the last 1 s.
 struct MotionDebugPinnedRegion: View {
 
+    @Bindable private var motionTuning = MotionTuning.shared
+
     let snapshot: MotionDebugViewModel.Snapshot
     let emissionRate: Int
     let referenceTime: Date
@@ -168,7 +170,7 @@ struct MotionDebugPinnedRegion: View {
     }
 
     private var settleChip: some View {
-        let total: TimeInterval = 3.5
+        let total = motionTuning.zeroPointSettleDuration
         let remaining = max(0, total - (snapshot.latest?.secondsSinceSettleReset ?? 0))
         let armed = remaining > 0 && remaining < total
         return chip(

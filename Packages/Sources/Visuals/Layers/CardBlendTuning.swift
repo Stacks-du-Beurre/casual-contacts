@@ -17,12 +17,14 @@ public final class CardBlendTuning {
         public static let depthScale: Double = 5.0
         public static let hideBackdrop: Bool = false
         public static let reverseDepthOrder: Bool = false
+        public static let reverseMotionDirection: Bool = false
     }
 
     private enum Key {
         static let depthScale = "CardBlendTuning.depthScale"
         static let hideBackdrop = "CardBlendTuning.hideBackdrop"
         static let reverseDepthOrder = "CardBlendTuning.reverseDepthOrder"
+        static let reverseMotionDirection = "CardBlendTuning.reverseMotionDirection"
     }
 
     public var depthScale: Double {
@@ -44,6 +46,17 @@ public final class CardBlendTuning {
         didSet { defaults.set(reverseDepthOrder, forKey: Key.reverseDepthOrder) }
     }
 
+    /// Flips x/y motion direction while keeping the depth ordering unchanged.
+    /// This is shared by guilloche/depth offsets and the frosted location-pill
+    /// blur so developer testing can compare both directions coherently.
+    public var reverseMotionDirection: Bool {
+        didSet { defaults.set(reverseMotionDirection, forKey: Key.reverseMotionDirection) }
+    }
+
+    public var motionDirectionMultiplier: Double {
+        reverseMotionDirection ? -1 : 1
+    }
+
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
@@ -51,12 +64,18 @@ public final class CardBlendTuning {
         self.depthScale = Self.read(defaults, Key.depthScale, fallback: Defaults.depthScale)
         self.hideBackdrop = Self.readBool(defaults, Key.hideBackdrop, fallback: Defaults.hideBackdrop)
         self.reverseDepthOrder = Self.readBool(defaults, Key.reverseDepthOrder, fallback: Defaults.reverseDepthOrder)
+        self.reverseMotionDirection = Self.readBool(
+            defaults,
+            Key.reverseMotionDirection,
+            fallback: Defaults.reverseMotionDirection
+        )
     }
 
     public func reset() {
         depthScale = Defaults.depthScale
         hideBackdrop = Defaults.hideBackdrop
         reverseDepthOrder = Defaults.reverseDepthOrder
+        reverseMotionDirection = Defaults.reverseMotionDirection
     }
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Double) -> Double {

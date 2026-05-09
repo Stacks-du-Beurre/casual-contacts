@@ -31,6 +31,47 @@ import CoreModels
         #expect(abs(firstOffset.height) > 0)
     }
 
+    @Test func offsetDirectionMatchesLocationPillBlurDirection() {
+        let attitude = DeviceAttitude(pitch: 0.3, roll: -0.4)
+        let offset = GuillocheBlendLayer.depthOffset(layer: 15, attitude: attitude, depthScale: 5)
+
+        #expect(offset.width.sign == CGFloat(attitude.roll).sign)
+        #expect(offset.height.sign == CGFloat(attitude.pitch).sign)
+    }
+
+    @Test func reversedMotionDirectionFlipsOffsetDirection() {
+        let attitude = DeviceAttitude(pitch: 0.3, roll: -0.4)
+        let normal = GuillocheBlendLayer.depthOffset(layer: 15, attitude: attitude, depthScale: 5)
+        let reversed = GuillocheBlendLayer.depthOffset(
+            layer: 15,
+            attitude: attitude,
+            depthScale: 5,
+            reverseMotionDirection: true
+        )
+
+        #expect(reversed.width == -normal.width)
+        #expect(reversed.height == -normal.height)
+    }
+
+    @Test func maxDepthOffsetCarriesReversedMotionDirection() {
+        let attitude = DeviceAttitude(pitch: -0.2, roll: 0.3)
+        let viaMax = GuillocheBlendLayer.maxDepthOffset(
+            pathCount: 15,
+            attitude: attitude,
+            depthScale: 5,
+            reverseMotionDirection: true
+        )
+        let viaDepth = GuillocheBlendLayer.depthOffset(
+            layer: 14,
+            attitude: attitude,
+            depthScale: 5,
+            maxLayer: 14,
+            reverseMotionDirection: true
+        )
+
+        #expect(viaMax == viaDepth)
+    }
+
     @Test func reversedStackAnchorsFirstPathLastPathMovesMost() {
         let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
         let firstOffset = GuillocheBlendLayer.offset(forPathIndex: 0, pathCount: 15, attitude: attitude, reversed: true)
@@ -63,8 +104,8 @@ import CoreModels
         #expect(layer0 == .zero)
         #expect(abs(layer5.width) < CGFloat(attitude.roll) * depthScale * 5)
         #expect(abs(layer10.width) < CGFloat(attitude.roll) * depthScale * 10)
-        #expect(layer15.width == -CGFloat(attitude.roll) * depthScale * 15)
-        #expect(layer15.height == -CGFloat(attitude.pitch) * depthScale * 15)
+        #expect(layer15.width == CGFloat(attitude.roll) * depthScale * 15)
+        #expect(layer15.height == CGFloat(attitude.pitch) * depthScale * 15)
         #expect(abs(layer10.width - layer5.width) < abs(layer15.width - layer10.width))
     }
 
@@ -93,8 +134,8 @@ import CoreModels
             reverseDepthOrder: true
         )
 
-        #expect(layer0.width == -CGFloat(attitude.roll) * depthScale * 15)
-        #expect(layer0.height == -CGFloat(attitude.pitch) * depthScale * 15)
+        #expect(layer0.width == CGFloat(attitude.roll) * depthScale * 15)
+        #expect(layer0.height == CGFloat(attitude.pitch) * depthScale * 15)
         #expect(layer15 == .zero)
     }
 

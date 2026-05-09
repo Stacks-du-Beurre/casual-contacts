@@ -61,7 +61,8 @@ public struct CardBackdrop: View {
             pathCount: blendPaths.count,
             attitude: attitude,
             depthScale: blendTuning.depthScale,
-            reverseDepthOrder: blendTuning.reverseDepthOrder
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection
         )
 
         ZStack {
@@ -101,6 +102,7 @@ public struct CardBackdrop: View {
                 depthScale: blendTuning.depthScale,
                 reversed: true,
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
+                reverseMotionDirection: blendTuning.reverseMotionDirection,
                 reveal: reveal
             )
             .frame(width: 184, height: 160)

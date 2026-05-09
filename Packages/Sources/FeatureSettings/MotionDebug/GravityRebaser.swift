@@ -55,10 +55,6 @@ public final class GravityRebaser: @unchecked Sendable {
     private var rebaseTargetPitch: Double = 0
     private var rebaseTargetRoll: Double = 0
 
-    /// ~3° angle delta below which the user is considered "still". Same scale
-    /// as the production pipeline's 0.05 unit-normalized threshold.
-    private let movementThreshold: Double = 0.05
-    private let settleDuration: TimeInterval = 3.5
     private let rebaseTransitionDuration: TimeInterval = 1.0
 
     public init() {}
@@ -88,12 +84,13 @@ public final class GravityRebaser: @unchecked Sendable {
         let relR = unwrappedRoll - baselineRoll
 
         if rebaseStart == nil {
+            let tuning = MotionTuning.shared
             let delta = max(abs(relP - settleReferencePitch), abs(relR - settleReferenceRoll))
-            if delta > movementThreshold {
+            if delta > tuning.zeroPointMovementThresholdRadians {
                 settleReferencePitch = relP
                 settleReferenceRoll = relR
                 settledSince = now
-            } else if now.timeIntervalSince(settledSince) >= settleDuration {
+            } else if now.timeIntervalSince(settledSince) >= tuning.zeroPointSettleDuration {
                 rebaseStart = now
                 rebaseFromPitch = baselinePitch
                 rebaseFromRoll = baselineRoll

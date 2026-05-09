@@ -11,6 +11,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let depthScale: CGFloat
     public let reversed: Bool
     public let reverseDepthOrder: Bool
+    public let reverseMotionDirection: Bool
     public var reveal: Double
 
     /// `Animatable` hook — SwiftUI interpolates `reveal` per frame so each
@@ -39,6 +40,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         reversed: Bool = false,
         reverseDepthOrder: Bool = false,
+        reverseMotionDirection: Bool = false,
         reveal: Double = 1.0
     ) {
         self.paths = paths
@@ -48,6 +50,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.depthScale = depthScale
         self.reversed = reversed
         self.reverseDepthOrder = reverseDepthOrder
+        self.reverseMotionDirection = reverseMotionDirection
         self.reveal = reveal
     }
 
@@ -62,7 +65,8 @@ public struct GuillocheBlendLayer: View, Animatable {
                         attitude: attitude,
                         depthScale: depthScale,
                         reversed: reversed,
-                        reverseDepthOrder: reverseDepthOrder
+                        reverseDepthOrder: reverseDepthOrder,
+                        reverseMotionDirection: reverseMotionDirection
                     ))
             }
         }
@@ -92,11 +96,13 @@ public struct GuillocheBlendLayer: View, Animatable {
         attitude: DeviceAttitude,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         reversed: Bool = false,
-        reverseDepthOrder: Bool = false
+        reverseDepthOrder: Bool = false,
+        reverseMotionDirection: Bool = false
     ) -> CGSize {
         // The anchored end of the stack stays put; the opposite end swims by
-        // the perspective-projected maximum depth. Translation runs counter to
-        // the tilt direction so the stack appears to swim away from the lift.
+        // the perspective-projected maximum depth. Translation follows the
+        // same roll/pitch direction as the card's frosted location-pill blur
+        // so every motion-reactive x/y layer reads as one coherent movement.
         //   reversed=false: last path is anchored, first path swims most.
         //   reversed=true:  first path is anchored, last path swims most.
         let maxLayer = max(pathCount - 1, 0)
@@ -107,9 +113,10 @@ public struct GuillocheBlendLayer: View, Animatable {
             depthScale: depthScale,
             reverseDepthOrder: reverseDepthOrder
         )
+        let direction: CGFloat = reverseMotionDirection ? -1 : 1
         return CGSize(
-            width: -CGFloat(attitude.roll) * depth,
-            height: -CGFloat(attitude.pitch) * depth
+            width: direction * CGFloat(attitude.roll) * depth,
+            height: direction * CGFloat(attitude.pitch) * depth
         )
     }
 
@@ -126,7 +133,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         attitude: DeviceAttitude,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         maxLayer: Int = GuillocheBlendLayer.defaultMaxDepthLayer,
-        reverseDepthOrder: Bool = false
+        reverseDepthOrder: Bool = false,
+        reverseMotionDirection: Bool = false
     ) -> CGSize {
         let depth = perspectiveDepth(
             layer: layer,
@@ -134,9 +142,10 @@ public struct GuillocheBlendLayer: View, Animatable {
             depthScale: depthScale,
             reverseDepthOrder: reverseDepthOrder
         )
+        let direction: CGFloat = reverseMotionDirection ? -1 : 1
         return CGSize(
-            width: -CGFloat(attitude.roll) * depth,
-            height: -CGFloat(attitude.pitch) * depth
+            width: direction * CGFloat(attitude.roll) * depth,
+            height: direction * CGFloat(attitude.pitch) * depth
         )
     }
 
@@ -148,7 +157,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         pathCount: Int,
         attitude: DeviceAttitude,
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
-        reverseDepthOrder: Bool = false
+        reverseDepthOrder: Bool = false,
+        reverseMotionDirection: Bool = false
     ) -> CGSize {
         let maxLayer = max(pathCount - 1, 0)
         return depthOffset(
@@ -156,7 +166,8 @@ public struct GuillocheBlendLayer: View, Animatable {
             attitude: attitude,
             depthScale: depthScale,
             maxLayer: maxLayer,
-            reverseDepthOrder: reverseDepthOrder
+            reverseDepthOrder: reverseDepthOrder,
+            reverseMotionDirection: reverseMotionDirection
         )
     }
 

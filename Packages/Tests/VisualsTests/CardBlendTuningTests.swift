@@ -31,4 +31,28 @@ import Foundation
 
         #expect(tuning.reverseDepthOrder == false)
     }
+
+    @Test func reverseMotionDirectionDefaultsOffAndPersists() {
+        let defaults = scratchDefaults()
+        let first = CardBlendTuning(defaults: defaults)
+
+        #expect(first.reverseMotionDirection == false)
+        #expect(first.motionDirectionMultiplier == 1)
+
+        first.reverseMotionDirection = true
+
+        let second = CardBlendTuning(defaults: defaults)
+        #expect(second.reverseMotionDirection == true)
+        #expect(second.motionDirectionMultiplier == -1)
+    }
+
+    @Test func resetRestoresReverseMotionDirectionDefault() {
+        let tuning = CardBlendTuning(defaults: scratchDefaults())
+        tuning.reverseMotionDirection = true
+
+        tuning.reset()
+
+        #expect(tuning.reverseMotionDirection == false)
+        #expect(tuning.motionDirectionMultiplier == 1)
+    }
 }

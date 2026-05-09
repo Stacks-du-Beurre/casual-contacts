@@ -13,6 +13,10 @@ public protocol MotionService: AnyObject, Sendable {
     /// present on the protocol so consumers don't need conditional dispatch.
     var debugSamples: AsyncStream<MotionDebugSample> { get }
 
+    /// Reset the current device pose as the zero point on the next available
+    /// sensor sample. Implementations should emit `.zero` immediately if they
+    /// can, so visuals center before the next CoreMotion callback arrives.
+    func resetZeroPoint()
     func start()
     func stop()
 }

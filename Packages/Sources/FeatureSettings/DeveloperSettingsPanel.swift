@@ -194,6 +194,11 @@ private struct DeveloperSettingsContent: View {
                 label: "Reverse depth order",
                 isOn: $cardBlendTuning.reverseDepthOrder
             )
+            SettingsDivider()
+            ToggleRow(
+                label: "Reverse motion direction",
+                isOn: $cardBlendTuning.reverseMotionDirection
+            )
         }
     }
 
@@ -245,6 +250,14 @@ private struct DeveloperSettingsContent: View {
                 value: $motionTuning.relativeFullScaleDegrees,
                 range: 10...180,
                 format: .decimal
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Zero reset timer (s)",
+                value: $motionTuning.zeroPointSettleDuration,
+                range: MotionTuning.Defaults.zeroPointSettleDurationMin...MotionTuning.Defaults.zeroPointSettleDurationMax,
+                format: .decimal,
+                tick: SliderRow.Tick(value: MotionTuning.Defaults.zeroPointSettleDuration, label: "2s")
             )
             SettingsDivider()
             SliderRow(
@@ -424,6 +437,7 @@ private struct DeveloperSettingsContent: View {
                 rotationTuning.reset()
                 photoFocusTuning.reset()
                 mediumCardTuning.reset()
+                motionTuning.reset()
                 cardAnimationDiagnostics.reset()
             }) {
                 Image(systemName: "arrow.counterclockwise")

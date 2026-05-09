@@ -150,6 +150,8 @@ public struct RootScene: Scene {
         }
         .task {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
+            currentAttitude = .zero
+            environment.motionService.resetZeroPoint()
             environment.motionService.start()
             for await raw in environment.motionService.attitude {
                 // Re-read @State each tick so mid-session toggles from the
@@ -168,6 +170,8 @@ public struct RootScene: Scene {
                 currentAttitude = .zero
             } else {
                 // Resume gyro sampling on the existing stream.
+                currentAttitude = .zero
+                environment.motionService.resetZeroPoint()
                 environment.motionService.start()
             }
         }
@@ -178,6 +182,8 @@ public struct RootScene: Scene {
             switch newPhase {
             case .active:
                 if !reduceMotionEnabled {
+                    currentAttitude = .zero
+                    environment.motionService.resetZeroPoint()
                     environment.motionService.start()
                 }
                 // Refresh time-of-day so the empty-state gradient tracks wall

@@ -33,6 +33,11 @@ public final class AttitudeThrottle: @unchecked Sendable {
         self.movementThreshold = movementThreshold
     }
 
+    public func reset() {
+        lastEmitted = nil
+        lastEmittedValue = nil
+    }
+
     /// Returns `sample` if the throttle decides to emit it, `nil` to drop.
     /// Always emits the first sample so consumers get an initial value.
     @discardableResult

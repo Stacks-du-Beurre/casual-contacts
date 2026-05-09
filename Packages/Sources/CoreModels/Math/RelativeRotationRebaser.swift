@@ -55,11 +55,35 @@ public final class RelativeRotationRebaser: @unchecked Sendable {
     private var rebaseFromQuat: Quaternion = .identity
     private var rebaseTargetQuat: Quaternion = .identity
 
-    private let movementThreshold: Double = 0.05  // radians, ~3°
-    private let settleDuration: TimeInterval = 3.5
+    private let settleDurationOverride: TimeInterval?
+    private let movementThresholdOverride: Double?
     private let rebaseTransitionDuration: TimeInterval = 1.0
 
-    public init() {}
+    public init(
+        settleDuration: TimeInterval? = nil,
+        movementThresholdRadians: Double? = nil
+    ) {
+        self.settleDurationOverride = settleDuration
+        self.movementThresholdOverride = movementThresholdRadians
+    }
+
+    /// Discard the current baseline so the next processed sample becomes the
+    /// zero point immediately, without waiting for the stillness timer.
+    public func resetBaseline() {
+        relativePitch = 0
+        relativeTwist = 0
+        isRebaseInProgress = false
+        rebaseProgress = 0
+        secondsSinceSettleReset = 0
+        baselineQuat = .identity
+        hasBaseline = false
+        settleReferencePitch = 0
+        settleReferenceTwist = 0
+        settledSince = Date()
+        rebaseStart = nil
+        rebaseFromQuat = .identity
+        rebaseTargetQuat = .identity
+    }
 
     /// Feed one inbound CoreMotion sample's quaternion. Updates
     /// `relativePitch`, `relativeTwist`, and the rebase / settle state.
@@ -86,6 +110,9 @@ public final class RelativeRotationRebaser: @unchecked Sendable {
         let twist = 2 * atan2(qDelta.y, qDelta.w)
 
         if rebaseStart == nil {
+            let tuning = MotionTuning.shared
+            let movementThreshold = movementThresholdOverride ?? tuning.zeroPointMovementThresholdRadians
+            let settleDuration = settleDurationOverride ?? tuning.zeroPointSettleDuration
             let movement = max(abs(pitch - settleReferencePitch), abs(twist - settleReferenceTwist))
             if movement > movementThreshold {
                 settleReferencePitch = pitch

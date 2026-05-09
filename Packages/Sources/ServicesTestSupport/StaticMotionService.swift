@@ -30,6 +30,10 @@ public final class StaticMotionService: MotionService, @unchecked Sendable {
         attitudeContinuation?.yield(fixedAttitude)
     }
 
+    public func resetZeroPoint() {
+        attitudeContinuation?.yield(.zero)
+    }
+
     public func stop() {
         attitudeContinuation?.finish()
         attitudeContinuation = nil

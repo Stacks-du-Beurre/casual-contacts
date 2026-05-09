@@ -299,7 +299,8 @@ public struct CreateRecordScene: View {
             attitude: attitude,
             depthScale: blendTuning.depthScale,
             maxLayer: CardElementDepthTuning.layerRange.upperBound,
-            reverseDepthOrder: blendTuning.reverseDepthOrder
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection
         )
     }
 
