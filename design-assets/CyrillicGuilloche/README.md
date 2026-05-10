@@ -25,6 +25,16 @@ The current layer-0 pass fills each normalized glyph into a single mask, traces 
 
 Outputs are written under `pipeline/intermediate-blends/{codepoint}/{variant}/`. Multi-part glyphs such as `U042B` are blended component-by-component, so each source shape independently interpolates toward the same foundation shape.
 
+## Rotation Sources
+
+`pipeline/generate-rotation-cyrillic.swift` extracts direct uppercase Cyrillic glyph outlines from the bundled `CormorantSC-SemiBold.ttf` font and writes one `380 x 380` rotation source per character to:
+
+- `pipeline/rotation-sources/`
+
+Like the layer-0 blend source pass, rotation sources fill each normalized glyph into a single mask and trace only the exterior silhouette so overlapping font contours do not survive into the rosette source. Detached exterior marks and contours remain visible. These files are the source inputs expected by `GuillocheRotationLayer.swirlPaths(from:)`; the app/runtime creates the 72-copy, 5-degree rosette from each source path. The generator also writes selected visual smoke-test rosettes to:
+
+- `pipeline/rotation-previews/`
+
 ## Seed Shapes
 
 The existing Latin `A` layer-16 assets should be treated as the initial canonical foundation shapes:
