@@ -180,6 +180,28 @@ public enum SVGParser {
 
         return commands
     }
+
+    /// Convert an SVG `<polygon points="...">` attribute into path commands.
+    /// SVG point lists accept comma and/or whitespace separators, so this
+    /// parser reads the numeric stream in pairs and closes the contour.
+    public static func parsePolygon(points: String) throws -> [PathCommand] {
+        var scanner = Scanner(points.trimmingCharacters(in: .whitespacesAndNewlines))
+        var pairs: [(x: Double, y: Double)] = []
+
+        while !scanner.isAtEnd {
+            scanner.skipWhitespaceAndCommas()
+            if scanner.isAtEnd { break }
+            let point = try scanner.readPoint()
+            pairs.append(point)
+        }
+
+        guard let first = pairs.first else { throw SVGParserError.unexpectedEnd }
+
+        var commands: [PathCommand] = [.moveTo(x: first.x, y: first.y)]
+        commands.append(contentsOf: pairs.dropFirst().map { .lineTo(x: $0.x, y: $0.y) })
+        commands.append(.closePath)
+        return commands
+    }
 }
 
 // MARK: - Scanner

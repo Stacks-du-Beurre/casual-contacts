@@ -1,8 +1,9 @@
 import Foundation
 
 // Usage: svg-to-swift <input-dir> <output-dir> <namespace>
-// Scans <input-dir> for *.svg, parses each <path d="..."> element, and emits
-// one Swift file per SVG into <output-dir>, with all paths under <namespace>.
+// Scans <input-dir> for *.svg, parses each <path d="..."> and
+// <polygon points="..."> element, and emits one Swift file per SVG into
+// <output-dir>, with all paths under <namespace>.
 
 let arguments = CommandLine.arguments
 guard arguments.count == 4 else {
@@ -43,20 +44,34 @@ for svgFile in svgFiles {
     let name = svgFile.deletingPathExtension().lastPathComponent
     let contents = try String(contentsOf: svgFile, encoding: .utf8)
 
-    // Extract every d="..." attribute. Quick regex — the designer's SVGs use
-    // straightforward attribute syntax; if they ever get nested CDATA we'd
-    // need a real XML parser.
-    // Match only d= attributes on <path> elements. A simple word boundary before `d`
-    // avoids false positives on e.g. `id="..."` where `d="..."` appears as a suffix.
-    let pattern = #"(?:^|\s)d\s*=\s*"([^"]*)""#
-    let regex = try NSRegularExpression(pattern: pattern)
+    // Extract supported SVG shape elements in document order. Quick regex —
+    // the designer's SVGs use straightforward attribute syntax; if they ever
+    // get nested CDATA we'd need a real XML parser.
+    let shapePattern = #"<(path|polygon)\b([^>]*)>"#
+    let regex = try NSRegularExpression(pattern: shapePattern, options: [.caseInsensitive, .dotMatchesLineSeparators])
     let matches = regex.matches(in: contents, range: NSRange(contents.startIndex..., in: contents))
 
     var paths: [(name: String, commands: [PathCommand])] = []
     for (index, match) in matches.enumerated() {
-        guard let range = Range(match.range(at: 1), in: contents) else { continue }
-        let dString = String(contents[range])
-        let commands = try SVGParser.parse(d: dString)
+        guard let elementRange = Range(match.range(at: 1), in: contents),
+              let attributesRange = Range(match.range(at: 2), in: contents)
+        else { continue }
+
+        let element = String(contents[elementRange]).lowercased()
+        let attributes = String(contents[attributesRange])
+        let commands: [PathCommand]
+
+        switch element {
+        case "path":
+            guard let dString = attribute("d", in: attributes) else { continue }
+            commands = try SVGParser.parse(d: dString)
+        case "polygon":
+            guard let points = attribute("points", in: attributes) else { continue }
+            commands = try SVGParser.parsePolygon(points: points)
+        default:
+            continue
+        }
+
         paths.append((name: "path\(index)", commands: commands))
     }
 
@@ -88,3 +103,14 @@ for svgFile in svgFiles {
 }
 
 print("Done. Processed \(svgFiles.count) SVG files.")
+
+private func attribute(_ name: String, in attributes: String) -> String? {
+    guard let regex = try? NSRegularExpression(pattern: #"(?:^|\s)\#(name)\s*=\s*"([^"]*)""#) else {
+        return nil
+    }
+    let match = regex.firstMatch(in: attributes, range: NSRange(attributes.startIndex..., in: attributes))
+    guard let match, let range = Range(match.range(at: 1), in: attributes) else {
+        return nil
+    }
+    return String(attributes[range])
+}
