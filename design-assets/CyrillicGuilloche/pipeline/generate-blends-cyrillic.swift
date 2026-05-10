@@ -8,7 +8,7 @@ struct Variant {
 }
 
 struct SVGPath {
-    var points: [CGPoint]
+    var components: [[CGPoint]]
 }
 
 enum PipelineError: Error, CustomStringConvertible {
@@ -42,7 +42,6 @@ let repoRoot = pipelineDir
     .deletingLastPathComponent()
 let glyphDir = pipelineDir.appendingPathComponent("glyph-outlines/layer-0")
 let outputDir = pipelineDir.appendingPathComponent("intermediate-blends")
-let excludedBasenames: Set<String> = ["U042B_layer_0"]
 let pointCount = 320
 
 let variants: [Variant] = [
@@ -64,8 +63,9 @@ let variants: [Variant] = [
 ]
 
 let foundationPaths = try variants.reduce(into: [String: [CGPoint]]()) { result, variant in
-    let points = try resampledPoints(from: variant.seedURL, count: pointCount)
-    result[variant.suffix] = points
+    let components = try resampledComponents(from: variant.seedURL, count: pointCount)
+    guard let component = components.first else { throw PipelineError.emptyPath(variant.seedURL) }
+    result[variant.suffix] = component
 }
 
 try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
@@ -74,7 +74,7 @@ let glyphURLs = try FileManager.default.contentsOfDirectory(
     at: glyphDir,
     includingPropertiesForKeys: nil
 )
-.filter { $0.pathExtension == "svg" && !excludedBasenames.contains($0.deletingPathExtension().lastPathComponent) }
+.filter { $0.pathExtension == "svg" }
 .sorted { $0.lastPathComponent < $1.lastPathComponent }
 
 for glyphURL in glyphURLs {
@@ -82,11 +82,11 @@ for glyphURL in glyphURLs {
     let glyphCode = basename.replacingOccurrences(of: "_layer_0", with: "")
     let sourceSVG = try String(contentsOf: glyphURL, encoding: .utf8)
     let character = attribute("data-character", in: sourceSVG) ?? glyphCode
-    let sourcePoints = try resampledPoints(from: glyphURL, count: pointCount)
+    let sourceComponents = try resampledComponents(from: glyphURL, count: pointCount)
 
     for variant in variants {
         guard let foundation = foundationPaths[variant.suffix] else { continue }
-        let alignedFoundation = align(foundation, to: sourcePoints)
+        let alignedFoundations = sourceComponents.map { align(foundation, to: $0) }
         let variantDir = outputDir
             .appendingPathComponent(glyphCode)
             .appendingPathComponent(variant.name)
@@ -94,18 +94,20 @@ for glyphURL in glyphURLs {
 
         for layer in 0...16 {
             let progress = CGFloat(layer) / 16
-            let points = zip(sourcePoints, alignedFoundation).map { source, target in
-                CGPoint(
-                    x: source.x + (target.x - source.x) * progress,
-                    y: source.y + (target.y - source.y) * progress
-                )
+            let components = zip(sourceComponents, alignedFoundations).map { sourceComponent, targetComponent in
+                zip(sourceComponent, targetComponent).map { source, target in
+                    CGPoint(
+                        x: source.x + (target.x - source.x) * progress,
+                        y: source.y + (target.y - source.y) * progress
+                    )
+                }
             }
             let svg = svgDocument(
                 glyphCode: glyphCode,
                 character: character,
                 variant: variant,
                 layer: layer,
-                points: points
+                components: components
             )
             let fileURL = variantDir.appendingPathComponent("\(glyphCode)_\(variant.suffix)_\(layer).svg")
             try svg.write(to: fileURL, atomically: true, encoding: .utf8)
@@ -117,19 +119,20 @@ for glyphURL in glyphURLs {
 
 print("Done. Generated \(glyphURLs.count) glyphs x \(variants.count) variants x 17 layers.")
 
-func resampledPoints(from url: URL, count: Int) throws -> [CGPoint] {
+func resampledComponents(from url: URL, count: Int) throws -> [[CGPoint]] {
     let svg = try String(contentsOf: url, encoding: .utf8)
     let path = try firstShapePath(in: svg, url: url)
-    guard !path.points.isEmpty else { throw PipelineError.emptyPath(url) }
-    return resampleClosedPath(path.points, count: count)
+    let components = path.components.filter { !$0.isEmpty }
+    guard !components.isEmpty else { throw PipelineError.emptyPath(url) }
+    return components.map { resampleClosedPath($0, count: count) }
 }
 
 func firstShapePath(in svg: String, url: URL) throws -> SVGPath {
     if let d = firstAttribute("d", element: "path", in: svg) {
-        return try SVGPath(points: parsePathPoints(d))
+        return try SVGPath(components: parsePathComponents(d))
     }
     if let points = firstAttribute("points", element: "polygon", in: svg) {
-        return try SVGPath(points: parsePolygonPoints(points))
+        return try SVGPath(components: [parsePolygonPoints(points)])
     }
     throw PipelineError.missingShape(url)
 }
@@ -164,14 +167,21 @@ func parsePolygonPoints(_ points: String) throws -> [CGPoint] {
     }
 }
 
-func parsePathPoints(_ d: String) throws -> [CGPoint] {
+func parsePathComponents(_ d: String) throws -> [[CGPoint]] {
     let tokens = tokenizePath(d)
     var index = 0
     var command: Character?
     var current = CGPoint.zero
     var start = CGPoint.zero
     var lastCubicControl: CGPoint?
+    var components: [[CGPoint]] = []
     var points: [CGPoint] = []
+
+    func finishComponent() {
+        guard !points.isEmpty else { return }
+        components.append(points)
+        points = []
+    }
 
     func hasNumber() -> Bool {
         guard index < tokens.count else { return false }
@@ -207,9 +217,10 @@ func parsePathPoints(_ d: String) throws -> [CGPoint] {
         let relative = activeCommand.isLowercase
         switch Character(activeCommand.uppercased()) {
         case "M":
+            finishComponent()
             current = try readPoint(relative: relative)
             start = current
-            points.append(current)
+            points = [current]
             lastCubicControl = nil
             command = relative ? "l" : "L"
             while hasNumber() {
@@ -276,12 +287,14 @@ func parsePathPoints(_ d: String) throws -> [CGPoint] {
         case "Z":
             current = start
             lastCubicControl = nil
+            finishComponent()
         default:
             throw PipelineError.unsupportedCommand(activeCommand)
         }
     }
 
-    return points
+    finishComponent()
+    return components
 }
 
 enum PathToken {
@@ -427,7 +440,7 @@ func cubicPoint(t: CGFloat, start: CGPoint, control1: CGPoint, control2: CGPoint
     )
 }
 
-func svgDocument(glyphCode: String, character: String, variant: Variant, layer: Int, points: [CGPoint]) -> String {
+func svgDocument(glyphCode: String, character: String, variant: Variant, layer: Int, components: [[CGPoint]]) -> String {
     """
     <?xml version="1.0" encoding="UTF-8"?>
     <svg id="\(glyphCode)_\(variant.suffix)_\(layer)" data-character="\(character)" data-variant="\(variant.name)" data-layer="\(layer)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 160">
@@ -441,10 +454,14 @@ func svgDocument(glyphCode: String, character: String, variant: Variant, layer: 
           }
         </style>
       </defs>
-      <path id="\(glyphCode)_\(variant.suffix)_\(layer)_outline" class="cls-1" d="\(pathData(for: points))"/>
+      <path id="\(glyphCode)_\(variant.suffix)_\(layer)_outline" class="cls-1" d="\(pathData(for: components))"/>
     </svg>
 
     """
+}
+
+func pathData(for components: [[CGPoint]]) -> String {
+    components.map(pathData(for:)).joined(separator: " ")
 }
 
 func pathData(for points: [CGPoint]) -> String {

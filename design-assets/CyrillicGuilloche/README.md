@@ -23,7 +23,7 @@ The current layer-0 pass fills each normalized glyph into a single mask, traces 
 - `Polygon`
 - `Square`
 
-Outputs are written under `pipeline/intermediate-blends/{codepoint}/{variant}/`. `U042B` is intentionally skipped for now because its multi-part source outline needs separate component handling before blending.
+Outputs are written under `pipeline/intermediate-blends/{codepoint}/{variant}/`. Multi-part glyphs such as `U042B` are blended component-by-component, so each source shape independently interpolates toward the same foundation shape.
 
 ## Seed Shapes
 
