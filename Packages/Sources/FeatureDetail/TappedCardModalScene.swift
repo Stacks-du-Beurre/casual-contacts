@@ -3,13 +3,15 @@ import CoreModels
 import DesignSystem
 import Visuals
 
-/// Custom overlay that animates a tapped card from its row position in the list
-/// to screen center, then fades in a backdrop + bottom toolbar. Dismissal
-/// reverses the sequence: backdrop fades out first, then the card slides back
-/// to its origin row.
+/// Custom overlay that immediately places the list under blur, then slides the
+/// tapped card up from below the viewport. The presented card dismisses through
+/// a downward drag gesture or by tapping the blurred backdrop.
 public struct TappedCardModalScene: View {
 
     public let record: Record
+    /// Retained for the existing list-to-root API. The new presentation no
+    /// longer uses the source frame for card geometry; the original row stays
+    /// visible beneath the immediate blur while the sheet card enters from below.
     public let sourceFrame: CGRect
     public let attitude: DeviceAttitude
     public let paths: any CardPathProvider
@@ -41,14 +43,16 @@ public struct TappedCardModalScene: View {
         self.onDismiss = onDismiss
     }
 
-    @State private var cardAtCenter = false
+    @State private var cardVisible = false
     @State private var chromeVisible = false
+    @State private var dragTranslation: CGFloat = 0
+    @State private var dismissalCommitting = false
     @Bindable private var sizeTuning = MediumCardSizeTuning.shared
     @Environment(\.locale) private var locale
 
-    private static let slideDuration: Double = 0.38
+    private static let slideDuration: Double = 0.42
     private static let chromeDuration: Double = 0.28
-    private static let chromeStagger: Double = 0.18
+    private static let chromeStagger: Double = 0.1
 
     public var body: some View {
         #if os(iOS)
@@ -57,37 +61,32 @@ public struct TappedCardModalScene: View {
         // home indicator. The backdrop Rectangle alone extends beyond via its
         // own `.ignoresSafeArea()`.
         GeometryReader { proxy in
-            // `sourceFrame` was captured by the list in global (window) coords.
-            // `.position` inside this GeometryReader uses proxy-local coords, so
-            // translate global → local by subtracting the GeometryReader's
-            // global origin (which equals the top safe-area inset).
-            let origin = proxy.frame(in: .global).origin
-            let sourceCenterLocal = CGPoint(
-                x: sourceFrame.midX - origin.x,
-                y: sourceFrame.midY - origin.y
-            )
             let centeredLocal = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            let cardCenter: CGPoint = cardAtCenter ? centeredLocal : sourceCenterLocal
 
-            // Centered card matches the list row's horizontal footprint
+            // Presented card matches the list row's horizontal footprint
             // (parent list uses 16pt side padding, so width = proxy.width - 32)
             // and grows vertically into the available scene height minus room
-            // for the bottom toolbar. Height is driven by the
-            // user-tunable `aspectRatio` (height ÷ width), then capped to the
-            // available vertical space. Falls back to the list-row source
-            // frame while the card is still anchored to its origin.
+            // for the bottom toolbar. Height is driven by the user-tunable
+            // `aspectRatio` (height ÷ width), then capped to available space.
             let centeredWidth = max(0, proxy.size.width - 32)
             let availableHeight = max(0, proxy.size.height - 200)
             let centeredHeight = min(centeredWidth * sizeTuning.aspectRatio, availableHeight)
-            let cardSize: CGSize = cardAtCenter
-                ? CGSize(width: centeredWidth, height: centeredHeight)
-                : CGSize(width: sourceFrame.width, height: sourceFrame.height)
+            let cardSize = CGSize(width: centeredWidth, height: centeredHeight)
+            let interactionMetrics = TappedCardModalInteraction.Metrics(
+                containerHeight: proxy.size.height,
+                cardHeight: cardSize.height
+            )
+            let cardOffset = cardVisible
+                ? TappedCardModalInteraction.visibleOffset(dragTranslation: dragTranslation)
+                : TappedCardModalInteraction.hiddenOffset(for: interactionMetrics)
 
             ZStack {
                 Rectangle()
                     .fill(.ultraThinMaterial)
                     .ignoresSafeArea()
-                    .opacity(chromeVisible ? 1 : 0)
+                    .opacity(TappedCardModalInteraction.backdropOpacity(
+                        isDismissalCommitting: dismissalCommitting
+                    ))
                     .contentShape(Rectangle())
                     .onTapGesture { beginDismiss() }
                     .accessibilityIdentifier("tappedCardModalBackdrop")
@@ -105,9 +104,11 @@ public struct TappedCardModalScene: View {
                 .frame(width: cardSize.width, height: cardSize.height)
                 .drawingGroup(opaque: false)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
-                .position(cardCenter)
+                .position(centeredLocal)
+                .offset(y: cardOffset)
                 .contentShape(Rectangle())
-                .onTapGesture { beginDismiss() }
+                .gesture(dismissDragGesture(metrics: interactionMetrics))
+                .accessibilityAction(.escape) { beginDismiss() }
                 .accessibilityIdentifier("tappedCardModalCard")
 
                 VStack {
@@ -149,8 +150,10 @@ public struct TappedCardModalScene: View {
     }
 
     private func beginPresent() {
-        withAnimation(.easeInOut(duration: Self.slideDuration)) {
-            cardAtCenter = true
+        dismissalCommitting = false
+        dragTranslation = 0
+        withAnimation(.interactiveSpring(response: Self.slideDuration, dampingFraction: 0.88)) {
+            cardVisible = true
         }
         withAnimation(.easeOut(duration: Self.chromeDuration).delay(Self.chromeStagger)) {
             chromeVisible = true
@@ -158,17 +161,45 @@ public struct TappedCardModalScene: View {
     }
 
     private func beginDismiss(then completion: (() -> Void)? = nil) {
+        guard !dismissalCommitting else { return }
+        dismissalCommitting = true
         withAnimation(.easeIn(duration: Self.chromeDuration)) {
             chromeVisible = false
         }
-        withAnimation(.easeInOut(duration: Self.slideDuration).delay(Self.chromeStagger)) {
-            cardAtCenter = false
+        withAnimation(.interactiveSpring(response: Self.slideDuration, dampingFraction: 0.9)) {
+            dragTranslation = 0
+            cardVisible = false
         }
-        let total = Self.slideDuration + Self.chromeStagger
+        let total = Self.slideDuration
         DispatchQueue.main.asyncAfter(deadline: .now() + total) {
             onDismiss()
             completion?()
         }
+    }
+
+    private func dismissDragGesture(
+        metrics: TappedCardModalInteraction.Metrics
+    ) -> some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                dragTranslation = TappedCardModalInteraction.visibleOffset(
+                    dragTranslation: value.translation.height
+                )
+            }
+            .onEnded { value in
+                let shouldDismiss = TappedCardModalInteraction.shouldDismiss(
+                    dragTranslation: value.translation.height,
+                    predictedEndTranslation: value.predictedEndTranslation.height,
+                    metrics: metrics
+                )
+                if shouldDismiss {
+                    beginDismiss()
+                } else {
+                    withAnimation(.interactiveSpring(response: 0.32, dampingFraction: 0.82)) {
+                        dragTranslation = 0
+                    }
+                }
+            }
     }
     #endif
 }

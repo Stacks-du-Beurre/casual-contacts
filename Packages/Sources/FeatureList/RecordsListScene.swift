@@ -30,13 +30,14 @@ public struct RecordsListScene: View {
     public let attitude: DeviceAttitude
     public let timeOfDay: TimeOfDay
     /// Fires with the tapped record and its global CGRect at the moment of the
-    /// tap. The host uses the rect as the starting position for an overlay
-    /// animation that slides the card from its row to screen center.
+    /// tap. The host still receives the rect for API continuity, but the
+    /// current tapped-card presentation uses a bottom-origin sheet animation.
     public let onTapRecord: (Record, CGRect) -> Void
     public let onTapCreate: () -> Void
     public let onTapSettings: () -> Void
-    /// While a modal overlay is presenting a tapped card, the source row is
-    /// hidden so the user doesn't see the same card in two places at once.
+    /// Optional hook for hosts that need to suppress a row while presenting a
+    /// separate card overlay. The default tapped-card overlay leaves this nil
+    /// so the original row remains visible beneath blur.
     public let hiddenRecordID: Record.ID?
     /// Called with `true` when the user begins interacting with the scroll
     /// (touch-down / scrolling / decelerating) and `false` when the scroll

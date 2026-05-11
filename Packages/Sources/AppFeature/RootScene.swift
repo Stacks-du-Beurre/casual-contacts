@@ -97,6 +97,10 @@ public struct RootScene: Scene {
         return ModuleLocalization.string("Couldn't delete %@. Try again.", locale: locale, displayName)
     }
 
+    static func hiddenRecordIDForList(tappedRecord: Record?) -> Record.ID? {
+        nil
+    }
+
     #if os(iOS)
     @MainActor
     @ViewBuilder
@@ -149,7 +153,7 @@ public struct RootScene: Scene {
             sortOption: $listSortOption,
             currentLocation: $listCurrentLocation,
             pendingDeleteRecord: $pendingDeleteRecord,
-            hiddenRecordID: router.tappedRecord?.id,
+            hiddenRecordID: Self.hiddenRecordIDForList(tappedRecord: router.tappedRecord),
             onSortOptionSelected: { option in
                 environment.listSortPreferenceStore.sortOption = option
             },
