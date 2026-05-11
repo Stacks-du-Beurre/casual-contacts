@@ -340,6 +340,13 @@ private struct DeveloperSettingsContent: View {
                 range: 0...GuillocheRotationTuning.Defaults.opacityMax,
                 format: .percent
             )
+            SettingsDivider()
+            SliderRow(
+                label: "Photo-card filigree opacity",
+                value: $rotationTuning.cardPhotoOpacity,
+                range: 0...GuillocheRotationTuning.Defaults.opacityMax,
+                format: .percent
+            )
         }
     }
 

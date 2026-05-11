@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// `GuillocheRotationLayer` observes `GuillocheRotationTuning.shared`, so
 /// moving the slider updates every instance on screen (empty-state hero
-/// filigree + per-card letter filigree) live. Persists across launches via
+/// filigree + per-card letter filigree variants) live. Persists across launches via
 /// `UserDefaults`.
 @Observable
 @MainActor
@@ -24,9 +24,11 @@ public final class GuillocheRotationTuning {
         public static let cardRotationDegrees: Double = 45
         /// Stroke opacity for the card-backdrop swirl filigree.
         public static let cardOpacity: Double = 0.2
+        /// Stroke opacity for the card-backdrop swirl filigree when a photo is present.
+        public static let cardPhotoOpacity: Double = 0.23
         /// Stroke opacity for the empty-state hero swirl filigree.
         public static let emptyStateOpacity: Double = 0.3
-        /// Slider ceiling shared by both opacity controls in the dev panel.
+        /// Slider ceiling shared by the filigree opacity controls in the dev panel.
         public static let opacityMax: Double = 0.4
     }
 
@@ -34,6 +36,7 @@ public final class GuillocheRotationTuning {
         static let emptyStateRotationDegrees = "GuillocheRotationTuning.emptyStateRotationDegrees"
         static let cardRotationDegrees = "GuillocheRotationTuning.cardRotationDegrees"
         static let cardOpacity = "GuillocheRotationTuning.cardOpacity"
+        static let cardPhotoOpacity = "GuillocheRotationTuning.cardPhotoOpacity"
         static let emptyStateOpacity = "GuillocheRotationTuning.emptyStateOpacity"
     }
 
@@ -47,6 +50,10 @@ public final class GuillocheRotationTuning {
 
     public var cardOpacity: Double {
         didSet { defaults.set(cardOpacity, forKey: Key.cardOpacity) }
+    }
+
+    public var cardPhotoOpacity: Double {
+        didSet { defaults.set(cardPhotoOpacity, forKey: Key.cardPhotoOpacity) }
     }
 
     public var emptyStateOpacity: Double {
@@ -66,6 +73,9 @@ public final class GuillocheRotationTuning {
         self.cardOpacity = Self.read(
             defaults, Key.cardOpacity, fallback: Defaults.cardOpacity
         )
+        self.cardPhotoOpacity = Self.read(
+            defaults, Key.cardPhotoOpacity, fallback: Defaults.cardPhotoOpacity
+        )
         self.emptyStateOpacity = Self.read(
             defaults, Key.emptyStateOpacity, fallback: Defaults.emptyStateOpacity
         )
@@ -75,6 +85,7 @@ public final class GuillocheRotationTuning {
         emptyStateRotationDegrees = Defaults.emptyStateRotationDegrees
         cardRotationDegrees = Defaults.cardRotationDegrees
         cardOpacity = Defaults.cardOpacity
+        cardPhotoOpacity = Defaults.cardPhotoOpacity
         emptyStateOpacity = Defaults.emptyStateOpacity
     }
 

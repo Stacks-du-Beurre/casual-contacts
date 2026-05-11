@@ -20,7 +20,7 @@ public final class CardElementDepthTuning {
     public enum Defaults {
         public static let moonPhaseLayer: Int = 12
         public static let zodiacGlyphLayer: Int = 4
-        public static let zodiacConstellationLayer: Int = 15
+        public static let zodiacConstellationLayer: Int = 12
         public static let perspectiveAmount: Double = 1.0
         public static let perspectiveAmountMin: Double = 0.0
         public static let perspectiveAmountMax: Double = 3.0

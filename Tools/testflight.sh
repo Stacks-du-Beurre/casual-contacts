@@ -18,6 +18,55 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PBXPROJ="$REPO_ROOT/CasualContacts/CasualContacts.xcodeproj/project.pbxproj"
+
+compare_versions() {
+    local left="$1"
+    local right="$2"
+    local left_major left_minor left_patch right_major right_minor right_patch
+    IFS='.' read -r left_major left_minor left_patch <<< "$left"
+    IFS='.' read -r right_major right_minor right_patch <<< "$right"
+    left_patch="${left_patch:-0}"
+    right_patch="${right_patch:-0}"
+
+    if ((10#$left_major > 10#$right_major)); then
+        printf '1\n'
+    elif ((10#$left_major < 10#$right_major)); then
+        printf -- '-1\n'
+    elif ((10#$left_minor > 10#$right_minor)); then
+        printf '1\n'
+    elif ((10#$left_minor < 10#$right_minor)); then
+        printf -- '-1\n'
+    elif ((10#$left_patch > 10#$right_patch)); then
+        printf '1\n'
+    elif ((10#$left_patch < 10#$right_patch)); then
+        printf -- '-1\n'
+    else
+        printf '0\n'
+    fi
+}
+
+version_gt() {
+    [ "$(compare_versions "$1" "$2")" = "1" ]
+}
+
+highest_tagged_marketing_version() {
+    local highest=""
+    local tag version
+
+    while IFS= read -r tag; do
+        version="${tag#v-}"
+        version="${version#v}"
+
+        if [[ "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            if [ -z "$highest" ] || version_gt "$version" "$highest"; then
+                highest="$version"
+            fi
+        fi
+    done < <(git -C "$REPO_ROOT" tag --list 'v*')
+
+    printf '%s\n' "$highest"
+}
 
 name=""
 message=""
@@ -49,6 +98,23 @@ done
 # correspond to a real, committed state we can later reproduce.
 if ! git -C "$REPO_ROOT" diff --quiet || ! git -C "$REPO_ROOT" diff --cached --quiet; then
     echo "ERROR: working tree is not clean. Commit or stash first so the TestFlight build matches a real commit." >&2
+    exit 1
+fi
+
+if [ ! -f "$PBXPROJ" ]; then
+    echo "ERROR: pbxproj not found at $PBXPROJ" >&2
+    exit 1
+fi
+
+current_marketing="$(grep -m1 'MARKETING_VERSION = ' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([^;]+);.*/\1/')"
+if ! [[ "$current_marketing" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "ERROR: MARKETING_VERSION '$current_marketing' must be X.Y or X.Y.Z (digits only)." >&2
+    exit 1
+fi
+
+latest_marketing="$(highest_tagged_marketing_version)"
+if [ -n "$latest_marketing" ] && version_gt "$latest_marketing" "$current_marketing"; then
+    echo "ERROR: MARKETING_VERSION $current_marketing is behind the latest release tag $latest_marketing. Bump to a new marketing version before tagging a TestFlight build." >&2
     exit 1
 fi
 

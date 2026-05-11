@@ -22,6 +22,13 @@ import StorageTestSupport
         #expect(RootScene.locale(for: .ukrainian)?.identifier == "uk")
     }
 
+    @Test func rootLocaleAlwaysResolvesToConcreteLocale() {
+        let current = Locale(identifier: "en_US")
+
+        #expect(RootScene.rootLocale(for: .system, current: current).identifier == "en_US")
+        #expect(RootScene.rootLocale(for: .russian, current: current).identifier == "ru")
+    }
+
     @Test func languagePreferenceReadsAndPersistsThroughDefaults() {
         let suiteName = "RootSceneTests.languagePreference.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

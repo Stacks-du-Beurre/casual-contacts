@@ -441,9 +441,15 @@ public struct RecordsListScene: View {
                     // `.interacting` fires the moment the user touches the scroll
                     // surface (before any movement is detected), so the gyro
                     // pipeline pauses on touch-down — not just once scrolling
-                    // begins. `.idle` after lift+decel resumes it.
+                    // begins. Programmatic scroll animation can be produced by
+                    // resorting/re-laying out the list; don't treat that as a
+                    // user interaction or the gyro stream can stay stopped.
                     .onScrollPhaseChange { _, phase in
-                        onScrollInteractionChange(phase != .idle)
+                        onScrollInteractionChange(
+                            ScrollInteractionPolicy.shouldPauseMotion(
+                                for: ScrollInteractionPhase(phase)
+                            )
+                        )
                     }
                     #endif
                 }
@@ -595,6 +601,35 @@ struct CardAnimationVisibility {
             && rowFrame.minY <= viewportHeight + prewarmMargin
     }
 }
+
+enum ScrollInteractionPhase: Sendable, Equatable {
+    case idle
+    case userInteraction
+    case programmaticAnimation
+}
+
+struct ScrollInteractionPolicy {
+    static func shouldPauseMotion(for phase: ScrollInteractionPhase) -> Bool {
+        phase == .userInteraction
+    }
+}
+
+#if os(iOS)
+extension ScrollInteractionPhase {
+    init(_ phase: ScrollPhase) {
+        switch phase {
+        case .idle:
+            self = .idle
+        case .animating:
+            self = .programmaticAnimation
+        case .tracking, .interacting, .decelerating:
+            self = .userInteraction
+        @unknown default:
+            self = .userInteraction
+        }
+    }
+}
+#endif
 
 private struct CardAnimationDiagnosticsOverlay: View {
     let activeCount: Int

@@ -86,6 +86,7 @@ public struct CardBackdrop: View {
                 ),
                 tint: .white,
                 attitude: rotationGuillocheAttitude,
+                usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
                 reveal: reveal
             )
             .offset(rotationGuillocheOffset)
@@ -137,5 +138,9 @@ public struct CardBackdrop: View {
                 reveal = shown ? 1 : 0
             }
         }
+    }
+
+    static func rotationGuillocheUsage(hasPhoto: Bool) -> GuillocheRotationLayer.Usage {
+        hasPhoto ? .cardPhoto : .card
     }
 }

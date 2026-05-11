@@ -43,4 +43,9 @@ import CoreModels
             photo: Image(systemName: "photo")
         ).body
     }
+
+    @Test func rotationGuillocheUsageSeparatesPhotoCards() {
+        #expect(CardBackdrop.rotationGuillocheUsage(hasPhoto: false) == .card)
+        #expect(CardBackdrop.rotationGuillocheUsage(hasPhoto: true) == .cardPhoto)
+    }
 }

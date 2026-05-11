@@ -349,6 +349,12 @@ struct NoopCardPathProvider: CardPathProvider {
         ))
     }
 
+    @Test func scrollInteractionPolicyDoesNotPauseForProgrammaticAnimation() {
+        #expect(ScrollInteractionPolicy.shouldPauseMotion(for: .userInteraction))
+        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .programmaticAnimation))
+        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .idle))
+    }
+
     @Test func cardAnimationDiagnosticsTracksMountedAndActiveCounts() throws {
         let suiteName = "CardAnimationDiagnostics.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))

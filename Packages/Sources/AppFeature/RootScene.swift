@@ -100,8 +100,15 @@ public struct RootScene: Scene {
         return Locale(identifier: identifier)
     }
 
+    public static func rootLocale(
+        for preference: AppLanguagePreference,
+        current: Locale = .current
+    ) -> Locale {
+        Self.locale(for: preference) ?? current
+    }
+
     private var activeLocalizationLocale: Locale {
-        Self.locale(for: appLanguagePreference.wrappedValue) ?? .current
+        Self.rootLocale(for: appLanguagePreference.wrappedValue)
     }
 
     static func deleteErrorMessage(forRecordName name: String, locale: Locale) -> String {
@@ -119,12 +126,7 @@ public struct RootScene: Scene {
     @MainActor
     @ViewBuilder
     private var localizedRootContent: some View {
-        let preference = appLanguagePreference.wrappedValue
-        if let locale = Self.locale(for: preference) {
-            rootContent.environment(\.locale, locale)
-        } else {
-            rootContent
-        }
+        rootContent.environment(\.locale, activeLocalizationLocale)
     }
 
     @MainActor

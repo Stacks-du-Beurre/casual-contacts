@@ -118,12 +118,73 @@ increment_marketing_version() {
     fi
 }
 
+compare_versions() {
+    local left="$1"
+    local right="$2"
+    local left_major left_minor left_patch right_major right_minor right_patch
+    IFS='.' read -r left_major left_minor left_patch <<< "$left"
+    IFS='.' read -r right_major right_minor right_patch <<< "$right"
+    left_patch="${left_patch:-0}"
+    right_patch="${right_patch:-0}"
+
+    if ((10#$left_major > 10#$right_major)); then
+        printf '1\n'
+    elif ((10#$left_major < 10#$right_major)); then
+        printf -- '-1\n'
+    elif ((10#$left_minor > 10#$right_minor)); then
+        printf '1\n'
+    elif ((10#$left_minor < 10#$right_minor)); then
+        printf -- '-1\n'
+    elif ((10#$left_patch > 10#$right_patch)); then
+        printf '1\n'
+    elif ((10#$left_patch < 10#$right_patch)); then
+        printf -- '-1\n'
+    else
+        printf '0\n'
+    fi
+}
+
+version_gt() {
+    [ "$(compare_versions "$1" "$2")" = "1" ]
+}
+
+highest_tagged_marketing_version() {
+    local highest=""
+    local tag version
+
+    while IFS= read -r tag; do
+        version="${tag#v-}"
+        version="${version#v}"
+
+        if [[ "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            if [ -z "$highest" ] || version_gt "$version" "$highest"; then
+                highest="$version"
+            fi
+        fi
+    done < <(git -C "$REPO_ROOT" tag --list 'v*')
+
+    printf '%s\n' "$highest"
+}
+
+latest_marketing="$(highest_tagged_marketing_version)"
+marketing_floor="$current_marketing"
+if [ -n "$latest_marketing" ] && version_gt "$latest_marketing" "$marketing_floor"; then
+    marketing_floor="$latest_marketing"
+fi
+
 if [ "$build_only" = true ]; then
+    if [ -n "$latest_marketing" ] && version_gt "$latest_marketing" "$current_marketing"; then
+        echo "ERROR: MARKETING_VERSION $current_marketing is behind the latest release tag $latest_marketing. Create a new marketing-version release instead of --build-only." >&2
+        exit 1
+    fi
     marketing_version="$current_marketing"
     new_build=$((current_build + 1))
 else
     if [ -z "$new_marketing" ]; then
-        new_marketing="$(increment_marketing_version "$current_marketing")"
+        new_marketing="$(increment_marketing_version "$marketing_floor")"
+    elif [ -n "$latest_marketing" ] && ! version_gt "$new_marketing" "$latest_marketing"; then
+        echo "ERROR: --version $new_marketing must be greater than the latest release tag $latest_marketing." >&2
+        exit 1
     fi
     if [ "$new_marketing" = "$current_marketing" ]; then
         echo "ERROR: MARKETING_VERSION is already $new_marketing. Pass --build-only to ship another build of the same marketing version." >&2

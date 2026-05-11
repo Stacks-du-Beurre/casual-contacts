@@ -5,10 +5,11 @@ import DesignSystem
 public struct GuillocheRotationLayer: View, Animatable {
 
     /// Which calling context the layer is used in — picks the matching
-    /// tuning value so the card and empty-state hero can be dialed
+    /// tuning value so card variants and the empty-state hero can be dialed
     /// independently from the developer-settings panel.
-    public enum Usage: Sendable {
+    public enum Usage: Equatable, Sendable {
         case card
+        case cardPhoto
         case emptyState
     }
 
@@ -46,10 +47,11 @@ public struct GuillocheRotationLayer: View, Animatable {
     }
 
     /// Stroke opacity, sourced from the per-usage tuning slider so the dev
-    /// panel can dial card vs. empty-state independently.
+    /// panel can dial card variants and empty-state independently.
     private var opacity: Double {
         switch usage {
         case .card: tuning.cardOpacity
+        case .cardPhoto: tuning.cardPhotoOpacity
         case .emptyState: tuning.emptyStateOpacity
         }
     }
@@ -150,7 +152,7 @@ public struct GuillocheRotationLayer: View, Animatable {
     private var motionRotation: Double {
         guard !reduceMotion else { return 0 }
         let degrees: Double = switch usage {
-        case .card: tuning.cardRotationDegrees
+        case .card, .cardPhoto: tuning.cardRotationDegrees
         case .emptyState: tuning.emptyStateRotationDegrees
         }
         return (attitude.roll - attitude.pitch) * degrees
