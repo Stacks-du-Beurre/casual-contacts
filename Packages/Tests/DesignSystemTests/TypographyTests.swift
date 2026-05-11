@@ -43,6 +43,7 @@ import SwiftUI
         let fontFiles = [
             (fileName: "CormorantSC-Bold", postScriptName: "CormorantSC-Bold"),
             (fileName: "CormorantSC-SemiBold", postScriptName: "CormorantSC-SemiBold"),
+            (fileName: "CormorantInfant-Variable", postScriptName: "CormorantInfant-Light"),
             (fileName: "CormorantInfant-SemiBold", postScriptName: "CormorantInfant-SemiBold"),
             (fileName: "IBMPlexMono-Regular", postScriptName: "IBMPlexMono-Regular")
         ]
