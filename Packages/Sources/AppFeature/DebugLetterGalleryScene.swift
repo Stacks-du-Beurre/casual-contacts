@@ -16,6 +16,7 @@ struct DebugLetterGalleryScene: View {
     let onDismiss: () -> Void
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
 
     private let records: [Record] = DebugRecordSeeder.letterGalleryRecords
 
@@ -63,7 +64,7 @@ struct DebugLetterGalleryScene: View {
 
     private var header: some View {
         ZStack {
-            Text("LETTER GALLERY")
+            ModuleLocalization.text("LETTER GALLERY", locale: locale)
                 .font(.custom("CormorantSC-Bold", size: 17, relativeTo: .headline))
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(chromePrimary)
@@ -78,7 +79,7 @@ struct DebugLetterGalleryScene: View {
                         .background(chromePrimary, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close")
+                .accessibilityLabel(ModuleLocalization.text("Close", locale: locale))
                 .padding(.trailing, 10)
             }
         }

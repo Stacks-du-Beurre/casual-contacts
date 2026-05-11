@@ -44,6 +44,7 @@ public struct TappedCardModalScene: View {
     @State private var cardAtCenter = false
     @State private var chromeVisible = false
     @Bindable private var sizeTuning = MediumCardSizeTuning.shared
+    @Environment(\.locale) private var locale
 
     private static let slideDuration: Double = 0.38
     private static let chromeDuration: Double = 0.28
@@ -90,7 +91,7 @@ public struct TappedCardModalScene: View {
                     .contentShape(Rectangle())
                     .onTapGesture { beginDismiss() }
                     .accessibilityIdentifier("tappedCardModalBackdrop")
-                    .accessibilityLabel("Dismiss")
+                    .accessibilityLabel(ModuleLocalization.text("Dismiss", locale: locale))
                     .accessibilityAddTraits(.isButton)
 
                 CardView(
@@ -126,7 +127,7 @@ public struct TappedCardModalScene: View {
     private var toolbar: some View {
         HStack {
             Button { beginDismiss(then: onEdit) } label: {
-                Text("EDIT")
+                ModuleLocalization.text("EDIT", locale: locale)
                     .font(CCDesign.Typography.headline)
                     .tracking(CCDesign.Typography.Tracking.headline)
                     .foregroundStyle(Color.primary)
@@ -136,7 +137,7 @@ public struct TappedCardModalScene: View {
             Spacer()
 
             Button(role: .destructive) { beginDismiss(then: onDelete) } label: {
-                Text("DELETE")
+                ModuleLocalization.text("DELETE", locale: locale)
                     .font(CCDesign.Typography.headline)
                     .tracking(CCDesign.Typography.Tracking.headline)
             }

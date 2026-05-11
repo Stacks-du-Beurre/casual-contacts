@@ -47,17 +47,17 @@ public struct DetailEditForm: View {
     public var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                TextField("Name", text: $name)
+                TextField(ModuleLocalization.string("Name", locale: locale), text: $name)
                     .font(CCDesign.Typography.description)
                     .textFieldStyle(.roundedBorder)
 
-                TextField("Description", text: $description, axis: .vertical)
+                TextField(ModuleLocalization.string("Description", locale: locale), text: $description, axis: .vertical)
                     .font(CCDesign.Typography.descriptionSmall)
                     .lineLimit(3, reservesSpace: true)
                     .textFieldStyle(.roundedBorder)
 
                 HStack {
-                    Text("Zodiac:")
+                    ModuleLocalization.text("Zodiac:", locale: locale)
                         .font(CCDesign.Typography.caption1)
                     Button {
                         showingZodiacPicker = true
@@ -75,16 +75,16 @@ public struct DetailEditForm: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Edit")
+            .navigationTitle(ModuleLocalization.string("Edit", locale: locale))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                    Button(ModuleLocalization.string("Cancel", locale: locale), action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(ModuleLocalization.string("Save", locale: locale)) {
                         onSave(updatedRecord)
                     }
                     .disabled(!isSaveable)
@@ -104,17 +104,18 @@ public struct DetailEditForm: View {
 private struct DetailZodiacPickerSheet: View {
     @Binding var selection: ZodiacSign?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Button("None") {
+                    Button(ModuleLocalization.string("None", locale: locale)) {
                         selection = nil
                         dismiss()
                     }
                 }
-                Section("Sign") {
+                Section(ModuleLocalization.string("Sign", locale: locale)) {
                     ForEach(ZodiacSign.allCases, id: \.self) { sign in
                         Button(sign.rawValue.capitalized) {
                             selection = sign
@@ -123,13 +124,13 @@ private struct DetailZodiacPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Zodiac")
+            .navigationTitle(ModuleLocalization.string("Zodiac", locale: locale))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(ModuleLocalization.string("Cancel", locale: locale)) { dismiss() }
                 }
             }
         }

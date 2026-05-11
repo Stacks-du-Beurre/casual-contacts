@@ -35,7 +35,7 @@ struct PersonTopNav: View {
                     onCancel()
                     dismiss()
                 } label: {
-                    Text("Cancel")
+                    ModuleLocalization.text("Cancel", locale: locale)
                         .font(.custom("CormorantInfant-SemiBold", size: 21.6))
                         .foregroundStyle(CCDesign.Colors.L0)
                         .padding(.vertical, 10)
@@ -46,7 +46,7 @@ struct PersonTopNav: View {
 
                 Spacer()
 
-                Text("+ Person")
+                ModuleLocalization.text("+ Person", locale: locale)
                     .font(.custom("CormorantInfant-SemiBold", size: 21.6))
                     .foregroundStyle(CCDesign.Colors.L0)
                     .opacity(0.35)

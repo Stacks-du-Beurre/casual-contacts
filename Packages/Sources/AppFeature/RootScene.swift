@@ -69,7 +69,7 @@ public struct RootScene: Scene {
                     await ScreenshotMode.seedIfNeeded(into: environment)
                 }
             #else
-            Text("RootScene is iOS-only")
+            ModuleLocalization.text("RootScene is iOS-only", locale: activeLocalizationLocale)
             #endif
         }
     }
@@ -390,26 +390,30 @@ public struct RootScene: Scene {
         }
         #endif
         .alert(
-            "Location Required",
+            ModuleLocalization.string("Location Required", locale: activeLocalizationLocale),
             isPresented: Binding(
                 get: { nearbyDebugError != nil },
                 set: { if !$0 { nearbyDebugError = nil } }
             ),
             presenting: nearbyDebugError
         ) { _ in
-            Button("OK", role: .cancel) { nearbyDebugError = nil }
+            Button(ModuleLocalization.string("OK", locale: activeLocalizationLocale), role: .cancel) {
+                nearbyDebugError = nil
+            }
         } message: { message in
             Text(message)
         }
         .alert(
-            "Couldn't delete contact",
+            ModuleLocalization.string("Couldn't delete contact", locale: activeLocalizationLocale),
             isPresented: Binding(
                 get: { deleteErrorMessage != nil },
                 set: { if !$0 { deleteErrorMessage = nil } }
             ),
             presenting: deleteErrorMessage
         ) { _ in
-            Button("OK", role: .cancel) { deleteErrorMessage = nil }
+            Button(ModuleLocalization.string("OK", locale: activeLocalizationLocale), role: .cancel) {
+                deleteErrorMessage = nil
+            }
         } message: { message in
             Text(message)
         }
@@ -418,7 +422,9 @@ public struct RootScene: Scene {
                 AboutView()
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { router.showingAbout = false }
+                            Button(ModuleLocalization.string("Done", locale: activeLocalizationLocale)) {
+                                router.showingAbout = false
+                            }
                         }
                     }
             }

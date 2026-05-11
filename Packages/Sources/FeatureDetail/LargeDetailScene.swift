@@ -13,6 +13,7 @@ public struct LargeDetailScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
+    @Environment(\.locale) private var locale
 
     public init(
         record: Record,
@@ -53,13 +54,13 @@ public struct LargeDetailScene: View {
                 .toolbar {
                     #if os(iOS)
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Done", action: onDismiss)
+                        Button(ModuleLocalization.string("Done", locale: locale), action: onDismiss)
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
-                            Button("Edit", action: onEdit)
+                            Button(ModuleLocalization.string("Edit", locale: locale), action: onEdit)
                             Button(role: .destructive, action: onDelete) {
-                                Text("Delete")
+                                ModuleLocalization.text("Delete", locale: locale)
                             }
                         } label: {
                             Image(systemName: "ellipsis")
@@ -67,13 +68,13 @@ public struct LargeDetailScene: View {
                     }
                     #else
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Done", action: onDismiss)
+                        Button(ModuleLocalization.string("Done", locale: locale), action: onDismiss)
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
-                            Button("Edit", action: onEdit)
+                            Button(ModuleLocalization.string("Edit", locale: locale), action: onEdit)
                             Button(role: .destructive, action: onDelete) {
-                                Text("Delete")
+                                ModuleLocalization.text("Delete", locale: locale)
                             }
                         } label: {
                             Image(systemName: "ellipsis")

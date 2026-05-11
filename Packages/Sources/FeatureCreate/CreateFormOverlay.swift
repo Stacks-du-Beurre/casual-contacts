@@ -73,14 +73,14 @@ struct CreateFormOverlay<Backdrop: View>: View {
                     .progressViewStyle(.circular)
                     .tint(CCDesign.Colors.L0)
                     .scaleEffect(0.7)
-                Text("Analyzing photo…")
+                ModuleLocalization.text("Analyzing photo…", locale: locale)
                     .font(CCDesign.Typography.caption2)
                     .foregroundStyle(CCDesign.Colors.L0)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Analyzing photo")
+            .accessibilityLabel(ModuleLocalization.text("Analyzing photo", locale: locale))
             .accessibilityIdentifier("photoDetectingSpinner")
         } else {
             Button(action: { isPhotoChooserPresented = true }) {
@@ -109,7 +109,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
             }
         }
         #else
-        Text("+ Add Photo")
+        ModuleLocalization.text("+ Add Photo", locale: locale)
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(CCDesign.Colors.L0)
         #endif
@@ -194,7 +194,7 @@ private struct NamePill<Backdrop: View>: View {
             )
 
             // Input layer — invisible TextField overlaid exactly on top.
-            TextField("Name", text: $model.name, axis: .vertical)
+            TextField(ModuleLocalization.string("Name", locale: locale), text: $model.name, axis: .vertical)
                 .font(Self.nameFont)
                 .foregroundStyle(.clear)
                 .tint(.black)
@@ -256,9 +256,9 @@ private struct DescriptionPill: View {
         let fieldWidth = min(max(naturalWidth + Self.editingCushion, 0), cap)
 
         TextField(
-            "Description",
+            ModuleLocalization.string("Description", locale: locale),
             text: $model.description,
-            prompt: Text("Description").foregroundStyle(CCDesign.Colors.L0),
+            prompt: ModuleLocalization.text("Description", locale: locale).foregroundStyle(CCDesign.Colors.L0),
             axis: .vertical
         )
         .lineLimit(1...)

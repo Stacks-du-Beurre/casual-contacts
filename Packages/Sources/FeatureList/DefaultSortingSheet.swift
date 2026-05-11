@@ -98,7 +98,7 @@ struct DefaultSortingSheet: View {
 
     private var cancelCard: some View {
         Button(action: onDismiss) {
-            Text("cancel")
+            ModuleLocalization.text("cancel", locale: locale)
                 .font(CCDesign.Typography.headline)
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(cancelColor)
@@ -109,7 +109,7 @@ struct DefaultSortingSheet: View {
         .buttonStyle(.plain)
         .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        .accessibilityLabel("Cancel")
+        .accessibilityLabel(ModuleLocalization.text("Cancel", locale: locale))
     }
 
     private func row(_ title: String, option: SortOption) -> some View {

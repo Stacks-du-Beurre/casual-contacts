@@ -3,6 +3,7 @@ import DesignSystem
 
 public struct LocationPermissionPrimer: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
 
     private let onContinue: () -> Void
 
@@ -15,7 +16,7 @@ public struct LocationPermissionPrimer: View {
     public var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 18) {
-                Text("LOCATION ACCESS")
+                ModuleLocalization.text("LOCATION ACCESS", locale: locale)
                     .font(CCDesign.Typography.headline)
                     .tracking(CCDesign.Typography.Tracking.headline)
                     .textCase(.uppercase)
@@ -23,7 +24,10 @@ public struct LocationPermissionPrimer: View {
                     .multilineTextAlignment(.center)
                     .accessibilityAddTraits(.isHeader)
 
-                Text("Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app.")
+                ModuleLocalization.text(
+                    "Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app.",
+                    locale: locale
+                )
                     .font(CCDesign.Typography.description)
                     .tracking(CCDesign.Typography.Tracking.description)
                     .foregroundStyle(labelColor)
@@ -33,7 +37,7 @@ public struct LocationPermissionPrimer: View {
 
                 VStack(spacing: 10) {
                     Button(action: onContinue) {
-                        Text("Continue")
+                        ModuleLocalization.text("Continue", locale: locale)
                             .font(CCDesign.Typography.description)
                             .tracking(CCDesign.Typography.Tracking.description)
                             .frame(maxWidth: .infinity)

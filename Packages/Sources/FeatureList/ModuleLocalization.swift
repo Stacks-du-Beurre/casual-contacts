@@ -1,6 +1,13 @@
 import Foundation
+import SwiftUI
 
 enum ModuleLocalization {
+    private static let catalog = StringCatalog.load()
+
+    static func text(_ key: String, locale: Locale) -> Text {
+        Text(string(key, locale: locale))
+    }
+
     static func string(_ key: String, locale: Locale, _ arguments: CVarArg...) -> String {
         let format = localizedFormat(key, locale: locale)
         guard !arguments.isEmpty else { return format }
@@ -17,9 +24,6 @@ enum ModuleLocalization {
 
     private static func catalogValue(for key: String, locale: Locale) -> String? {
         guard
-            let url = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"),
-            let data = try? Data(contentsOf: url),
-            let catalog = try? JSONDecoder().decode(StringCatalog.self, from: data),
             let entry = catalog.strings[key]
         else {
             return nil
@@ -47,6 +51,17 @@ enum ModuleLocalization {
 
 private struct StringCatalog: Decodable {
     let strings: [String: StringCatalogEntry]
+
+    static func load() -> StringCatalog {
+        guard
+            let url = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"),
+            let data = try? Data(contentsOf: url),
+            let catalog = try? JSONDecoder().decode(StringCatalog.self, from: data)
+        else {
+            return StringCatalog(strings: [:])
+        }
+        return catalog
+    }
 }
 
 private struct StringCatalogEntry: Decodable {

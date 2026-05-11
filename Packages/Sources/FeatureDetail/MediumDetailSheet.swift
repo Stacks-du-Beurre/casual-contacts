@@ -14,6 +14,7 @@ public struct MediumDetailSheet: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
+    @Environment(\.locale) private var locale
 
     public init(
         record: Record,
@@ -59,11 +60,11 @@ public struct MediumDetailSheet: View {
                 .accessibilityAddTraits(.isHeader)
 
             HStack(spacing: 16) {
-                Button("Expand", action: onExpand)
-                Button("Edit", action: onEdit)
+                Button(ModuleLocalization.string("Expand", locale: locale), action: onExpand)
+                Button(ModuleLocalization.string("Edit", locale: locale), action: onEdit)
                 Spacer()
                 Button(role: .destructive, action: onDelete) {
-                    Text("Delete")
+                    ModuleLocalization.text("Delete", locale: locale)
                 }
             }
             .padding()

@@ -296,31 +296,33 @@ public struct RecordsListScene: View {
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSortingSheetPresented)
             .alert(
-                "Delete contact?",
+                ModuleLocalization.string("Delete contact?", locale: locale),
                 isPresented: Binding(
                     get: { pendingDeleteRecord != nil },
                     set: { if !$0 { pendingDeleteRecord = nil } }
                 ),
                 presenting: pendingDeleteRecord
             ) { record in
-                Button("Delete", role: .destructive) {
+                Button(ModuleLocalization.string("Delete", locale: locale), role: .destructive) {
                     Task { await performDelete(record) }
                 }
-                Button("Cancel", role: .cancel) {
+                Button(ModuleLocalization.string("Cancel", locale: locale), role: .cancel) {
                     pendingDeleteRecord = nil
                 }
             } message: { record in
                 Text(Self.deleteConfirmationMessage(forRecordName: record.name, locale: locale))
             }
             .alert(
-                "Couldn't delete contact",
+                ModuleLocalization.string("Couldn't delete contact", locale: locale),
                 isPresented: Binding(
                     get: { deleteErrorMessage != nil },
                     set: { if !$0 { deleteErrorMessage = nil } }
                 ),
                 presenting: deleteErrorMessage
             ) { _ in
-                Button("OK", role: .cancel) { deleteErrorMessage = nil }
+                Button(ModuleLocalization.string("OK", locale: locale), role: .cancel) {
+                    deleteErrorMessage = nil
+                }
             } message: { message in
                 Text(message)
             }
@@ -332,7 +334,7 @@ public struct RecordsListScene: View {
         // title stays L2; only the populated-list title inverts.
         let titleColor: Color = isStoreEmpty ? CCDesign.Colors.L2 : chromePrimary
         return ZStack {
-            Text("MY CONTACTS")
+            ModuleLocalization.text("MY CONTACTS", locale: locale)
                 .font(.custom("CormorantSC-Bold", size: 17 * scale, relativeTo: .headline))
                 .tracking(CCDesign.Typography.Tracking.headline * scale)
                 .foregroundStyle(titleColor)
@@ -345,7 +347,7 @@ public struct RecordsListScene: View {
                         },
                         glyph: chromePrimary
                     )
-                    .accessibilityLabel("Sorting")
+                    .accessibilityLabel(ModuleLocalization.text("Sorting", locale: locale))
                     .accessibilityIdentifier("sortButton")
                     .padding(.leading, 10)
                 }
@@ -356,7 +358,7 @@ public struct RecordsListScene: View {
                     glyph: chromeAccent,
                     scale: scale
                 )
-                .accessibilityLabel("Settings")
+                .accessibilityLabel(ModuleLocalization.text("Settings", locale: locale))
                 .padding(.trailing, 10)
             }
         }
@@ -453,7 +455,7 @@ public struct RecordsListScene: View {
             )
             .padding(.trailing, 24)
             .padding(.bottom, 32)
-            .accessibilityLabel("Add new contact")
+            .accessibilityLabel(ModuleLocalization.text("Add new contact", locale: locale))
             .accessibilityIdentifier("createRecordButton")
             .zoomSource(.createButton)
 
@@ -473,7 +475,7 @@ public struct RecordsListScene: View {
     private var noVisibleMatchesContent: some View {
         VStack {
             Spacer()
-            Text("NO MATCHES")
+            ModuleLocalization.text("NO MATCHES", locale: locale)
                 .font(.custom("CormorantSC-Bold", size: 17, relativeTo: .headline))
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(chromePrimary)
@@ -675,10 +677,11 @@ final class RecordsListSortCache {
 private struct ConditionalSearchable: ViewModifier {
     @Binding var text: String
     let isActive: Bool
+    @Environment(\.locale) private var locale
 
     func body(content: Content) -> some View {
         if isActive {
-            content.searchable(text: $text, prompt: "Search")
+            content.searchable(text: $text, prompt: ModuleLocalization.text("Search", locale: locale))
         } else {
             content
         }

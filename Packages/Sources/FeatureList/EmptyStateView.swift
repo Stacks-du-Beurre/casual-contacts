@@ -45,8 +45,8 @@ public struct EmptyStateView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("emptyStateTitle")
-                .accessibilityLabel("add the first person")
-                .accessibilityHint("Opens the new contact form")
+                .accessibilityLabel(ModuleLocalization.text("add the first person", locale: locale))
+                .accessibilityHint(ModuleLocalization.text("Opens the new contact form", locale: locale))
             }
             .coordinateSpace(.named(Self.sceneCoordinateSpace))
         }
