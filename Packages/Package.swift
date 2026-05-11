@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "CasualContactsPackages",
+    defaultLocalization: "en",
     platforms: [.iOS(.v18), .macOS(.v14)],
     products: [
         .library(name: "CoreModels", targets: ["CoreModels"]),
@@ -61,7 +62,8 @@ let package = Package(
         .target(
             name: "FeatureList",
             dependencies: ["CoreModels", "DesignSystem", "Visuals"],
-            path: "Sources/FeatureList"
+            path: "Sources/FeatureList",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "FeatureListTests",
@@ -71,7 +73,8 @@ let package = Package(
         .target(
             name: "FeatureCreate",
             dependencies: ["CoreModels", "DesignSystem", "Visuals"],
-            path: "Sources/FeatureCreate"
+            path: "Sources/FeatureCreate",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "FeatureCreateTests",
@@ -81,7 +84,8 @@ let package = Package(
         .target(
             name: "FeatureDetail",
             dependencies: ["CoreModels", "DesignSystem", "Visuals"],
-            path: "Sources/FeatureDetail"
+            path: "Sources/FeatureDetail",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "FeatureDetailTests",
@@ -91,7 +95,8 @@ let package = Package(
         .target(
             name: "FeatureSettings",
             dependencies: ["CoreModels", "DesignSystem", "Visuals"],
-            path: "Sources/FeatureSettings"
+            path: "Sources/FeatureSettings",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "FeatureSettingsTests",
@@ -111,7 +116,8 @@ let package = Package(
                 "FeatureDetail",
                 "FeatureSettings"
             ],
-            path: "Sources/AppFeature"
+            path: "Sources/AppFeature",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "AppFeatureTests",
