@@ -1,3 +1,4 @@
+import CoreText
 import Testing
 import SwiftUI
 @testable import DesignSystem
@@ -31,5 +32,29 @@ import SwiftUI
         #expect(bundle.url(forResource: "CormorantSC-SemiBold", withExtension: "ttf") != nil)
         #expect(bundle.url(forResource: "CormorantInfant-Variable", withExtension: "ttf") != nil)
         #expect(bundle.url(forResource: "IBMPlexMono-Regular", withExtension: "ttf") != nil)
+    }
+
+    @Test func bundledFontsCoverRussianAndUkrainianSampleText() throws {
+        let samples = [
+            "Настройки Сохранить Удалить",
+            "Налаштування Зберегти Видалити ї є ґ і"
+        ]
+        let fontNames = [
+            "CormorantSC-Bold",
+            "CormorantSC-SemiBold",
+            "CormorantInfant-SemiBold",
+            "IBMPlexMono-Regular"
+        ]
+
+        for fontName in fontNames {
+            let font = CTFontCreateWithName(fontName as CFString, 16, nil)
+            for sample in samples {
+                let characters = Array(sample)
+                let scalars = characters.map { UniChar(String($0).utf16.first!) }
+                var glyphs = Array(repeating: CGGlyph(), count: scalars.count)
+                let hasGlyphs = CTFontGetGlyphsForCharacters(font, scalars, &glyphs, scalars.count)
+                #expect(hasGlyphs, "\(fontName) is missing glyphs for \(sample)")
+            }
+        }
     }
 }
