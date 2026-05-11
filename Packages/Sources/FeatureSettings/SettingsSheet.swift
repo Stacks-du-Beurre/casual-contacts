@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import CoreModels
 import DesignSystem
@@ -187,7 +188,7 @@ public struct SettingsSheet: View {
 
             Picker("settings.language", selection: $languagePreference) {
                 ForEach(AppLanguagePreference.allCases) { preference in
-                    Text(preference.displayName).tag(preference)
+                    Text(FeatureSettingsLocalization.languageDisplayName(for: preference)).tag(preference)
                 }
             }
             .labelsHidden()
@@ -222,6 +223,48 @@ public struct SettingsSheet: View {
 
     private var versionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        return String(localized: "Casual Contacts Version \(version)")
+        return String(localized: "Casual Contacts Version \(version)", bundle: .module)
+    }
+}
+
+enum FeatureSettingsLocalization {
+    static func languageDisplayName(for preference: AppLanguagePreference) -> LocalizedStringResource {
+        switch preference {
+        case .system:
+            LocalizedStringResource("language.system", bundle: .module)
+        case .english:
+            LocalizedStringResource("language.english", bundle: .module)
+        case .russian:
+            LocalizedStringResource("language.russian", bundle: .module)
+        case .ukrainian:
+            LocalizedStringResource("language.ukrainian", bundle: .module)
+        }
+    }
+
+    static func localizedString(_ key: String, localeIdentifier: String) -> String {
+        let localized = String(
+            localized: String.LocalizationValue(key),
+            bundle: .module,
+            locale: Locale(identifier: localeIdentifier)
+        )
+        if localized != key {
+            return localized
+        }
+
+        guard
+            let url = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"),
+            let data = try? Data(contentsOf: url),
+            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let strings = root["strings"] as? [String: Any],
+            let entry = strings[key] as? [String: Any],
+            let localizations = entry["localizations"] as? [String: Any],
+            let localization = localizations[localeIdentifier] as? [String: Any],
+            let stringUnit = localization["stringUnit"] as? [String: Any],
+            let value = stringUnit["value"] as? String
+        else {
+            return localized
+        }
+
+        return value
     }
 }

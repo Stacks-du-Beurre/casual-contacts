@@ -29,6 +29,16 @@ import CoreModels
         }
     }
 
+    @Test func featureSettingsBundleLocalizesSettingsLanguage() {
+        #expect(FeatureSettingsLocalization.localizedString("settings.language", localeIdentifier: "ru") == "Язык")
+        #expect(FeatureSettingsLocalization.localizedString("settings.language", localeIdentifier: "uk") == "Мова")
+    }
+
+    @Test func featureSettingsBundleLocalizesLanguageDisplayName() {
+        #expect(FeatureSettingsLocalization.localizedString(AppLanguagePreference.russian.displayNameKey, localeIdentifier: "ru") == "Русский")
+        #expect(FeatureSettingsLocalization.localizedString(AppLanguagePreference.ukrainian.displayNameKey, localeIdentifier: "uk") == "Українська")
+    }
+
     @Test func inListDeveloperSettingsPanelInstantiates() {
         _ = InListDeveloperSettingsPanel(onClose: {}).body
     }

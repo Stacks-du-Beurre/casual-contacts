@@ -25,7 +25,7 @@ public enum AppLanguagePreference: String, CaseIterable, Identifiable, Sendable 
         }
     }
 
-    public var displayName: LocalizedStringResource {
+    public var displayNameKey: String {
         switch self {
         case .system:
             "language.system"
@@ -36,5 +36,9 @@ public enum AppLanguagePreference: String, CaseIterable, Identifiable, Sendable 
         case .ukrainian:
             "language.ukrainian"
         }
+    }
+
+    public var displayName: LocalizedStringResource {
+        LocalizedStringResource(String.LocalizationValue(displayNameKey))
     }
 }
