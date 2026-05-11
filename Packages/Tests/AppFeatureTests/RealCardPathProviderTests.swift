@@ -19,6 +19,20 @@ import Visuals
         #expect(!paths.isEmpty, "Expected generated Rotation/Cyrillic/U0410 paths to be non-empty — did you run Tools/regenerate-svg.sh?")
     }
 
+    @Test func cyrillicRotationPathsAreFlippedUpright() {
+        let provider = RealCardPathProvider()
+        let rawPaths = CCVisuals.Guilloche.SVGResource.paths(named: "U0410_Rotation", kind: .rotation)
+        let renderedPaths = provider.rotationPaths(for: "А")
+
+        #expect(!rawPaths.isEmpty)
+        #expect(!renderedPaths.isEmpty)
+        #expect(
+            renderedPaths[0].boundingRect.isApproximatelyEqual(
+                to: rawPaths[0].boundingRect.flippedUprightInGuillocheViewBox
+            )
+        )
+    }
+
     @Test func rotationPathsReturnEmptyForUnknownSymbol() {
         let provider = RealCardPathProvider()
         let paths = provider.rotationPaths(for: "@")   // not a letter
@@ -44,5 +58,37 @@ import Visuals
         let provider = RealCardPathProvider()
         let paths = provider.blendPaths(for: "Ю", shape: .polygon, density: .cards)
         #expect(paths.count >= 10, "Cyrillic blend paths should include the generated layered stack — got \(paths.count)")
+    }
+
+    @Test func cyrillicBlendPathsAreFlippedUpright() {
+        let provider = RealCardPathProvider()
+        let rawPaths = CCVisuals.Guilloche.SVGResource.paths(named: "U042E_Polygon", kind: .blend)
+        let renderedPaths = provider.blendPaths(for: "Ю", shape: .polygon, density: .cards)
+
+        #expect(!rawPaths.isEmpty)
+        #expect(!renderedPaths.isEmpty)
+        #expect(
+            renderedPaths[0].boundingRect.isApproximatelyEqual(
+                to: rawPaths[0].boundingRect.flippedUprightInGuillocheViewBox
+            )
+        )
+    }
+}
+
+private extension CGRect {
+    var flippedUprightInGuillocheViewBox: CGRect {
+        CGRect(
+            x: minX,
+            y: 160 - maxY,
+            width: width,
+            height: height
+        )
+    }
+
+    func isApproximatelyEqual(to other: CGRect, tolerance: CGFloat = 0.01) -> Bool {
+        abs(minX - other.minX) <= tolerance
+            && abs(minY - other.minY) <= tolerance
+            && abs(width - other.width) <= tolerance
+            && abs(height - other.height) <= tolerance
     }
 }

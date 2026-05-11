@@ -202,6 +202,7 @@ private final class GuillocheSVGPathCache: @unchecked Sendable {
         lock.unlock()
 
         let parsed = CCVisuals.Guilloche.SVGResource.paths(named: name, kind: kind)
+            .map { $0.applying(Self.uprightCyrillicTransform) }
 
         lock.lock()
         cache[key] = parsed
@@ -209,6 +210,15 @@ private final class GuillocheSVGPathCache: @unchecked Sendable {
 
         return parsed
     }
+
+    private static let uprightCyrillicTransform = CGAffineTransform(
+        a: 1,
+        b: 0,
+        c: 0,
+        d: -1,
+        tx: 0,
+        ty: 160
+    )
 }
 
 private extension GuillocheShape {
