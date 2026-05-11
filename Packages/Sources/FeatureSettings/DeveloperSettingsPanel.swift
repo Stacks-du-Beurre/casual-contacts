@@ -353,6 +353,19 @@ private struct DeveloperSettingsContent: View {
                 tick: SliderRow.Tick(value: CardElementDepthTuning.Defaults.perspectiveAmount, label: "1")
             )
             SettingsDivider()
+            ToggleRow(
+                label: "Enable depth skew",
+                isOn: $elementDepthTuning.isSkewEnabled
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Depth skew amount",
+                value: $elementDepthTuning.skewAmount,
+                range: CardElementDepthTuning.Defaults.skewAmountMin...CardElementDepthTuning.Defaults.skewAmountMax,
+                format: .decimal,
+                tick: SliderRow.Tick(value: CardElementDepthTuning.Defaults.skewAmount, label: "0.08")
+            )
+            SettingsDivider()
             IntSliderRow(
                 label: "Moon phase depth layer",
                 value: $elementDepthTuning.moonPhaseLayer,
@@ -448,6 +461,7 @@ private struct DeveloperSettingsContent: View {
                 tuning.reset()
                 gradientTuning.reset()
                 cardBlendTuning.reset()
+                elementDepthTuning.reset()
                 zodiacTuning.reset()
                 rotationTuning.reset()
                 photoFocusTuning.reset()

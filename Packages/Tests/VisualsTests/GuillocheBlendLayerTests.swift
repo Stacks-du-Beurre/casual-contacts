@@ -186,6 +186,96 @@ import CoreModels
         #expect(viaMax == viaDepth)
     }
 
+    @Test func depthSkewTransformKeepsFlatAndAnchoredLayersIdentity() {
+        let tilted = DeviceAttitude(pitch: 0.6, roll: -0.4)
+
+        let flat = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: .zero,
+            skewAmount: 0.08
+        )
+        let anchored = GuillocheBlendLayer.depthSkewTransform(
+            layer: 0,
+            attitude: tilted,
+            skewAmount: 0.08
+        )
+        let disabled = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: tilted,
+            skewAmount: 0
+        )
+
+        #expect(flat == .identity)
+        #expect(anchored == .identity)
+        #expect(disabled == .identity)
+    }
+
+    @Test func depthSkewTransformScalesWithLayerDepth() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: 0.5)
+        let skewAmount = 0.08
+
+        let layer5 = GuillocheBlendLayer.depthSkewTransform(
+            layer: 5,
+            attitude: attitude,
+            skewAmount: skewAmount
+        )
+        let layer15 = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: attitude,
+            skewAmount: skewAmount
+        )
+
+        #expect(abs(layer5.b) < abs(layer15.b))
+        #expect(abs(layer5.c) < abs(layer15.c))
+        #expect(layer15.b == CGFloat(attitude.pitch) * CGFloat(skewAmount))
+        #expect(layer15.c == CGFloat(attitude.roll) * CGFloat(skewAmount))
+    }
+
+    @Test func depthSkewTransformCarriesDepthAndMotionReversal() {
+        let attitude = DeviceAttitude(pitch: 0.5, roll: -0.5)
+        let normal = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: attitude,
+            skewAmount: 0.08
+        )
+        let reversedMotion = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: attitude,
+            reverseMotionDirection: true,
+            skewAmount: 0.08
+        )
+        let reversedDepthNear = GuillocheBlendLayer.depthSkewTransform(
+            layer: 0,
+            attitude: attitude,
+            reverseDepthOrder: true,
+            skewAmount: 0.08
+        )
+        let reversedDepthFar = GuillocheBlendLayer.depthSkewTransform(
+            layer: 15,
+            attitude: attitude,
+            reverseDepthOrder: true,
+            skewAmount: 0.08
+        )
+
+        #expect(reversedMotion.b == -normal.b)
+        #expect(reversedMotion.c == -normal.c)
+        #expect(reversedDepthNear.b == normal.b)
+        #expect(reversedDepthNear.c == normal.c)
+        #expect(reversedDepthFar == .identity)
+    }
+
+    @Test func centeredSkewTransformPreservesPathCenter() {
+        let rect = CGRect(x: 10, y: 20, width: 100, height: 80)
+        let transform = GuillocheBlendLayer.centeredSkewTransform(
+            bounds: rect,
+            skew: CGAffineTransform(a: 1, b: 0.04, c: -0.03, d: 1, tx: 0, ty: 0)
+        )
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+
+        #expect(center.applying(transform).x == center.x)
+        #expect(center.applying(transform).y == center.y)
+    }
+
     @Test @MainActor func layerInstantiatesAtEveryDensity() {
         let paths15 = makePaths(count: 15)
         let paths7 = makePaths(count: 7)

@@ -13,6 +13,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let reverseDepthOrder: Bool
     public let reverseMotionDirection: Bool
     public let perspectiveAmount: Double
+    public let skewAmount: Double
     public var reveal: Double
 
     /// `Animatable` hook — SwiftUI interpolates `reveal` per frame so each
@@ -43,6 +44,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         reverseDepthOrder: Bool = false,
         reverseMotionDirection: Bool = false,
         perspectiveAmount: Double = 1.0,
+        skewAmount: Double = 0.08,
         reveal: Double = 1.0
     ) {
         self.paths = paths
@@ -54,13 +56,28 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.reverseDepthOrder = reverseDepthOrder
         self.reverseMotionDirection = reverseMotionDirection
         self.perspectiveAmount = perspectiveAmount
+        self.skewAmount = skewAmount
         self.reveal = reveal
     }
 
     public var body: some View {
         ZStack {
             ForEach(paths.indices, id: \.self) { index in
-                paths[index]
+                let path = paths[index]
+                let maxLayer = max(paths.count - 1, 0)
+                let layer = reversed ? index : max(maxLayer - index, 0)
+                let skew = Self.depthSkewTransform(
+                    layer: layer,
+                    attitude: attitude,
+                    maxLayer: maxLayer,
+                    reverseDepthOrder: reverseDepthOrder,
+                    reverseMotionDirection: reverseMotionDirection,
+                    perspectiveAmount: perspectiveAmount,
+                    skewAmount: skewAmount
+                )
+                let transformedPath = path.applying(Self.centeredSkewTransform(bounds: path.boundingRect, skew: skew))
+
+                transformedPath
                     .stroke(tint.opacity(0.8 * localReveal(forIndex: index)), lineWidth: 0.5)
                     .offset(Self.offset(
                         forPathIndex: index,
@@ -157,6 +174,43 @@ public struct GuillocheBlendLayer: View, Animatable {
         )
     }
 
+    nonisolated public static func depthSkewTransform(
+        layer: Int,
+        attitude: DeviceAttitude,
+        maxLayer: Int = GuillocheBlendLayer.defaultMaxDepthLayer,
+        reverseDepthOrder: Bool = false,
+        reverseMotionDirection: Bool = false,
+        perspectiveAmount: Double = 1.0,
+        skewAmount: Double = 0.08
+    ) -> CGAffineTransform {
+        let normalized = perspectiveDepthFraction(
+            layer: layer,
+            maxLayer: maxLayer,
+            reverseDepthOrder: reverseDepthOrder,
+            perspectiveAmount: perspectiveAmount
+        )
+        guard normalized > 0, skewAmount > 0 else { return .identity }
+
+        let direction: CGFloat = reverseMotionDirection ? -1 : 1
+        let pitchSkew = direction * CGFloat(attitude.pitch) * normalized * CGFloat(skewAmount)
+        let rollSkew = direction * CGFloat(attitude.roll) * normalized * CGFloat(skewAmount)
+        guard pitchSkew != 0 || rollSkew != 0 else { return .identity }
+
+        return CGAffineTransform(a: 1, b: pitchSkew, c: rollSkew, d: 1, tx: 0, ty: 0)
+    }
+
+    nonisolated public static func centeredSkewTransform(
+        bounds: CGRect,
+        skew: CGAffineTransform
+    ) -> CGAffineTransform {
+        guard !bounds.isNull, !bounds.isEmpty, skew != .identity else { return skew }
+
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        return CGAffineTransform(translationX: -center.x, y: -center.y)
+            .concatenating(skew)
+            .concatenating(CGAffineTransform(translationX: center.x, y: center.y))
+    }
+
     /// Translation applied to the most-shifted path in the stack — the path
     /// opposite the anchored end. Apply this to a sibling layer (e.g. the
     /// rotation guilloche) so it drifts in lockstep with the blend's swimming
@@ -188,6 +242,21 @@ public struct GuillocheBlendLayer: View, Animatable {
         reverseDepthOrder: Bool,
         perspectiveAmount: Double
     ) -> CGFloat {
+        let normalized = perspectiveDepthFraction(
+            layer: layer,
+            maxLayer: maxLayer,
+            reverseDepthOrder: reverseDepthOrder,
+            perspectiveAmount: perspectiveAmount
+        )
+        return normalized * CGFloat(maxLayer) * depthScale
+    }
+
+    nonisolated private static func perspectiveDepthFraction(
+        layer: Int,
+        maxLayer: Int,
+        reverseDepthOrder: Bool,
+        perspectiveAmount: Double
+    ) -> CGFloat {
         guard maxLayer > 0 else { return 0 }
 
         let clampedLayer = min(max(layer, 0), maxLayer)
@@ -200,7 +269,6 @@ public struct GuillocheBlendLayer: View, Animatable {
         let maxProjected = perspectiveMaxZ / (perspectiveCameraDistance - perspectiveMaxZ)
         let perspectiveNormalized = projected / maxProjected
         let perspectiveDelta = perspectiveNormalized - t
-        let normalized = max(0, t + perspectiveDelta * CGFloat(max(0, perspectiveAmount)))
-        return normalized * CGFloat(maxLayer) * depthScale
+        return max(0, t + perspectiveDelta * CGFloat(max(0, perspectiveAmount)))
     }
 }

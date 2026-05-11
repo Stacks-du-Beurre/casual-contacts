@@ -109,6 +109,7 @@ public struct CardBackdrop: View {
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
                 reverseMotionDirection: blendTuning.reverseMotionDirection,
                 perspectiveAmount: elementDepthTuning.perspectiveAmount,
+                skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
                 reveal: reveal
             )
             .frame(width: 184, height: 160)

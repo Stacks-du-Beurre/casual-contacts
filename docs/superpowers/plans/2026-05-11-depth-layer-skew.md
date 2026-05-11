@@ -16,9 +16,12 @@ Initial implementation should affect the guilloche blend path stack only. Moon p
 
 The effect must be tunable from the existing Developer Settings panel:
 
+- Developer toggle: `Enable depth skew`
+- Default toggle state: `false`
 - Default skew amount: `0.08`
 - Range: `0.0...0.2`
-- `0.0` means the current translation-only behavior.
+- Toggle off means the current translation-only behavior, regardless of skew amount.
+- Toggle on with `0.0` skew amount also means the current translation-only behavior.
 
 No generated guilloche files, asset files, or Figma assets should be touched.
 
@@ -27,15 +30,15 @@ No generated guilloche files, asset files, or Figma assets should be touched.
 - Modify: `Packages/Tests/VisualsTests/GuillocheBlendLayerTests.swift`
   - Adds red tests for skew identity, depth scaling, reverse depth order, reverse motion direction, and path-center preservation.
 - Modify: `Packages/Tests/VisualsTests/CardElementDepthTuningTests.swift`
-  - Adds red tests for the new persisted `skewAmount` tuning.
+  - Adds red tests for the new persisted `isSkewEnabled` and `skewAmount` tuning.
 - Modify: `Packages/Sources/Visuals/Layers/CardElementDepthTuning.swift`
-  - Adds persisted `skewAmount` defaults and reset behavior.
+  - Adds persisted `isSkewEnabled` and `skewAmount` defaults and reset behavior.
 - Modify: `Packages/Sources/Visuals/Layers/GuillocheBlendLayer.swift`
   - Adds skew amount input, skew math helpers, and path application.
 - Modify: `Packages/Sources/Visuals/CardBackdrop.swift`
-  - Passes `elementDepthTuning.skewAmount` into `GuillocheBlendLayer`.
+  - Passes `elementDepthTuning.skewAmount` into `GuillocheBlendLayer` only when `elementDepthTuning.isSkewEnabled` is true.
 - Modify: `Packages/Sources/FeatureSettings/DeveloperSettingsPanel.swift`
-  - Adds a “Depth skew amount” slider below “Depth perspective amount”.
+  - Adds an “Enable depth skew” toggle and a “Depth skew amount” slider below “Depth perspective amount”.
 
 ## Task 1: Red Tests For Skew Math
 
@@ -156,9 +159,10 @@ Expected: compile failure because `depthSkewTransform` and `centeredSkewTransfor
 
 - [ ] **Step 1: Add failing tests**
 
-Update existing expectations to include `skewAmount`:
+Update existing expectations to include `isSkewEnabled` and `skewAmount`:
 
 ```swift
+#expect(tuning.isSkewEnabled == false)
 #expect(tuning.skewAmount == 0.08)
 #expect(CardElementDepthTuning.Defaults.skewAmountMin == 0.0)
 #expect(CardElementDepthTuning.Defaults.skewAmountMax == 0.2)
@@ -167,14 +171,18 @@ Update existing expectations to include `skewAmount`:
 In `writesPersistAcrossInstances`, add:
 
 ```swift
+first.isSkewEnabled = true
 first.skewAmount = 0.12
+#expect(second.isSkewEnabled == true)
 #expect(second.skewAmount == 0.12)
 ```
 
 In `resetRestoresDefaults`, add:
 
 ```swift
+tuning.isSkewEnabled = true
 tuning.skewAmount = 0.2
+#expect(tuning.isSkewEnabled == false)
 #expect(tuning.skewAmount == 0.08)
 ```
 
@@ -187,7 +195,7 @@ cd /Users/adam/Projects/cc/Packages
 swift test --filter CardElementDepthTuningTests
 ```
 
-Expected: compile failure because `skewAmount` and its defaults do not exist yet.
+Expected: compile failure because `isSkewEnabled`, `skewAmount`, and skew defaults do not exist yet.
 
 ## Task 3: Add Skew Tuning
 
@@ -199,18 +207,26 @@ Expected: compile failure because `skewAmount` and its defaults do not exist yet
 Add defaults:
 
 ```swift
+public static let isSkewEnabled: Bool = false
 public static let skewAmount: Double = 0.08
 public static let skewAmountMin: Double = 0.0
 public static let skewAmountMax: Double = 0.2
 ```
 
-Add a key:
+Add keys:
 
 ```swift
+static let isSkewEnabled = "CardElementDepthTuning.isSkewEnabled"
 static let skewAmount = "CardElementDepthTuning.skewAmount"
 ```
 
-Add the property:
+Add properties:
+
+```swift
+public var isSkewEnabled: Bool {
+    didSet { defaults.set(isSkewEnabled, forKey: Key.isSkewEnabled) }
+}
+```
 
 ```swift
 public var skewAmount: Double {
@@ -218,19 +234,37 @@ public var skewAmount: Double {
 }
 ```
 
-Initialize it:
+Initialize them:
+
+```swift
+self.isSkewEnabled = Self.read(defaults, Key.isSkewEnabled, fallback: Defaults.isSkewEnabled)
+```
 
 ```swift
 self.skewAmount = Self.read(defaults, Key.skewAmount, fallback: Defaults.skewAmount)
 ```
 
-Reset it:
+Reset them:
+
+```swift
+isSkewEnabled = Defaults.isSkewEnabled
+```
 
 ```swift
 skewAmount = Defaults.skewAmount
 ```
 
-- [ ] **Step 2: Run tuning tests and verify GREEN**
+- [ ] **Step 2: Add Bool defaults reader**
+
+Add:
+
+```swift
+private static func read(_ defaults: UserDefaults, _ key: String, fallback: Bool) -> Bool {
+    defaults.object(forKey: key) == nil ? fallback : defaults.bool(forKey: key)
+}
+```
+
+- [ ] **Step 3: Run tuning tests and verify GREEN**
 
 Run:
 
@@ -391,13 +425,13 @@ Then stroke `transformedPath` instead of `paths[index]`.
 
 Keep the existing `.offset(Self.offset(...))` call after the stroke so translation behavior remains unchanged.
 
-- [ ] **Step 3: Pass tuning from `CardBackdrop`**
+- [ ] **Step 3: Pass gated tuning from `CardBackdrop`**
 
 Update the `GuillocheBlendLayer(...)` call:
 
 ```swift
 perspectiveAmount: elementDepthTuning.perspectiveAmount,
-skewAmount: elementDepthTuning.skewAmount,
+skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
 reveal: reveal
 ```
 
@@ -412,14 +446,24 @@ swift test --filter VisualsTests
 
 Expected: tests compile and pass. Snapshot tests may be skipped/host-gated depending on platform; do not re-record snapshots in this task.
 
-## Task 6: Add Developer Slider
+## Task 6: Add Developer Toggle And Slider
 
 **Files:**
 - Modify: `Packages/Sources/FeatureSettings/DeveloperSettingsPanel.swift`
 
-- [ ] **Step 1: Add slider after “Depth perspective amount”**
+- [ ] **Step 1: Add toggle and slider after “Depth perspective amount”**
 
 In `elementDepthGroup`, add:
+
+```swift
+SettingsDivider()
+ToggleRow(
+    label: "Enable depth skew",
+    isOn: $elementDepthTuning.isSkewEnabled
+)
+```
+
+Then add:
 
 ```swift
 SettingsDivider()
@@ -465,14 +509,16 @@ Expected: build succeeds.
 
 Launch the app on iPhone 17 simulator and inspect a card with guilloche visible. Use Developer Settings to try:
 
-- `Depth skew amount = 0.00`
-- `Depth skew amount = 0.08`
-- `Depth skew amount = 0.12`
+- `Enable depth skew = off`, `Depth skew amount = 0.08`
+- `Enable depth skew = on`, `Depth skew amount = 0.00`
+- `Enable depth skew = on`, `Depth skew amount = 0.08`
+- `Enable depth skew = on`, `Depth skew amount = 0.12`
 
 Acceptance criteria:
 
-- At `0.00`, behavior matches the current translation-only stack.
-- At `0.08`, foreground paths shear subtly while retaining the existing x/y parallax.
+- With `Enable depth skew = off`, behavior matches the current translation-only stack.
+- With `Enable depth skew = on` and `Depth skew amount = 0.00`, behavior also matches the current translation-only stack.
+- With `Enable depth skew = on` and `Depth skew amount = 0.08`, foreground paths shear subtly while retaining the existing x/y parallax.
 - The stack should not look like it is melting, stretching text, or sliding off its frame.
 - The effect should remain subtle enough that snapshot churn is expected but not visually chaotic.
 

@@ -24,6 +24,10 @@ public final class CardElementDepthTuning {
         public static let perspectiveAmount: Double = 1.0
         public static let perspectiveAmountMin: Double = 0.0
         public static let perspectiveAmountMax: Double = 3.0
+        public static let isSkewEnabled: Bool = false
+        public static let skewAmount: Double = 0.08
+        public static let skewAmountMin: Double = 0.0
+        public static let skewAmountMax: Double = 0.2
     }
 
     private enum Key {
@@ -31,6 +35,8 @@ public final class CardElementDepthTuning {
         static let zodiacGlyphLayer = "CardElementDepthTuning.zodiacGlyphLayer"
         static let zodiacConstellationLayer = "CardElementDepthTuning.zodiacConstellationLayer"
         static let perspectiveAmount = "CardElementDepthTuning.perspectiveAmount"
+        static let isSkewEnabled = "CardElementDepthTuning.isSkewEnabled"
+        static let skewAmount = "CardElementDepthTuning.skewAmount"
     }
 
     public var moonPhaseLayer: Int {
@@ -49,6 +55,14 @@ public final class CardElementDepthTuning {
         didSet { defaults.set(perspectiveAmount, forKey: Key.perspectiveAmount) }
     }
 
+    public var isSkewEnabled: Bool {
+        didSet { defaults.set(isSkewEnabled, forKey: Key.isSkewEnabled) }
+    }
+
+    public var skewAmount: Double {
+        didSet { defaults.set(skewAmount, forKey: Key.skewAmount) }
+    }
+
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults = .standard) {
@@ -57,6 +71,8 @@ public final class CardElementDepthTuning {
         self.zodiacGlyphLayer = Self.read(defaults, Key.zodiacGlyphLayer, fallback: Defaults.zodiacGlyphLayer)
         self.zodiacConstellationLayer = Self.read(defaults, Key.zodiacConstellationLayer, fallback: Defaults.zodiacConstellationLayer)
         self.perspectiveAmount = Self.read(defaults, Key.perspectiveAmount, fallback: Defaults.perspectiveAmount)
+        self.isSkewEnabled = Self.read(defaults, Key.isSkewEnabled, fallback: Defaults.isSkewEnabled)
+        self.skewAmount = Self.read(defaults, Key.skewAmount, fallback: Defaults.skewAmount)
     }
 
     public func reset() {
@@ -64,6 +80,8 @@ public final class CardElementDepthTuning {
         zodiacGlyphLayer = Defaults.zodiacGlyphLayer
         zodiacConstellationLayer = Defaults.zodiacConstellationLayer
         perspectiveAmount = Defaults.perspectiveAmount
+        isSkewEnabled = Defaults.isSkewEnabled
+        skewAmount = Defaults.skewAmount
     }
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Int) -> Int {
@@ -72,5 +90,9 @@ public final class CardElementDepthTuning {
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Double) -> Double {
         defaults.object(forKey: key) == nil ? fallback : defaults.double(forKey: key)
+    }
+
+    private static func read(_ defaults: UserDefaults, _ key: String, fallback: Bool) -> Bool {
+        defaults.object(forKey: key) == nil ? fallback : defaults.bool(forKey: key)
     }
 }
