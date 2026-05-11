@@ -18,7 +18,7 @@ struct ZodiacPickerSheet: View {
                 }
                 Section(ModuleLocalization.string("Sign", locale: locale)) {
                     ForEach(ZodiacSign.allCases, id: \.self) { sign in
-                        Button(sign.rawValue.capitalized) {
+                        Button(ModuleLocalization.zodiacDisplayName(sign, locale: locale)) {
                             selection = sign
                             dismiss()
                         }

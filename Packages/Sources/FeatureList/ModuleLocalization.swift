@@ -16,7 +16,7 @@ enum ModuleLocalization {
 
     private static func localizedFormat(_ key: String, locale: Locale) -> String {
         let systemValue = String(localized: String.LocalizationValue(key), bundle: .module, locale: locale)
-        guard languageIdentifier(for: locale) != "en", systemValue == key else {
+        guard systemValue == key else {
             return systemValue
         }
         return catalogValue(for: key, locale: locale) ?? systemValue

@@ -60,7 +60,12 @@ import CoreModels
         )
         #expect(
             CreateFormOverlay<EmptyView>.zodiacButtonLabel(for: .virgo, locale: Locale(identifier: "uk"))
-                == "Змінити знак зодіаку — Virgo"
+                == "Змінити знак зодіаку — Діва"
         )
+    }
+
+    @Test func zodiacDisplayNamesUseProvidedLocale() {
+        #expect(ModuleLocalization.zodiacDisplayName(.aries, locale: Locale(identifier: "ru")) == "Овен")
+        #expect(ModuleLocalization.zodiacDisplayName(.pisces, locale: Locale(identifier: "uk")) == "Риби")
     }
 }

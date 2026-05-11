@@ -62,7 +62,10 @@ public struct DetailEditForm: View {
                     Button {
                         showingZodiacPicker = true
                     } label: {
-                        Text(zodiacSign?.rawValue.capitalized ?? ModuleLocalization.string("Add", locale: locale))
+                        Text(
+                            zodiacSign.map { ModuleLocalization.zodiacDisplayName($0, locale: locale) }
+                                ?? ModuleLocalization.string("Add", locale: locale)
+                        )
                             .font(CCDesign.Typography.caption1)
                     }
                 }
@@ -117,7 +120,7 @@ private struct DetailZodiacPickerSheet: View {
                 }
                 Section(ModuleLocalization.string("Sign", locale: locale)) {
                     ForEach(ZodiacSign.allCases, id: \.self) { sign in
-                        Button(sign.rawValue.capitalized) {
+                        Button(ModuleLocalization.zodiacDisplayName(sign, locale: locale)) {
                             selection = sign
                             dismiss()
                         }

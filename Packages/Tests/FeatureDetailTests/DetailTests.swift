@@ -68,4 +68,9 @@ struct NoopCardPathProvider: CardPathProvider {
                 == "Место: 1200 TREAT AVE"
         )
     }
+
+    @Test func zodiacDisplayNamesUseProvidedLocale() {
+        #expect(ModuleLocalization.zodiacDisplayName(.scorpio, locale: Locale(identifier: "ru")) == "Скорпион")
+        #expect(ModuleLocalization.zodiacDisplayName(.aquarius, locale: Locale(identifier: "uk")) == "Водолій")
+    }
 }

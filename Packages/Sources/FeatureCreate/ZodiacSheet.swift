@@ -19,6 +19,7 @@ struct ZodiacSheet: View {
     let isLightAppearance: Bool
     let onSelect: (ZodiacSign) -> Void
     let onClose: () -> Void
+    @Environment(\.locale) private var locale
 
     /// Row-major split of `ZodiacSign.allCases` into two columns of six, so
     /// the left column holds the even-indexed signs (aries, gemini, leo,
@@ -69,7 +70,7 @@ struct ZodiacSheet: View {
                     backgroundAssetName: backgroundAssetName
                 )
                 .frame(width: 35, height: 32)
-                Text(sign.rawValue.capitalized)
+                Text(ModuleLocalization.zodiacDisplayName(sign, locale: locale))
                     .font(CCDesign.Typography.caption2)
                     .foregroundStyle(Color(uiColor: .label))
                     .lineLimit(1)

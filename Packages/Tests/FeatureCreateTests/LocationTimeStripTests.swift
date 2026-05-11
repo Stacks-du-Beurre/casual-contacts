@@ -10,26 +10,38 @@ import CoreModels
     private let sampleDate = Date(timeIntervalSince1970: 1_598_376_000)
 
     @Test func formatsDateAsMMMdYYYY() {
-        let formatted = LocationTimeStrip.formattedDate(sampleDate, timeZone: TimeZone(identifier: "UTC")!)
+        let formatted = LocationTimeStrip.formattedDate(
+            sampleDate,
+            timeZone: TimeZone(identifier: "UTC")!,
+            locale: Locale(identifier: "en")
+        )
         #expect(formatted == "Aug 25, 2020")
     }
 
-    @Test func formatsTimeWithLowercaseAmPm() {
+    @Test func formatsTimeWithLocaleAwareTimeOfDay() {
         let formatted = LocationTimeStrip.formattedTimeLine(
             sampleDate,
             timeOfDay: .sunset,
-            timeZone: TimeZone(identifier: "UTC")!
+            timeZone: TimeZone(identifier: "UTC")!,
+            locale: Locale(identifier: "en")
         )
-        #expect(formatted == "Sunset, 5:20 pm")
+        #expect(formatted.contains("Sunset"))
+        #expect(formatted.contains("5:20"))
     }
 
-    @Test func timeLineCapitalizesTimeOfDay() {
+    @Test func timeLineLocalizesTimeOfDay() {
         let formatted = LocationTimeStrip.formattedTimeLine(
             sampleDate,
             timeOfDay: .midday,
-            timeZone: TimeZone(identifier: "UTC")!
+            timeZone: TimeZone(identifier: "UTC")!,
+            locale: Locale(identifier: "uk")
         )
-        #expect(formatted == "Midday, 5:20 pm")
+        #expect(formatted.contains("Полудень"))
+    }
+
+    @Test func timeOfDayDisplayNamesUseProvidedLocale() {
+        #expect(LocationTimeStrip.timeOfDayDisplayName(.sunset, locale: Locale(identifier: "ru")) == "Закат")
+        #expect(LocationTimeStrip.timeOfDayDisplayName(.midnight, locale: Locale(identifier: "uk")) == "Північ")
     }
 
     @Test func splitsAddressAtFirstComma() {

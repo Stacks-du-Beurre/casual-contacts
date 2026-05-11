@@ -11,6 +11,7 @@ struct LocationTimeStrip: View {
     let location: LocationInfo?
     let createdAt: Date
     let timeOfDay: TimeOfDay
+    @Environment(\.locale) private var locale
 
     var body: some View {
         let (addrLine1, addrLine2) = Self.splitAddress(location?.label)
@@ -49,8 +50,8 @@ struct LocationTimeStrip: View {
 
             // Right half — date + time.
             VStack(alignment: .trailing, spacing: 0) {
-                Text(Self.formattedDate(createdAt, timeZone: zone))
-                Text(Self.formattedTimeLine(createdAt, timeOfDay: timeOfDay, timeZone: zone))
+                Text(Self.formattedDate(createdAt, timeZone: zone, locale: locale))
+                Text(Self.formattedTimeLine(createdAt, timeOfDay: timeOfDay, timeZone: zone, locale: locale))
             }
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(CCDesign.Colors.L0)
@@ -69,24 +70,31 @@ struct LocationTimeStrip: View {
 
     // MARK: - Formatters
 
-    nonisolated static func formattedDate(_ date: Date, timeZone: TimeZone) -> String {
+    nonisolated static func formattedDate(_ date: Date, timeZone: TimeZone, locale: Locale) -> String {
         let f = DateFormatter()
-        f.dateFormat = "MMM d, yyyy"
+        f.locale = locale
         f.timeZone = timeZone
-        f.locale = Locale(identifier: "en_US_POSIX")
+        f.setLocalizedDateFormatFromTemplate("MMM d, yyyy")
         return f.string(from: date)
     }
 
-    nonisolated static func formattedTimeLine(_ date: Date, timeOfDay: TimeOfDay, timeZone: TimeZone) -> String {
+    nonisolated static func formattedTimeLine(
+        _ date: Date,
+        timeOfDay: TimeOfDay,
+        timeZone: TimeZone,
+        locale: Locale
+    ) -> String {
         let f = DateFormatter()
-        f.dateFormat = "h:mm a"
-        f.amSymbol = "am"
-        f.pmSymbol = "pm"
+        f.locale = locale
         f.timeZone = timeZone
-        f.locale = Locale(identifier: "en_US_POSIX")
+        f.setLocalizedDateFormatFromTemplate("j:mm")
         let time = f.string(from: date)
-        let label = timeOfDay.rawValue.capitalized
+        let label = Self.timeOfDayDisplayName(timeOfDay, locale: locale)
         return "\(label), \(time)"
+    }
+
+    nonisolated static func timeOfDayDisplayName(_ timeOfDay: TimeOfDay, locale: Locale) -> String {
+        ModuleLocalization.timeOfDayDisplayName(timeOfDay, locale: locale)
     }
 
     nonisolated static func splitAddress(_ raw: String?) -> (String, String) {

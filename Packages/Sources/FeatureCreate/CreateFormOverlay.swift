@@ -162,7 +162,11 @@ struct CreateFormOverlay<Backdrop: View>: View {
         guard let sign else {
             return ModuleLocalization.string("+ Add Zodiac", locale: locale)
         }
-        return ModuleLocalization.string("Change zodiac - %@", locale: locale, sign.rawValue.capitalized)
+        return ModuleLocalization.string(
+            "Change zodiac - %@",
+            locale: locale,
+            ModuleLocalization.zodiacDisplayName(sign, locale: locale)
+        )
     }
 }
 

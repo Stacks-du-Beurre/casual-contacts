@@ -19,12 +19,14 @@ import Testing
             #"\.navigationTitle\s*\(\s*""#,
             #"\.alert\s*\(\s*""#,
             #"\.accessibilityLabel\s*\(\s*""#,
-            #"\.accessibilityHint\s*\(\s*""#
+            #"\.accessibilityHint\s*\(\s*""#,
+            #"rawValue\.capitalized"#,
+            #"en_US_POSIX"#
         ].map { try! NSRegularExpression(pattern: $0) }
 
         let allowed: Set<String> = [
-            "Sources/FeatureCreate/CameraPicker.swift",
-            "Sources/FeatureCreate/LocationTimeStrip.swift"
+            "Sources/AppFeature/DebugRecordSeeder.swift",
+            "Sources/FeatureCreate/CameraPicker.swift"
         ]
 
         var violations: [String] = []
