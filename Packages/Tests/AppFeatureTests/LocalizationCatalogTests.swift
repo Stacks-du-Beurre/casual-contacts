@@ -21,11 +21,17 @@ import Testing
             let data = try Data(contentsOf: url)
             let catalog = try JSONDecoder().decode(StringCatalog.self, from: data)
 
+            #expect(!catalog.strings.isEmpty, "\(path) has no strings")
+
             for key in catalog.strings.keys {
                 let localizations = catalog.strings[key]?.localizations ?? [:]
-                #expect(localizations["en"]?.stringUnit.value.isEmpty == false, "\(path) missing en for \(key)")
-                #expect(localizations["ru"]?.stringUnit.value.isEmpty == false, "\(path) missing ru for \(key)")
-                #expect(localizations["uk"]?.stringUnit.value.isEmpty == false, "\(path) missing uk for \(key)")
+                for language in ["en", "ru", "uk"] {
+                    let stringUnit = localizations[language]?.stringUnit
+                    #expect(stringUnit != nil, "\(path) missing \(language) stringUnit for \(key); variations/plurals are not supported by this test yet")
+
+                    let value = stringUnit?.value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    #expect(value?.isEmpty == false, "\(path) missing \(language) for \(key)")
+                }
             }
         }
     }
@@ -39,7 +45,7 @@ private struct StringCatalog: Decodable {
     }
 
     struct Localization: Decodable {
-        let stringUnit: StringUnit
+        let stringUnit: StringUnit?
     }
 
     struct StringUnit: Decodable {
