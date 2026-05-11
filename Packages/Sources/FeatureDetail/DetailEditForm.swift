@@ -16,6 +16,7 @@ public struct DetailEditForm: View {
     @State private var description: String
     @State private var zodiacSign: ZodiacSign?
     @State private var showingZodiacPicker = false
+    @Environment(\.locale) private var locale
 
     public init(
         record: Record,
@@ -61,13 +62,13 @@ public struct DetailEditForm: View {
                     Button {
                         showingZodiacPicker = true
                     } label: {
-                        Text(zodiacSign?.rawValue.capitalized ?? String(localized: "Add", bundle: .module))
+                        Text(zodiacSign?.rawValue.capitalized ?? ModuleLocalization.string("Add", locale: locale))
                             .font(CCDesign.Typography.caption1)
                     }
                 }
 
                 if let label = original.location?.label {
-                    Text(String(localized: "Location: \(label)", bundle: .module))
+                    Text(Self.locationLabel(label, locale: locale))
                         .font(CCDesign.Typography.caption2)
                 }
 
@@ -93,6 +94,10 @@ public struct DetailEditForm: View {
                 DetailZodiacPickerSheet(selection: $zodiacSign)
             }
         }
+    }
+
+    static func locationLabel(_ label: String, locale: Locale) -> String {
+        ModuleLocalization.string("Location: %@", locale: locale, label)
     }
 }
 

@@ -29,6 +29,7 @@ public struct CreateRecordScene: View {
 
     @State private var showingPhotoChooser = false
     @State private var showingZodiacPicker = false
+    @Environment(\.locale) private var locale
     #if os(iOS)
     @State private var photoItem: PhotosPickerItem?
     @State private var showingPhotosPicker = false
@@ -38,10 +39,18 @@ public struct CreateRecordScene: View {
     private static let coordSpace = "createScene"
 
     private var topNavTitle: String {
-        String(localized: editingRecord == nil ? "PERSON" : "EDIT", bundle: .module)
+        if editingRecord == nil {
+            ModuleLocalization.string("PERSON", locale: locale)
+        } else {
+            ModuleLocalization.string("EDIT", locale: locale)
+        }
     }
     private var saveButtonLabel: String {
-        String(localized: editingRecord == nil ? "SAVE" : "UPDATE", bundle: .module)
+        if editingRecord == nil {
+            ModuleLocalization.string("SAVE", locale: locale)
+        } else {
+            ModuleLocalization.string("UPDATE", locale: locale)
+        }
     }
 
     public init(

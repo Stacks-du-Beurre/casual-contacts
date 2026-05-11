@@ -212,6 +212,17 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(dismissedCount == 1)
     }
 
+    @Test func deleteMessagesUseProvidedLocale() {
+        #expect(
+            RecordsListScene.deleteConfirmationMessage(forRecordName: "", locale: Locale(identifier: "ru"))
+                == "Этот контакт будет удален навсегда."
+        )
+        #expect(
+            RecordsListScene.deleteErrorMessage(forRecordName: "Jane", locale: Locale(identifier: "uk"))
+                == "Не вдалося видалити Jane. Спробуйте ще раз."
+        )
+    }
+
     @Test func renderStateDistinguishesEmptyStoreFromEmptySearchResults() {
         let jane = Record(
             id: UUID(),

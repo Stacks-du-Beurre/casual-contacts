@@ -13,6 +13,7 @@ struct PhotoSourceSheet: View {
     let onCamera: () -> Void
     let onPhotos: () -> Void
     let onCancel: () -> Void
+    @Environment(\.locale) private var locale
 
     private var cameraAvailable: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -21,13 +22,13 @@ struct PhotoSourceSheet: View {
     var body: some View {
         HStack(spacing: 12) {
             tile(
-                title: String(localized: "Camera", bundle: .module),
+                title: ModuleLocalization.string("Camera", locale: locale),
                 systemImage: "camera.fill",
                 isEnabled: cameraAvailable,
                 action: onCamera
             )
             tile(
-                title: String(localized: "Photo Library", bundle: .module),
+                title: ModuleLocalization.string("Photo Library", locale: locale),
                 systemImage: "photo.on.rectangle.angled",
                 isEnabled: true,
                 action: onPhotos

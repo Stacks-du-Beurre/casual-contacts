@@ -34,6 +34,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
     /// Moon_Background asset — SwiftUI's `colorScheme` environment is forced
     /// dark inside popover content and can't be relied on there.
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -84,9 +85,7 @@ struct CreateFormOverlay<Backdrop: View>: View {
         } else {
             Button(action: { isPhotoChooserPresented = true }) {
                 Text(
-                    model.photoData == nil
-                        ? String(localized: "+ Add Photo", bundle: .module)
-                        : String(localized: "Change photo", bundle: .module)
+                    Self.photoButtonLabel(hasPhoto: model.photoData != nil, locale: locale)
                 )
                     .font(CCDesign.Typography.caption2)
                     .foregroundStyle(CCDesign.Colors.L0)
@@ -150,10 +149,20 @@ struct CreateFormOverlay<Backdrop: View>: View {
     }
 
     private var zodiacButtonLabel: String {
-        guard let sign = model.zodiacSign else {
-            return String(localized: "+ Add Zodiac", bundle: .module)
+        Self.zodiacButtonLabel(for: model.zodiacSign, locale: locale)
+    }
+
+    static func photoButtonLabel(hasPhoto: Bool, locale: Locale) -> String {
+        hasPhoto
+            ? ModuleLocalization.string("Change photo", locale: locale)
+            : ModuleLocalization.string("+ Add Photo", locale: locale)
+    }
+
+    static func zodiacButtonLabel(for sign: ZodiacSign?, locale: Locale) -> String {
+        guard let sign else {
+            return ModuleLocalization.string("+ Add Zodiac", locale: locale)
         }
-        return String(localized: "Change zodiac - \(sign.rawValue.capitalized)", bundle: .module)
+        return ModuleLocalization.string("Change zodiac - %@", locale: locale, sign.rawValue.capitalized)
     }
 }
 
@@ -168,6 +177,7 @@ private struct NamePill<Backdrop: View>: View {
     let backdropSize: CGSize
     let coordinateSpaceName: String
     @ViewBuilder let backdrop: () -> Backdrop
+    @Environment(\.locale) private var locale
 
     private static var nameFont: Font { .custom("CormorantSC-SemiBold", size: 48) }
 
@@ -199,7 +209,7 @@ private struct NamePill<Backdrop: View>: View {
     }
 
     private var displayName: String {
-        model.name.isEmpty ? String(localized: "Name", bundle: .module) : model.name
+        model.name.isEmpty ? ModuleLocalization.string("Name", locale: locale) : model.name
     }
 }
 
@@ -228,6 +238,7 @@ private struct DescriptionPill: View {
     let maxWidth: CGFloat
 
     @State private var naturalWidth: CGFloat = 0
+    @Environment(\.locale) private var locale
 
     private static let horizontalPadding: CGFloat = 16
     /// Cushion added to the measured `Text` width before sizing the
@@ -239,7 +250,7 @@ private struct DescriptionPill: View {
 
     var body: some View {
         let displayText = model.description.isEmpty
-            ? String(localized: "Description", bundle: .module)
+            ? ModuleLocalization.string("Description", locale: locale)
             : model.description
         let cap = max(0, maxWidth - Self.horizontalPadding * 2)
         let fieldWidth = min(max(naturalWidth + Self.editingCushion, 0), cap)

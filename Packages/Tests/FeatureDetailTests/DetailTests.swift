@@ -57,4 +57,15 @@ struct NoopCardPathProvider: CardPathProvider {
             onSave: { _ in }
         ).body
     }
+
+    @Test func locationLabelUsesProvidedLocale() {
+        #expect(
+            DetailEditForm.locationLabel("1200 TREAT AVE", locale: Locale(identifier: "uk"))
+                == "Місце: 1200 TREAT AVE"
+        )
+        #expect(
+            DetailEditForm.locationLabel("1200 TREAT AVE", locale: Locale(identifier: "ru"))
+                == "Место: 1200 TREAT AVE"
+        )
+    }
 }

@@ -86,6 +86,17 @@ public struct RootScene: Scene {
         return Locale(identifier: identifier)
     }
 
+    private var activeLocalizationLocale: Locale {
+        Self.locale(for: appLanguagePreference.wrappedValue) ?? .current
+    }
+
+    static func deleteErrorMessage(forRecordName name: String, locale: Locale) -> String {
+        let displayName = name.isEmpty
+            ? ModuleLocalization.string("this contact", locale: locale)
+            : name
+        return ModuleLocalization.string("Couldn't delete %@. Try again.", locale: locale, displayName)
+    }
+
     #if os(iOS)
     @MainActor
     @ViewBuilder
@@ -437,8 +448,10 @@ public struct RootScene: Scene {
                 try await environment.recordStore.delete(id: record.id)
                 afterSuccess()
             } catch {
-                let name = record.name.isEmpty ? String(localized: "this contact", bundle: .module) : record.name
-                deleteErrorMessage = String(localized: "Couldn't delete \(name). Try again.", bundle: .module)
+                deleteErrorMessage = Self.deleteErrorMessage(
+                    forRecordName: record.name,
+                    locale: activeLocalizationLocale
+                )
             }
         }
     }
@@ -585,9 +598,9 @@ public struct RootScene: Scene {
             let service = environment.locationService
             guard service.currentAuthorization() == .authorized else {
                 await MainActor.run {
-                    nearbyDebugError = String(
-                        localized: "Enable location access for Casual Contacts in iOS Settings to seed nearby records.",
-                        bundle: .module
+                    nearbyDebugError = ModuleLocalization.string(
+                        "Enable location access for Casual Contacts in iOS Settings to seed nearby records.",
+                        locale: activeLocalizationLocale
                     )
                 }
                 return
@@ -600,9 +613,9 @@ public struct RootScene: Scene {
             }
             guard let origin else {
                 await MainActor.run {
-                    nearbyDebugError = String(
-                        localized: "Couldn't determine your current location. Try again with a clearer GPS signal.",
-                        bundle: .module
+                    nearbyDebugError = ModuleLocalization.string(
+                        "Couldn't determine your current location. Try again with a clearer GPS signal.",
+                        locale: activeLocalizationLocale
                     )
                 }
                 return

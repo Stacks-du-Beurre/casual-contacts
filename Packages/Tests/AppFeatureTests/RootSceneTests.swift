@@ -22,6 +22,17 @@ import StorageTestSupport
         #expect(RootScene.locale(for: .ukrainian)?.identifier == "uk")
     }
 
+    @Test func deleteErrorMessageUsesProvidedLocale() {
+        #expect(
+            RootScene.deleteErrorMessage(forRecordName: "", locale: Locale(identifier: "ru"))
+                == "Не удалось удалить этот контакт. Попробуйте еще раз."
+        )
+        #expect(
+            RootScene.deleteErrorMessage(forRecordName: "Jane", locale: Locale(identifier: "uk"))
+                == "Не вдалося видалити Jane. Спробуйте ще раз."
+        )
+    }
+
     @Test func navigationRouterDefaultsAreAllClear() {
         let router = NavigationRouter()
         #expect(router.showingCreate == false)

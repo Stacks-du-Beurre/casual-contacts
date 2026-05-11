@@ -52,4 +52,15 @@ import CoreModels
         let model = makeModel(name: "Adam", description: "Met at midday")
         _ = Harness(model: model).body
     }
+
+    @Test func dynamicLabelsUseProvidedLocale() {
+        #expect(
+            CreateFormOverlay<EmptyView>.photoButtonLabel(hasPhoto: false, locale: Locale(identifier: "ru"))
+                == "+ Добавить фото"
+        )
+        #expect(
+            CreateFormOverlay<EmptyView>.zodiacButtonLabel(for: .virgo, locale: Locale(identifier: "uk"))
+                == "Змінити знак зодіаку — Virgo"
+        )
+    }
 }

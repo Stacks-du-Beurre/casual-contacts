@@ -63,6 +63,7 @@ public struct RecordsListScene: View {
     @Binding private var pendingDeleteRecord: Record?
     @Bindable private var diagnostics = CardAnimationDiagnostics.shared
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
 
     private static let scrollCoordinateSpace = "RecordsListScroll"
 
@@ -150,6 +151,20 @@ public struct RecordsListScene: View {
     static func renderState(records: [Record], searchText: String) -> RecordsListRenderState {
         guard !records.isEmpty else { return .emptyStore }
         return filtered(records, searchText: searchText).isEmpty ? .noVisibleMatches : .showingRecords
+    }
+
+    static func deleteConfirmationMessage(forRecordName name: String, locale: Locale) -> String {
+        let displayName = name.isEmpty
+            ? ModuleLocalization.string("This contact", locale: locale)
+            : name
+        return ModuleLocalization.string("%@ will be permanently removed.", locale: locale, displayName)
+    }
+
+    static func deleteErrorMessage(forRecordName name: String, locale: Locale) -> String {
+        let displayName = name.isEmpty
+            ? ModuleLocalization.string("this contact", locale: locale)
+            : name
+        return ModuleLocalization.string("Couldn't delete %@. Try again.", locale: locale, displayName)
     }
 
     static func sorted(
@@ -295,8 +310,7 @@ public struct RecordsListScene: View {
                     pendingDeleteRecord = nil
                 }
             } message: { record in
-                let name = record.name.isEmpty ? String(localized: "This contact", bundle: .module) : record.name
-                Text(String(localized: "\(name) will be permanently removed.", bundle: .module))
+                Text(Self.deleteConfirmationMessage(forRecordName: record.name, locale: locale))
             }
             .alert(
                 "Couldn't delete contact",
@@ -480,8 +494,7 @@ public struct RecordsListScene: View {
             try await onDeleteRecord(record)
             pendingDeleteRecord = nil
         } catch {
-            let name = record.name.isEmpty ? String(localized: "this contact", bundle: .module) : record.name
-            deleteErrorMessage = String(localized: "Couldn't delete \(name). Try again.", bundle: .module)
+            deleteErrorMessage = Self.deleteErrorMessage(forRecordName: record.name, locale: locale)
         }
     }
 
@@ -583,11 +596,12 @@ struct CardAnimationVisibility {
 private struct CardAnimationDiagnosticsOverlay: View {
     let activeCount: Int
     let mountedCount: Int
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 2) {
-            Text(String(localized: "ACTIVE \(activeCount)", bundle: .module))
-            Text(String(localized: "MOUNTED \(mountedCount)", bundle: .module))
+            Text(ModuleLocalization.string("ACTIVE %lld", locale: locale, activeCount))
+            Text(ModuleLocalization.string("MOUNTED %lld", locale: locale, mountedCount))
         }
         .font(.system(size: 11, weight: .semibold, design: .monospaced))
         .foregroundStyle(.white)
@@ -596,7 +610,12 @@ private struct CardAnimationDiagnosticsOverlay: View {
         .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 6))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            String(localized: "Active card animations \(activeCount), mounted card rows \(mountedCount)", bundle: .module)
+            ModuleLocalization.string(
+                "Active card animations %lld, mounted card rows %lld",
+                locale: locale,
+                activeCount,
+                mountedCount
+            )
         )
     }
 }

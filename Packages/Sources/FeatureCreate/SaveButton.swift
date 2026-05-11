@@ -8,12 +8,14 @@ import Visuals
 /// as a continuation of the card above. Centered label (defaults to "SAVE").
 struct SaveButton: View {
     let label: String
+    private let usesDefaultLabel: Bool
     let isEnabled: Bool
     let timeOfDay: TimeOfDay
     let attitude: DeviceAttitude
     let action: () -> Void
 
     @Bindable private var motionTuning = MotionTuning.shared
+    @Environment(\.locale) private var locale
 
     init(
         label: String? = nil,
@@ -22,7 +24,8 @@ struct SaveButton: View {
         attitude: DeviceAttitude,
         action: @escaping () -> Void
     ) {
-        self.label = label ?? String(localized: "SAVE", bundle: .module)
+        self.label = label ?? "SAVE"
+        self.usesDefaultLabel = label == nil
         self.isEnabled = isEnabled
         self.timeOfDay = timeOfDay
         self.attitude = attitude
@@ -38,7 +41,7 @@ struct SaveButton: View {
                 gain: motionTuning.saveButtonGradientGain
             )
 
-            Text(label)
+            Text(localizedLabel)
                 .font(CCDesign.Typography.headline)
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(CCDesign.Colors.L0)
@@ -53,5 +56,11 @@ struct SaveButton: View {
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("saveRecordButton")
+    }
+
+    private var localizedLabel: String {
+        usesDefaultLabel
+            ? ModuleLocalization.string("SAVE", locale: locale)
+            : label
     }
 }

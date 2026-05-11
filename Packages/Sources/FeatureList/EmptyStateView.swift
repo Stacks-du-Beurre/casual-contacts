@@ -13,6 +13,7 @@ public struct EmptyStateView: View {
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
+    @Environment(\.locale) private var locale
 
     public init(
         paths: any CardPathProvider,
@@ -34,7 +35,7 @@ public struct EmptyStateView: View {
 
                 Button(action: onTap) {
                     HologramText(
-                        String(localized: "add the first person", bundle: .module),
+                        ModuleLocalization.string("add the first person", locale: locale),
                         font: Self.scaledTitleFont(canvasWidth: sceneGeo.size.width),
                         attitude: attitude,
                         backdropSize: sceneGeo.size,

@@ -8,19 +8,22 @@ import Foundation
 /// (2-person flow) is deferred to a later plan.
 struct PersonTopNav: View {
     let title: String
+    private let usesDefaultTitle: Bool
     let onCancel: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     init(title: String? = nil, onCancel: @escaping () -> Void) {
-        self.title = title ?? String(localized: "PERSON", bundle: .module)
+        self.title = title ?? "PERSON"
+        self.usesDefaultTitle = title == nil
         self.onCancel = onCancel
     }
 
     var body: some View {
         ZStack {
             // Heading — centered. 20% larger than Figma base 17pt.
-            Text(title)
+            Text(localizedTitle)
                 .font(.custom("CormorantSC-Bold", size: 20.4))
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .foregroundStyle(CCDesign.Colors.L2)
@@ -52,5 +55,11 @@ struct PersonTopNav: View {
             .padding(.horizontal, 16)
         }
         .frame(height: 44)
+    }
+
+    private var localizedTitle: String {
+        usesDefaultTitle
+            ? ModuleLocalization.string("PERSON", locale: locale)
+            : title
     }
 }

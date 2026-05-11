@@ -31,6 +31,7 @@ struct DefaultSortingSheet: View {
     let onDismiss: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
 
     // Card fills + dividers derive from the populated collection-view tokens
     // (L2/D3 card, L3/D0 hairline) so the sheet matches the list it lives in.
@@ -71,11 +72,11 @@ struct DefaultSortingSheet: View {
 
     private var optionsCard: some View {
         VStack(spacing: 0) {
-            row(String(localized: "Default (Alphabetically)", bundle: .module), option: .alphabetical)
+            row(ModuleLocalization.string("Default (Alphabetically)", locale: locale), option: .alphabetical)
             divider
-            row(String(localized: "Date Created", bundle: .module), option: .dateCreated)
+            row(ModuleLocalization.string("Date Created", locale: locale), option: .dateCreated)
             divider
-            row(String(localized: "Time Created", bundle: .module), option: .timeCreated)
+            row(ModuleLocalization.string("Time Created", locale: locale), option: .timeCreated)
             divider
             distanceRow
             divider
@@ -89,7 +90,7 @@ struct DefaultSortingSheet: View {
         Button {
             selectDistance()
         } label: {
-            rowContent(title: String(localized: "By distance", bundle: .module), isSelected: selected == .distance)
+            rowContent(title: ModuleLocalization.string("By distance", locale: locale), isSelected: selected == .distance)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected == .distance ? .isSelected : [])
@@ -123,7 +124,7 @@ struct DefaultSortingSheet: View {
 
     private var advancedRow: some View {
         Button(action: onAdvanced) {
-            rowContent(title: String(localized: "Advanced sorting", bundle: .module), isSelected: false)
+            rowContent(title: ModuleLocalization.string("Advanced sorting", locale: locale), isSelected: false)
         }
         .buttonStyle(.plain)
     }
