@@ -29,6 +29,8 @@ public struct GuillocheRotationLayer: View, Animatable {
     @Bindable private var tuning = GuillocheRotationTuning.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    static let nativeViewBoxSide: CGFloat = 380
+
     public init(
         paths: [Path],
         tint: Color = CCDesign.Colors.L4,
@@ -54,12 +56,12 @@ public struct GuillocheRotationLayer: View, Animatable {
 
     public var body: some View {
         // `Color.clear` is flex-flex, so this layer reports the parent ZStack's
-        // proposed size upward — no size leak from the fixed 380 child. The
-        // Canvas overlay is pinned to the 380×380 SVG viewBox so paths always
-        // have room to draw at their native coordinates; on the empty-state
-        // hero (also 380×380) it aligns 1:1, on the smaller card the swirl
-        // overflows symmetrically and the card's outer `.clipped()` crops it —
-        // so rotation never clips through the fan itself.
+        // proposed size upward — no size leak from the fixed render child. The
+        // Canvas overlay is larger than the 380×380 SVG viewBox by the viewBox
+        // diagonal, so rotating the full filigree cannot crop against its own
+        // render texture. Smaller card callers still crop at their intentional
+        // outer `.clipped()` boundary.
+        let renderSide = Self.rotatingRenderSide(forNativeSide: Self.nativeViewBoxSide)
         Color.clear
             .overlay {
                 // Rasterize the 72-path stroke pass into a single Metal-backed
@@ -68,11 +70,11 @@ public struct GuillocheRotationLayer: View, Animatable {
                 Group {
                     if reveal >= 1.0 {
                         canvasContent
-                            .frame(width: 380, height: 380)
+                            .frame(width: renderSide, height: renderSide)
                             .drawingGroup(opaque: false)
                     } else {
                         canvasContent
-                            .frame(width: 380, height: 380)
+                            .frame(width: renderSide, height: renderSide)
                     }
                 }
                 .rotationEffect(.degrees(motionRotation))
@@ -91,8 +93,12 @@ public struct GuillocheRotationLayer: View, Animatable {
     /// ramp is honored. Once fully revealed, a sibling `.drawingGroup` wraps
     /// this view into a cached texture so the rotation animation is cheap.
     private var canvasContent: some View {
-        Canvas { context, _ in
+        Canvas { context, size in
             guard reveal > 0 else { return }
+            context.translateBy(
+                x: Self.nativeViewBoxOffset(inRenderSide: size.width, nativeSide: Self.nativeViewBoxSide),
+                y: Self.nativeViewBoxOffset(inRenderSide: size.height, nativeSide: Self.nativeViewBoxSide)
+            )
             // Under Reduce Motion, skip the stagger and treat `reveal` as a
             // flat opacity multiplier so the filigree cross-fades instead of
             // scribbling in.
@@ -124,6 +130,14 @@ public struct GuillocheRotationLayer: View, Animatable {
                 )
             }
         }
+    }
+
+    static func rotatingRenderSide(forNativeSide nativeSide: CGFloat) -> CGFloat {
+        (nativeSide * CGFloat(2.0.squareRoot())).rounded(.up)
+    }
+
+    static func nativeViewBoxOffset(inRenderSide renderSide: CGFloat, nativeSide: CGFloat) -> CGFloat {
+        max(0, (renderSide - nativeSide) / 2)
     }
 
     /// `(roll - pitch) * rotationDegrees`, zeroed under Reduce Motion.
