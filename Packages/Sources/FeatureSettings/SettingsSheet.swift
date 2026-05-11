@@ -9,6 +9,7 @@ public struct SettingsSheet: View {
     @State private var advancedCardStackEnabled = false
     @State private var path: [Route] = []
     @State private var locationAuthorization: LocationAuthorization = .notDetermined
+    @Binding private var languagePreference: AppLanguagePreference
     #if os(iOS)
     @State private var detent: PresentationDetent = .medium
     #endif
@@ -33,6 +34,7 @@ public struct SettingsSheet: View {
 
     public init(
         onAbout: @escaping () -> Void,
+        languagePreference: Binding<AppLanguagePreference> = .constant(.system),
         onAddDebugRecords: @escaping () -> Void = {},
         onAddNearbyDebugRecords: @escaping () -> Void = {},
         onRemoveDebugRecords: @escaping () -> Void = {},
@@ -43,6 +45,7 @@ public struct SettingsSheet: View {
         motionService: (any MotionService)? = nil
     ) {
         self.onAbout = onAbout
+        _languagePreference = languagePreference
         self.onAddDebugRecords = onAddDebugRecords
         self.onAddNearbyDebugRecords = onAddNearbyDebugRecords
         self.onRemoveDebugRecords = onRemoveDebugRecords
