@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Добавить" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Додати" } } } },
+    "Cancel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Отмена" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Скасувати" } } } },
+    "DELETE" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "DELETE" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "УДАЛИТЬ" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "ВИДАЛИТИ" } } } },
+    "Delete" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Удалить" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Видалити" } } } },
+    "Description" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Description" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Описание" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Опис" } } } },
+    "Dismiss" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Закрыть" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Закрити" } } } },
+    "Done" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Готово" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Готово" } } } },
+    "EDIT" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "EDIT" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "РЕДАКТИРОВАТЬ" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "РЕДАГУВАТИ" } } } },
+    "Edit" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Редактировать" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Редагувати" } } } },
+    "Expand" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Expand" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Развернуть" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Розгорнути" } } } },
+    "Location: %@" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Location: %@" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Место: %@" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Місце: %@" } } } },
+    "Name" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Name" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Имя" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Ім'я" } } } },
+    "None" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "None" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Нет" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Немає" } } } },
+    "Save" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Сохранить" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Зберегти" } } } },
+    "Sign" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Знак" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Знак" } } } },
+    "Zodiac" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Zodiac" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Зодиак" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Зодіак" } } } },
+    "Zodiac:" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Zodiac:" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Зодиак:" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Зодіак:" } } } }
   },
   "version" : "1.0"
 }

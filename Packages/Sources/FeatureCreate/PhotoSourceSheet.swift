@@ -2,6 +2,7 @@
 import SwiftUI
 import UIKit
 import DesignSystem
+import Foundation
 
 /// Liquid-glass chooser presented when the user taps "+ Add Photo" in the
 /// create flow. Two tiles: Camera (opens `UIImagePickerController`) and Photos
@@ -20,13 +21,13 @@ struct PhotoSourceSheet: View {
     var body: some View {
         HStack(spacing: 12) {
             tile(
-                title: "Camera",
+                title: String(localized: "Camera", bundle: .module),
                 systemImage: "camera.fill",
                 isEnabled: cameraAvailable,
                 action: onCamera
             )
             tile(
-                title: "Photos",
+                title: String(localized: "Photo Library", bundle: .module),
                 systemImage: "photo.on.rectangle.angled",
                 isEnabled: true,
                 action: onPhotos

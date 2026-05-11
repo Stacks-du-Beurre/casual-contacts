@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreModels
 import DesignSystem
+import Foundation
 import Visuals
 
 /// Output of `RecordsListScene.bucketed(_:from:)`. `near` is everyone within
@@ -294,8 +295,8 @@ public struct RecordsListScene: View {
                     pendingDeleteRecord = nil
                 }
             } message: { record in
-                let name = record.name.isEmpty ? "This contact" : record.name.capitalized
-                Text("\(name) will be permanently removed.")
+                let name = record.name.isEmpty ? String(localized: "This contact", bundle: .module) : record.name
+                Text(String(localized: "\(name) will be permanently removed.", bundle: .module))
             }
             .alert(
                 "Couldn't delete contact",
@@ -479,8 +480,8 @@ public struct RecordsListScene: View {
             try await onDeleteRecord(record)
             pendingDeleteRecord = nil
         } catch {
-            let name = record.name.isEmpty ? "this contact" : record.name
-            deleteErrorMessage = "Couldn't delete \(name). Try again."
+            let name = record.name.isEmpty ? String(localized: "this contact", bundle: .module) : record.name
+            deleteErrorMessage = String(localized: "Couldn't delete \(name). Try again.", bundle: .module)
         }
     }
 
@@ -585,8 +586,8 @@ private struct CardAnimationDiagnosticsOverlay: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 2) {
-            Text("ACTIVE \(activeCount)")
-            Text("MOUNTED \(mountedCount)")
+            Text(String(localized: "ACTIVE \(activeCount)", bundle: .module))
+            Text(String(localized: "MOUNTED \(mountedCount)", bundle: .module))
         }
         .font(.system(size: 11, weight: .semibold, design: .monospaced))
         .foregroundStyle(.white)
@@ -594,7 +595,9 @@ private struct CardAnimationDiagnosticsOverlay: View {
         .padding(.vertical, 8)
         .background(.black.opacity(0.68), in: RoundedRectangle(cornerRadius: 6))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Active card animations \(activeCount), mounted card rows \(mountedCount)")
+        .accessibilityLabel(
+            String(localized: "Active card animations \(activeCount), mounted card rows \(mountedCount)", bundle: .module)
+        )
     }
 }
 

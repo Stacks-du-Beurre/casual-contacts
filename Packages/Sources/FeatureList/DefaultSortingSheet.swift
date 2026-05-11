@@ -1,5 +1,6 @@
 import SwiftUI
 import DesignSystem
+import Foundation
 
 /// Sort option backing the Default Sorting sheet. `advanced` is surfaced in the
 /// sheet but its destination screen (`L_Advanced_Sorting`) is deferred to v1.1+.
@@ -70,11 +71,11 @@ struct DefaultSortingSheet: View {
 
     private var optionsCard: some View {
         VStack(spacing: 0) {
-            row("Default (Alphabetically)", option: .alphabetical)
+            row(String(localized: "Default (Alphabetically)", bundle: .module), option: .alphabetical)
             divider
-            row("Date Created", option: .dateCreated)
+            row(String(localized: "Date Created", bundle: .module), option: .dateCreated)
             divider
-            row("Time Created", option: .timeCreated)
+            row(String(localized: "Time Created", bundle: .module), option: .timeCreated)
             divider
             distanceRow
             divider
@@ -88,7 +89,7 @@ struct DefaultSortingSheet: View {
         Button {
             selectDistance()
         } label: {
-            rowContent(title: "By distance", isSelected: selected == .distance)
+            rowContent(title: String(localized: "By distance", bundle: .module), isSelected: selected == .distance)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected == .distance ? .isSelected : [])
@@ -122,7 +123,7 @@ struct DefaultSortingSheet: View {
 
     private var advancedRow: some View {
         Button(action: onAdvanced) {
-            rowContent(title: "Advanced sorting", isSelected: false)
+            rowContent(title: String(localized: "Advanced sorting", bundle: .module), isSelected: false)
         }
         .buttonStyle(.plain)
     }

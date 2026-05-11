@@ -437,8 +437,8 @@ public struct RootScene: Scene {
                 try await environment.recordStore.delete(id: record.id)
                 afterSuccess()
             } catch {
-                let name = record.name.isEmpty ? "this contact" : record.name
-                deleteErrorMessage = "Couldn't delete \(name). Try again."
+                let name = record.name.isEmpty ? String(localized: "this contact", bundle: .module) : record.name
+                deleteErrorMessage = String(localized: "Couldn't delete \(name). Try again.", bundle: .module)
             }
         }
     }
@@ -585,7 +585,10 @@ public struct RootScene: Scene {
             let service = environment.locationService
             guard service.currentAuthorization() == .authorized else {
                 await MainActor.run {
-                    nearbyDebugError = "Enable location access for Casual Contacts in iOS Settings to seed nearby records."
+                    nearbyDebugError = String(
+                        localized: "Enable location access for Casual Contacts in iOS Settings to seed nearby records.",
+                        bundle: .module
+                    )
                 }
                 return
             }
@@ -597,7 +600,10 @@ public struct RootScene: Scene {
             }
             guard let origin else {
                 await MainActor.run {
-                    nearbyDebugError = "Couldn't determine your current location. Try again with a clearer GPS signal."
+                    nearbyDebugError = String(
+                        localized: "Couldn't determine your current location. Try again with a clearer GPS signal.",
+                        bundle: .module
+                    )
                 }
                 return
             }

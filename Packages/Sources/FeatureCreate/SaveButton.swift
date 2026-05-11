@@ -1,5 +1,6 @@
 import CoreModels
 import DesignSystem
+import Foundation
 import SwiftUI
 import Visuals
 
@@ -15,13 +16,13 @@ struct SaveButton: View {
     @Bindable private var motionTuning = MotionTuning.shared
 
     init(
-        label: String = "SAVE",
+        label: String? = nil,
         isEnabled: Bool,
         timeOfDay: TimeOfDay,
         attitude: DeviceAttitude,
         action: @escaping () -> Void
     ) {
-        self.label = label
+        self.label = label ?? String(localized: "SAVE", bundle: .module)
         self.isEnabled = isEnabled
         self.timeOfDay = timeOfDay
         self.attitude = attitude

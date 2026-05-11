@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreModels
 import DesignSystem
+import Foundation
 import Visuals
 
 public struct EmptyStateView: View {
@@ -33,7 +34,7 @@ public struct EmptyStateView: View {
 
                 Button(action: onTap) {
                     HologramText(
-                        "add the first person",
+                        String(localized: "add the first person", bundle: .module),
                         font: Self.scaledTitleFont(canvasWidth: sceneGeo.size.width),
                         attitude: attitude,
                         backdropSize: sceneGeo.size,

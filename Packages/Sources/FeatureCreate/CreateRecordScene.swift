@@ -37,8 +37,12 @@ public struct CreateRecordScene: View {
 
     private static let coordSpace = "createScene"
 
-    private var topNavTitle: String { editingRecord == nil ? "PERSON" : "EDIT" }
-    private var saveButtonLabel: String { editingRecord == nil ? "SAVE" : "UPDATE" }
+    private var topNavTitle: String {
+        String(localized: editingRecord == nil ? "PERSON" : "EDIT", bundle: .module)
+    }
+    private var saveButtonLabel: String {
+        String(localized: editingRecord == nil ? "SAVE" : "UPDATE", bundle: .module)
+    }
 
     public init(
         attitude: DeviceAttitude,

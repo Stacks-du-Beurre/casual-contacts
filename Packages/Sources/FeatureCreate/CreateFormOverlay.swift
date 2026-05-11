@@ -83,7 +83,11 @@ struct CreateFormOverlay<Backdrop: View>: View {
             .accessibilityIdentifier("photoDetectingSpinner")
         } else {
             Button(action: { isPhotoChooserPresented = true }) {
-                Text(model.photoData == nil ? "+ Add Photo" : "Change photo")
+                Text(
+                    model.photoData == nil
+                        ? String(localized: "+ Add Photo", bundle: .module)
+                        : String(localized: "Change photo", bundle: .module)
+                )
                     .font(CCDesign.Typography.caption2)
                     .foregroundStyle(CCDesign.Colors.L0)
                     .padding(.vertical, 6)
@@ -146,8 +150,10 @@ struct CreateFormOverlay<Backdrop: View>: View {
     }
 
     private var zodiacButtonLabel: String {
-        guard let sign = model.zodiacSign else { return "+ Add Zodiac" }
-        return "Change zodiac - \(sign.rawValue.capitalized)"
+        guard let sign = model.zodiacSign else {
+            return String(localized: "+ Add Zodiac", bundle: .module)
+        }
+        return String(localized: "Change zodiac - \(sign.rawValue.capitalized)", bundle: .module)
     }
 }
 
@@ -193,7 +199,7 @@ private struct NamePill<Backdrop: View>: View {
     }
 
     private var displayName: String {
-        model.name.isEmpty ? "Name" : model.name
+        model.name.isEmpty ? String(localized: "Name", bundle: .module) : model.name
     }
 }
 
@@ -232,7 +238,9 @@ private struct DescriptionPill: View {
     private static let editingCushion: CGFloat = 18
 
     var body: some View {
-        let displayText = model.description.isEmpty ? "Description" : model.description
+        let displayText = model.description.isEmpty
+            ? String(localized: "Description", bundle: .module)
+            : model.description
         let cap = max(0, maxWidth - Self.horizontalPadding * 2)
         let fieldWidth = min(max(naturalWidth + Self.editingCushion, 0), cap)
 

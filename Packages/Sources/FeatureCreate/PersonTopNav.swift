@@ -1,5 +1,6 @@
 import SwiftUI
 import DesignSystem
+import Foundation
 
 /// Top bar for the create-record sheet: Cancel on the left, centered title
 /// (defaults to "PERSON"), `+ Person` disabled placeholder on the right.
@@ -11,8 +12,8 @@ struct PersonTopNav: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String = "PERSON", onCancel: @escaping () -> Void) {
-        self.title = title
+    init(title: String? = nil, onCancel: @escaping () -> Void) {
+        self.title = title ?? String(localized: "PERSON", bundle: .module)
         self.onCancel = onCancel
     }
 

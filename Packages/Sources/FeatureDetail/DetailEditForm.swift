@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreModels
 import DesignSystem
+import Foundation
 
 /// Editable form for an existing `Record`. Mirrors the field layout of
 /// `CreateFormFields` but operates on a mutable local copy of the record
@@ -60,13 +61,13 @@ public struct DetailEditForm: View {
                     Button {
                         showingZodiacPicker = true
                     } label: {
-                        Text(zodiacSign?.rawValue.capitalized ?? "Add")
+                        Text(zodiacSign?.rawValue.capitalized ?? String(localized: "Add", bundle: .module))
                             .font(CCDesign.Typography.caption1)
                     }
                 }
 
                 if let label = original.location?.label {
-                    Text("Location: \(label)")
+                    Text(String(localized: "Location: \(label)", bundle: .module))
                         .font(CCDesign.Typography.caption2)
                 }
 
