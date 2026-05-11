@@ -1,5 +1,6 @@
 import Testing
 import SwiftUI
+import CoreModels
 @testable import FeatureSettings
 
 @MainActor
@@ -15,6 +16,17 @@ import SwiftUI
 
     @Test func settingsSheetAcceptsInListDeveloperSettingsCallback() {
         _ = SettingsSheet(onAbout: {}, onShowInListDeveloperSettings: {}).body
+    }
+
+    @Test func settingsSheetAcceptsLanguagePreferenceBinding() {
+        @State var preference = AppLanguagePreference.system
+        _ = SettingsSheet(onAbout: {}, languagePreference: $preference).body
+    }
+
+    @Test func allLanguagePreferencesHaveDisplayNames() {
+        for preference in AppLanguagePreference.allCases {
+            #expect(String(localized: preference.displayName).isEmpty == false)
+        }
     }
 
     @Test func inListDeveloperSettingsPanelInstantiates() {

@@ -24,7 +24,7 @@ enum SettingsPalette {
 
 struct SettingsRow<Trailing: View>: View {
     @Environment(\.colorScheme) private var scheme
-    let label: String
+    let label: LocalizedStringResource
     let onTap: (() -> Void)?
     @ViewBuilder let trailing: () -> Trailing
 
@@ -56,7 +56,7 @@ struct SettingsRow<Trailing: View>: View {
 /// `Toggle` in its trailing slot, which only responds to hits on the knob).
 struct SettingsToggleRow: View {
     @Environment(\.colorScheme) private var scheme
-    let label: String
+    let label: LocalizedStringResource
     @Binding var isOn: Bool
 
     var body: some View {
@@ -75,10 +75,10 @@ struct SettingsToggleRow: View {
 
 struct SettingsGroup<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
-    let title: String?
+    let title: LocalizedStringResource?
     @ViewBuilder let content: () -> Content
 
-    init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(title: LocalizedStringResource? = nil, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.content = content
     }

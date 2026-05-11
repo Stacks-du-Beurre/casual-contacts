@@ -122,6 +122,8 @@ public struct SettingsSheet: View {
                 SettingsToggleRow(label: "Sync data with iCloud", isOn: $syncEnabled)
                 SettingsDivider()
                 SettingsToggleRow(label: "Turn on advanced card stack", isOn: $advancedCardStackEnabled)
+                SettingsDivider()
+                languagePickerRow
             }
 
             SettingsGroup(title: "Location") {
@@ -175,6 +177,25 @@ public struct SettingsSheet: View {
         )
     }
 
+    private var languagePickerRow: some View {
+        HStack(spacing: 12) {
+            Text("settings.language")
+                .font(CCDesign.Typography.description)
+                .tracking(CCDesign.Typography.Tracking.description)
+                .foregroundStyle(SettingsPalette.label(scheme))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Picker("settings.language", selection: $languagePreference) {
+                ForEach(AppLanguagePreference.allCases) { preference in
+                    Text(preference.displayName).tag(preference)
+                }
+            }
+            .labelsHidden()
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 43)
+    }
+
     private func handleLocationToggleTapped() {
         Task {
             await onLocationToggleTapped()
@@ -201,6 +222,6 @@ public struct SettingsSheet: View {
 
     private var versionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        return "Casual Contacts Version \(version)"
+        return String(localized: "Casual Contacts Version \(version)")
     }
 }
