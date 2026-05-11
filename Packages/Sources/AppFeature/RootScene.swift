@@ -37,6 +37,7 @@ public struct RootScene: Scene {
     /// usable location fix (denied authorization or fix failure). Setting
     /// this to non-nil presents the alert with the message as the body.
     @State private var nearbyDebugError: String?
+    @AppStorage("appLanguagePreference") private var appLanguagePreferenceRawValue = AppLanguagePreference.system.rawValue
     @Environment(\.scenePhase) private var scenePhase
     @Namespace private var zoomNamespace
 
@@ -61,7 +62,7 @@ public struct RootScene: Scene {
     public var body: some Scene {
         WindowGroup {
             #if os(iOS)
-            rootContent
+            localizedRootContent
                 .environment(\.zoomNamespace, zoomNamespace)
                 .preferredColorScheme(ScreenshotMode.appearanceOverride)
                 .task {
@@ -73,7 +74,29 @@ public struct RootScene: Scene {
         }
     }
 
+    private var appLanguagePreference: Binding<AppLanguagePreference> {
+        Binding(
+            get: { AppLanguagePreference(storedValue: appLanguagePreferenceRawValue) },
+            set: { appLanguagePreferenceRawValue = $0.rawValue }
+        )
+    }
+
+    public static func locale(for preference: AppLanguagePreference) -> Locale? {
+        guard let identifier = preference.localeIdentifier else { return nil }
+        return Locale(identifier: identifier)
+    }
+
     #if os(iOS)
+    @MainActor
+    @ViewBuilder
+    private var localizedRootContent: some View {
+        if let locale = Self.locale(for: appLanguagePreference.wrappedValue) {
+            rootContent.environment(\.locale, locale)
+        } else {
+            rootContent
+        }
+    }
+
     @MainActor
     @ViewBuilder
     private var rootContent: some View {
@@ -323,6 +346,7 @@ public struct RootScene: Scene {
         .sheet(isPresented: $router.showingSettings) {
             SettingsSheet(
                 onAbout: { router.showingAbout = true },
+                languagePreference: appLanguagePreference,
                 onAddDebugRecords: addDebugRecords,
                 onAddNearbyDebugRecords: addNearbyDebugRecords,
                 onRemoveDebugRecords: removeDebugRecords,

@@ -15,6 +15,13 @@ import StorageTestSupport
         _ = scene
     }
 
+    @Test func selectedLocaleUsesLanguagePreferenceIdentifier() {
+        #expect(RootScene.locale(for: .system) == nil)
+        #expect(RootScene.locale(for: .english)?.identifier == "en")
+        #expect(RootScene.locale(for: .russian)?.identifier == "ru")
+        #expect(RootScene.locale(for: .ukrainian)?.identifier == "uk")
+    }
+
     @Test func navigationRouterDefaultsAreAllClear() {
         let router = NavigationRouter()
         #expect(router.showingCreate == false)
