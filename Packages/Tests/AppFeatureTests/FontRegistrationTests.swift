@@ -5,11 +5,12 @@ import CoreText
 
 @Suite struct FontRegistrationTests {
 
-    @Test func registerBundledFontsReturnsFourFontNames() {
+    @Test func registerBundledFontsReturnsBundledFontPostScriptNames() {
         let names = FontRegistration.registerBundledFonts()
         #expect(names.contains("CormorantSC-Bold"))
         #expect(names.contains("CormorantSC-SemiBold"))
-        #expect(names.contains("CormorantInfant"))
+        #expect(names.contains("CormorantInfant-Light"))
+        #expect(names.contains("CormorantInfant-SemiBold"))
         #expect(names.contains("IBMPlexMono-Regular"))
     }
 

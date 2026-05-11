@@ -51,7 +51,7 @@ public enum FontRegistration {
         switch filename {
         case "CormorantSC-Bold":         return "CormorantSC-Bold"
         case "CormorantSC-SemiBold":     return "CormorantSC-SemiBold"
-        case "CormorantInfant-Variable": return "CormorantInfant"
+        case "CormorantInfant-Variable": return "CormorantInfant-Light"
         case "CormorantInfant-SemiBold": return "CormorantInfant-SemiBold"
         case "IBMPlexMono-Regular":      return "IBMPlexMono-Regular"
         default:                         return filename
