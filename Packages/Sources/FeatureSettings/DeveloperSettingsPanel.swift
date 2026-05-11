@@ -7,6 +7,7 @@ struct DeveloperSettingsPanel: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     /// Closures injected by the host so the panel can stay in
     /// `FeatureSettings` (which has no `Storage` dependency). The
@@ -52,7 +53,7 @@ struct DeveloperSettingsPanel: View {
 
     private var header: some View {
         ZStack {
-            Text("Developer")
+            FeatureSettingsLocalization.text("Developer", locale: locale)
                 .font(CCDesign.Typography.headline)
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .textCase(.uppercase)
@@ -67,7 +68,7 @@ struct DeveloperSettingsPanel: View {
                         .frame(width: 44, height: 43)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Back")
+                .accessibilityLabel(FeatureSettingsLocalization.text("Back", locale: locale))
                 Spacer()
             }
         }
@@ -78,6 +79,7 @@ struct DeveloperSettingsPanel: View {
 public struct InListDeveloperSettingsPanel: View {
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
 
     private let onClose: () -> Void
     private let onAddDebugRecords: () -> Void
@@ -122,7 +124,7 @@ public struct InListDeveloperSettingsPanel: View {
 
     private var header: some View {
         ZStack {
-            Text("Developer")
+            FeatureSettingsLocalization.text("Developer", locale: locale)
                 .font(CCDesign.Typography.headline)
                 .tracking(CCDesign.Typography.Tracking.headline)
                 .textCase(.uppercase)
@@ -138,7 +140,7 @@ public struct InListDeveloperSettingsPanel: View {
                         .frame(width: 44, height: 43)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close in-list developer settings")
+                .accessibilityLabel(FeatureSettingsLocalization.text("Close in-list developer settings", locale: locale))
             }
         }
         .frame(height: 48)
@@ -465,12 +467,13 @@ private struct DeveloperSettingsContent: View {
 struct ToggleRow: View {
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
     let label: String
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            Text(label)
+            FeatureSettingsLocalization.text(label, locale: locale)
                 .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(SettingsPalette.label(scheme))
@@ -491,6 +494,7 @@ struct SliderRow: View {
     }
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
     let label: String
     @Binding var value: Double
     let range: ClosedRange<Double>
@@ -500,7 +504,7 @@ struct SliderRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                Text(label)
+                FeatureSettingsLocalization.text(label, locale: locale)
                     .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
                     .tracking(CCDesign.Typography.Tracking.description)
                     .foregroundStyle(SettingsPalette.label(scheme))
@@ -565,6 +569,7 @@ struct SliderRow: View {
 struct IntSliderRow: View {
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
     let label: String
     @Binding var value: Int
     let range: ClosedRange<Int>
@@ -572,12 +577,12 @@ struct IntSliderRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 12) {
-                Text(label)
+                FeatureSettingsLocalization.text(label, locale: locale)
                     .font(.custom("CormorantInfant-SemiBold", size: 18, relativeTo: .body))
                     .tracking(CCDesign.Typography.Tracking.description)
                     .foregroundStyle(SettingsPalette.label(scheme))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text("\(value)")
+                Text(verbatim: "\(value)")
                     .font(.custom("CormorantInfant-SemiBold", size: 16, relativeTo: .body))
                     .foregroundStyle(SettingsPalette.icon(scheme))
                     .monospacedDigit()

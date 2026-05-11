@@ -24,12 +24,16 @@ enum MotionDebugDotSource: String, CaseIterable, Hashable {
     /// real-world acceleration because it folds in accelerometer data.
     case gravity
 
-    var label: String {
+    func localizedLabel(locale: Locale) -> String {
         switch self {
-        case .relative:   return "Relative"
-        case .rawEuler:   return "Euler"
-        case .quaternion: return "Quat"
-        case .gravity:    return "Gravity"
+        case .relative:
+            return FeatureSettingsLocalization.string("Relative", locale: locale)
+        case .rawEuler:
+            return FeatureSettingsLocalization.string("Euler", locale: locale)
+        case .quaternion:
+            return FeatureSettingsLocalization.string("Quat", locale: locale)
+        case .gravity:
+            return FeatureSettingsLocalization.string("Gravity", locale: locale)
         }
     }
 }
@@ -46,6 +50,7 @@ enum MotionDebugDotSource: String, CaseIterable, Hashable {
 struct MotionDebugPinnedRegion: View {
 
     @Bindable private var motionTuning = MotionTuning.shared
+    @Environment(\.locale) private var locale
 
     let snapshot: MotionDebugViewModel.Snapshot
     let emissionRate: Int
@@ -174,7 +179,7 @@ struct MotionDebugPinnedRegion: View {
         let remaining = max(0, total - (snapshot.latest?.secondsSinceSettleReset ?? 0))
         let armed = remaining > 0 && remaining < total
         return chip(
-            label: "settle",
+            label: FeatureSettingsLocalization.string("settle", locale: locale),
             value: String(format: "%.1fs", remaining),
             tint: armed ? .orange : .secondary
         )
@@ -184,7 +189,11 @@ struct MotionDebugPinnedRegion: View {
         let inProgress = snapshot.latest?.isRebaseInProgress == true
         let progress = snapshot.latest?.rebaseProgress ?? 0
         return HStack(spacing: 8) {
-            chip(label: "rebase", value: inProgress ? "in progress" : "idle", tint: inProgress ? .orange : .secondary)
+            chip(
+                label: FeatureSettingsLocalization.string("rebase", locale: locale),
+                value: FeatureSettingsLocalization.string(inProgress ? "in progress" : "idle", locale: locale),
+                tint: inProgress ? .orange : .secondary
+            )
             if inProgress {
                 ProgressView(value: progress)
                     .frame(width: 80)

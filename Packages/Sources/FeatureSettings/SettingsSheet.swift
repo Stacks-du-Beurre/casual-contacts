@@ -6,6 +6,7 @@ import DesignSystem
 public struct SettingsSheet: View {
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.locale) private var locale
     @State private var syncEnabled = false
     @State private var advancedCardStackEnabled = false
     @State private var path: [Route] = []
@@ -73,7 +74,7 @@ public struct SettingsSheet: View {
                         if let motionService {
                             MotionDebugScene(service: motionService)
                         } else {
-                            Text("Motion service unavailable")
+                            FeatureSettingsLocalization.text("Motion service unavailable", locale: locale)
                         }
                     }
                 }
@@ -107,7 +108,7 @@ public struct SettingsSheet: View {
     }
 
     private var header: some View {
-        Text("Settings")
+        FeatureSettingsLocalization.text("Settings", locale: locale)
             .font(CCDesign.Typography.headline)
             .tracking(CCDesign.Typography.Tracking.headline)
             .textCase(.uppercase)
@@ -180,15 +181,15 @@ public struct SettingsSheet: View {
 
     private var languagePickerRow: some View {
         HStack(spacing: 12) {
-            Text("settings.language")
+            FeatureSettingsLocalization.text("settings.language", locale: locale)
                 .font(CCDesign.Typography.description)
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(SettingsPalette.label(scheme))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Picker("settings.language", selection: $languagePreference) {
+            Picker(FeatureSettingsLocalization.string("settings.language", locale: locale), selection: $languagePreference) {
                 ForEach(AppLanguagePreference.allCases) { preference in
-                    Text(FeatureSettingsLocalization.languageDisplayName(for: preference)).tag(preference)
+                    Text(FeatureSettingsLocalization.languageDisplayName(for: preference, locale: locale)).tag(preference)
                 }
             }
             .labelsHidden()
@@ -223,48 +224,6 @@ public struct SettingsSheet: View {
 
     private var versionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        return String(localized: "Casual Contacts Version \(version)", bundle: .module)
-    }
-}
-
-enum FeatureSettingsLocalization {
-    static func languageDisplayName(for preference: AppLanguagePreference) -> LocalizedStringResource {
-        switch preference {
-        case .system:
-            LocalizedStringResource("language.system", bundle: .module)
-        case .english:
-            LocalizedStringResource("language.english", bundle: .module)
-        case .russian:
-            LocalizedStringResource("language.russian", bundle: .module)
-        case .ukrainian:
-            LocalizedStringResource("language.ukrainian", bundle: .module)
-        }
-    }
-
-    static func localizedString(_ key: String, localeIdentifier: String) -> String {
-        let localized = String(
-            localized: String.LocalizationValue(key),
-            bundle: .module,
-            locale: Locale(identifier: localeIdentifier)
-        )
-        if localized != key {
-            return localized
-        }
-
-        guard
-            let url = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"),
-            let data = try? Data(contentsOf: url),
-            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let strings = root["strings"] as? [String: Any],
-            let entry = strings[key] as? [String: Any],
-            let localizations = entry["localizations"] as? [String: Any],
-            let localization = localizations[localeIdentifier] as? [String: Any],
-            let stringUnit = localization["stringUnit"] as? [String: Any],
-            let value = stringUnit["value"] as? String
-        else {
-            return localized
-        }
-
-        return value
+        return FeatureSettingsLocalization.string("Casual Contacts Version %@", locale: locale, version)
     }
 }

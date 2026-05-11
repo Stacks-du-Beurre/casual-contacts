@@ -24,13 +24,14 @@ enum SettingsPalette {
 
 struct SettingsRow<Trailing: View>: View {
     @Environment(\.colorScheme) private var scheme
-    let label: LocalizedStringResource
+    @Environment(\.locale) private var locale
+    let label: String
     let onTap: (() -> Void)?
     @ViewBuilder let trailing: () -> Trailing
 
     var body: some View {
         let content = HStack(spacing: 12) {
-            Text(label)
+            FeatureSettingsLocalization.text(label, locale: locale)
                 .font(CCDesign.Typography.description)
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(SettingsPalette.label(scheme))
@@ -56,12 +57,13 @@ struct SettingsRow<Trailing: View>: View {
 /// `Toggle` in its trailing slot, which only responds to hits on the knob).
 struct SettingsToggleRow: View {
     @Environment(\.colorScheme) private var scheme
-    let label: LocalizedStringResource
+    @Environment(\.locale) private var locale
+    let label: String
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            Text(label)
+            FeatureSettingsLocalization.text(label, locale: locale)
                 .font(CCDesign.Typography.description)
                 .tracking(CCDesign.Typography.Tracking.description)
                 .foregroundStyle(SettingsPalette.label(scheme))
@@ -75,10 +77,11 @@ struct SettingsToggleRow: View {
 
 struct SettingsGroup<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
-    let title: LocalizedStringResource?
+    @Environment(\.locale) private var locale
+    let title: String?
     @ViewBuilder let content: () -> Content
 
-    init(title: LocalizedStringResource? = nil, @ViewBuilder content: @escaping () -> Content) {
+    init(title: String? = nil, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.content = content
     }
@@ -86,7 +89,7 @@ struct SettingsGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let title {
-                Text(title)
+                FeatureSettingsLocalization.text(title, locale: locale)
                     .font(CCDesign.Typography.caption2)
                     .tracking(CCDesign.Typography.Tracking.headline)
                     .textCase(.uppercase)

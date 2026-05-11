@@ -39,6 +39,19 @@ import CoreModels
         #expect(FeatureSettingsLocalization.localizedString(AppLanguagePreference.ukrainian.displayNameKey, localeIdentifier: "uk") == "Українська")
     }
 
+    @Test func featureSettingsLocalizationUsesActiveLocaleForRemainingUILiterals() {
+        #expect(FeatureSettingsLocalization.string("Back", locale: Locale(identifier: "ru")) == "Назад")
+        #expect(FeatureSettingsLocalization.string("Motion Debug", locale: Locale(identifier: "uk")) == "Налагодження руху")
+        #expect(
+            FeatureSettingsLocalization.string("Source: %@", locale: Locale(identifier: "ru"), "Relative") ==
+            "Источник: Relative"
+        )
+        #expect(
+            FeatureSettingsLocalization.string("Casual Contacts Version %@", locale: Locale(identifier: "uk"), "1.0") ==
+            "Casual Contacts, версія 1.0"
+        )
+    }
+
     @Test func inListDeveloperSettingsPanelInstantiates() {
         _ = InListDeveloperSettingsPanel(onClose: {}).body
     }

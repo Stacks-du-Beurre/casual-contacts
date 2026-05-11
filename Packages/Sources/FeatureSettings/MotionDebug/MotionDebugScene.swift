@@ -18,6 +18,7 @@ public struct MotionDebugScene: View {
     @State private var dotSource: MotionDebugDotSource = .relative
     @State private var gravityRebaser = GravityRebaser()
     @State private var relativeRebaser = RelativeRotationRebaser()
+    @Environment(\.locale) private var locale
     /// Live binding to the singleton tuning shared with `CoreMotionService`,
     /// so dragging the slider here also tunes the production card animations.
     @Bindable private var motionTuning = MotionTuning.shared
@@ -33,19 +34,31 @@ public struct MotionDebugScene: View {
             // control's tap-state somehow). dotSource updates flow into the
             // TimelineView block below by closure capture.
             VStack(alignment: .leading, spacing: 8) {
-                Text("Source: \(dotSource.label)")
+                Text(
+                    FeatureSettingsLocalization.string(
+                        "Source: %@",
+                        locale: locale,
+                        dotSource.localizedLabel(locale: locale)
+                    )
+                )
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.primary)
-                Picker("Source", selection: $dotSource) {
+                Picker(FeatureSettingsLocalization.string("Source", locale: locale), selection: $dotSource) {
                     ForEach(MotionDebugDotSource.allCases, id: \.self) { source in
-                        Text(source.label).tag(source)
+                        Text(source.localizedLabel(locale: locale)).tag(source)
                     }
                 }
                 .pickerStyle(.segmented)
 
                 if dotSource == .relative {
                     HStack(spacing: 12) {
-                        Text("Full-scale: \(Int(motionTuning.relativeFullScaleDegrees))°")
+                        Text(
+                            FeatureSettingsLocalization.string(
+                                "Full-scale: %lld°",
+                                locale: locale,
+                                Int(motionTuning.relativeFullScaleDegrees)
+                            )
+                        )
                             .font(.caption.monospacedDigit())
                             .frame(width: 130, alignment: .leading)
                         Slider(value: $motionTuning.relativeFullScaleDegrees, in: 10...180, step: 5)
@@ -63,7 +76,7 @@ public struct MotionDebugScene: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         if reduceMotionActive {
-                            Text("Reduce Motion is on — debug stream is suppressed.")
+                            FeatureSettingsLocalization.text("Reduce Motion is on — debug stream is suppressed.", locale: locale)
                                 .font(.caption)
                                 .padding(8)
                                 .frame(maxWidth: .infinity)
@@ -86,7 +99,7 @@ public struct MotionDebugScene: View {
                 }
             }
         }
-        .navigationTitle("Motion Debug")
+        .navigationTitle(FeatureSettingsLocalization.string("Motion Debug", locale: locale))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -113,7 +126,7 @@ public struct MotionDebugScene: View {
         Group {
             // 1. Raw Euler
             row(
-                "Raw Euler (rad)",
+                FeatureSettingsLocalization.string("Raw Euler (rad)", locale: locale),
                 snapshot: snapshot,
                 now: now,
                 window: window,
@@ -127,7 +140,7 @@ public struct MotionDebugScene: View {
 
             // 2. Quaternion
             row(
-                "Quaternion",
+                FeatureSettingsLocalization.string("Quaternion", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -1...1,
                 channels: [
@@ -140,7 +153,7 @@ public struct MotionDebugScene: View {
 
             // 3. Gravity
             row(
-                "Gravity",
+                FeatureSettingsLocalization.string("Gravity", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -1...1,
                 channels: [
@@ -152,7 +165,7 @@ public struct MotionDebugScene: View {
 
             // 4. Normalized
             row(
-                "Normalized",
+                FeatureSettingsLocalization.string("Normalized", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -2...2,
                 channels: [
@@ -163,7 +176,7 @@ public struct MotionDebugScene: View {
 
             // 5. Baseline-relative
             row(
-                "Baseline-relative",
+                FeatureSettingsLocalization.string("Baseline-relative", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -2...2,
                 channels: [
@@ -174,7 +187,7 @@ public struct MotionDebugScene: View {
 
             // 6. Smoothed
             row(
-                "Smoothed",
+                FeatureSettingsLocalization.string("Smoothed", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -2...2,
                 channels: [
@@ -185,7 +198,7 @@ public struct MotionDebugScene: View {
 
             // 7. Shaped (post-tanh)
             row(
-                "Shaped (consumers)",
+                FeatureSettingsLocalization.string("Shaped (consumers)", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -1...1,
                 channels: [
@@ -196,7 +209,7 @@ public struct MotionDebugScene: View {
 
             // 8. Throttled output (NaN-padded — falls back to shaped on dropped frames)
             row(
-                "Throttled output",
+                FeatureSettingsLocalization.string("Throttled output", locale: locale),
                 snapshot: snapshot, now: now, window: window,
                 yRange: -1...1,
                 channels: [
