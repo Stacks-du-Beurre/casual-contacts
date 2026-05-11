@@ -13,6 +13,12 @@ import Visuals
         #expect(!paths.isEmpty, "Expected generated Rotation/A paths to be non-empty — did you run Tools/regenerate-svg.sh?")
     }
 
+    @Test func rotationPathsReturnNonEmptyForCyrillicLetter() {
+        let provider = RealCardPathProvider()
+        let paths = provider.rotationPaths(for: "А")
+        #expect(!paths.isEmpty, "Expected generated Rotation/Cyrillic/U0410 paths to be non-empty — did you run Tools/regenerate-svg.sh?")
+    }
+
     @Test func rotationPathsReturnEmptyForUnknownSymbol() {
         let provider = RealCardPathProvider()
         let paths = provider.rotationPaths(for: "@")   // not a letter
@@ -32,5 +38,11 @@ import Visuals
         let square = provider.blendPaths(for: "A", shape: .square, density: .cards)
         // Different shapes map to different generated files; both should be non-empty.
         #expect(!circle.isEmpty && !square.isEmpty)
+    }
+
+    @Test func blendPathsReturnNonEmptyForCyrillicLetter() {
+        let provider = RealCardPathProvider()
+        let paths = provider.blendPaths(for: "Ю", shape: .polygon, density: .cards)
+        #expect(paths.count >= 10, "Cyrillic blend paths should include the generated layered stack — got \(paths.count)")
     }
 }

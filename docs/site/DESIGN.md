@@ -161,7 +161,7 @@ Gradients are **bitmaps**, not procedural CSS gradients — keep the painterly t
 
 ### 4.5 Glyphs & guilloche
 
-The 26-letter guilloche set lives at `design-assets/Blended_export/SVG/{A–Z}_{Circle,Square,Polygon}.svg`. For the marketing site, use:
+The Latin guilloche set lives at `design-assets/Guilloche/App/Blend/Latin/{A–Z}_{Circle,Square,Polygon}.svg`. For the marketing site, use:
 
 - **`C_Circle.svg`** — the brand glyph. Use as a section divider, a hero decoration, and an oversized footer mark.
 - **A small hand-picked set** (e.g. `A`, `B`, `C`, `M`, `N` in Circle variant) — for the "Memory through metadata" sample cards, to suggest the per-letter visual identity.

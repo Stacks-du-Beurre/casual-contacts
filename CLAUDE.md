@@ -126,14 +126,14 @@ Prerequisites: Facebook IDB (`brew install idb-companion` + `pipx install fb-idb
 
 ### Regenerate guilloche Swift files
 
-After any change to `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Rotation/` or `design-assets/Blended_export/SVG/`:
+After any change to `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Guilloche/App/`:
 
 ```bash
 cd /Users/adam/Projects/cc
 ./Tools/regenerate-svg.sh
 ```
 
-Produces ~130 Swift files in `Packages/Sources/Visuals/Guilloche/Generated/` (gitignored). Without this, `RealCardPathProvider` fails to compile.
+Produces Swift files in `Packages/Sources/Visuals/Guilloche/Generated/`. Without this, `RealCardPathProvider` fails to compile. The script also packages finalized Cyrillic pipeline output before converting SVGs.
 
 ### Run snapshot tests (visual regression)
 

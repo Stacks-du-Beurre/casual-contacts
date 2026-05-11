@@ -16,6 +16,11 @@ import Foundation
         #expect(record.accoutrements.letter == "J")
     }
 
+    @Test func cyrillicLetterIsFirstCharacterUppercased() {
+        let record = Self.makeRecord(id: UUID(), name: "юлия")
+        #expect(record.accoutrements.letter == "Ю")
+    }
+
     @Test func letterFallsBackToAForEmptyName() {
         let record = Self.makeRecord(id: UUID(), name: "")
         #expect(record.accoutrements.letter == "A")

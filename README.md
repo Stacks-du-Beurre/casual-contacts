@@ -94,7 +94,7 @@ xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
 
 ### Regenerate guilloche Swift files
 
-Required after any change under `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Rotation/` or `design-assets/Blended_export/SVG/`:
+Required after any change under `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Guilloche/App/`:
 
 ```bash
 ./Tools/regenerate-svg.sh

@@ -231,7 +231,7 @@ Light symbols: frame `Light_Nav_Symbols` `9:115`. Dark symbols: frame `Dark_Nav_
 Alphabetical guilloche patterns are built with two complementary Illustrator techniques. The app uses both — one for ambient backgrounds, one for the identity glyph on each card.
 
 **1. Rotation (background patterns)** — §1.2
-- Source SVGs live in `design-assets/Rotation/`. Each character is pre-shaped so its centroid lies at a point that, when rotated around, yields the correct guilloche.
+- Source SVGs live in `design-assets/Guilloche/App/Rotation/{Latin,Cyrillic}/`. Each character is pre-shaped so its centroid lies at a point that, when rotated around, yields the correct guilloche.
 - Stroke CSS (reference): `fill: none; stroke: #000; stroke-miterlimit: 10; stroke-width: 0.5px; transform-origin: center;`
 - Per copy, rotate **5°**. Stacking ~72 copies produces one full 360° rosette. Stroke width is *dynamic* across the stack (varies per copy) — that's what gives the "weight" pulse.
 - In the app this is `GuillocheRotationLayer`. See `Tools/SVGToSwift/` + `Tools/regenerate-svg.sh` for the SVG-to-Swift pipeline.
@@ -246,9 +246,9 @@ Alphabetical guilloche patterns are built with two complementary Illustrator tec
 - In the app this is `GuillocheBlendLayer`. Generated Swift files land in `Packages/Sources/Visuals/Guilloche/Generated/` (gitignored); regenerate via `./Tools/regenerate-svg.sh`.
 
 **Exported assets (guilloche):**
-- **Rotation sources (§1.2)** — `design-assets/Rotation/{A–Z}_Rotation.svg` (26 files). Stroke CSS lives inline on each path; the rotation pipeline multiplies these by ~72 to build the rosette.
+- **Rotation sources (§1.2)** — `design-assets/Guilloche/App/Rotation/Latin/{A–Z}_Rotation.svg` and `design-assets/Guilloche/App/Rotation/Cyrillic/Uxxxx_Rotation.svg`. Stroke CSS lives inline on each path; the rotation pipeline multiplies these by ~72 to build the rosette.
 - **Blend per-line layers (§1.3, deep-dive source)** — `design-assets/Blended/{A,B,C}/Circle/{Letter}_C_{0–16}.svg`, `…/Square/{Letter}_S_{0–16}.svg`, `…/Polygon/{Letter}_P_{0–16}.svg`, `…/Circle_for_Preview_Section/{Letter}_Pre_{0–8}.svg`. Only **A, B, C** are exported per-line ("3 letters for test" in the PDF). Each indexed file is one transition line; stack them on the same 100% artboard to drive deep-dive translation.
-- **Blend flat composites (all 26 letters)** — `design-assets/Blended_export/SVG/{A–Z}_{Circle,Square,Polygon}.svg` (78) + `{A–Z}_Preview.svg` (26, Recommended Section variant). Each SVG is the full stack already merged — no deep-dive motion, but usable as a static fallback or for the Recommended small card.
+- **Blend flat composites** — `design-assets/Guilloche/App/Blend/Latin/{A–Z}_{Circle,Square,Polygon}.svg` + `{A–Z}_Preview.svg` and `design-assets/Guilloche/App/Blend/Cyrillic/Uxxxx_{Circle,Square,Polygon}.svg`. Each SVG is the full stack already merged — no deep-dive motion, but usable as a static fallback or for the Recommended small card.
 - **Source (master)** — `design-assets/Blended_Letters.ai` (Adobe Illustrator) is the designer's working file; regenerate per-line and composite SVGs from it if the full A–Z per-line set is ever needed.
 
 ## Holograms (`Holograms` frame `51:6377`)
@@ -338,8 +338,8 @@ Section map (for quick lookup):
 
 | PDF section | Covers | Inlined under | Exported assets on disk |
 |---|---|---|---|
-| §1.2 Rotation | Background guilloche construction | **Guilloche patterns** | `design-assets/Rotation/` (26 SVGs) |
-| §1.3 Blend "Path to" | Letter-to-shape morph | **Guilloche patterns** | `design-assets/Blended/{A,B,C}/…` (per-line, 3 letters) + `design-assets/Blended_export/SVG/` (composites, 26 letters) + `design-assets/Blended_Letters.ai` |
+| §1.2 Rotation | Background guilloche construction | **Guilloche patterns** | `design-assets/Guilloche/App/Rotation/` |
+| §1.3 Blend "Path to" | Letter-to-shape morph | **Guilloche patterns** | `design-assets/Blended/{A,B,C}/…` (per-line, 3 letters) + `design-assets/Guilloche/App/Blend/` (composites) + `design-assets/Blended_Letters.ai` |
 | §2 Gradients | 7 time-of-day gradients + Transfusion | **Gradients** | `design-assets/Gradients/*.png` (7) |
 | §3 Zodiac signs | 12 constellation + symbol pairs | **Zodiac** | `design-assets/Zodiac/Сonstellations/*.svg` (12) + `design-assets/Zodiac/Signs/*.svg` (12 + `Background_Lines.svg`) |
 | §4 Moon phases | 8 phases | **Moon phases** | `design-assets/Moon_Phases/*.svg` (8 + `Moon_Background.svg`) |
