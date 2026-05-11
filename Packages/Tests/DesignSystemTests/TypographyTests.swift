@@ -1,4 +1,5 @@
 import CoreText
+import Foundation
 import Testing
 import SwiftUI
 @testable import DesignSystem
@@ -39,21 +40,36 @@ import SwiftUI
             "Настройки Сохранить Удалить",
             "Налаштування Зберегти Видалити ї є ґ і"
         ]
-        let fontNames = [
-            "CormorantSC-Bold",
-            "CormorantSC-SemiBold",
-            "CormorantInfant-SemiBold",
-            "IBMPlexMono-Regular"
+        let fontFiles = [
+            (fileName: "CormorantSC-Bold", postScriptName: "CormorantSC-Bold"),
+            (fileName: "CormorantSC-SemiBold", postScriptName: "CormorantSC-SemiBold"),
+            (fileName: "CormorantInfant-SemiBold", postScriptName: "CormorantInfant-SemiBold"),
+            (fileName: "IBMPlexMono-Regular", postScriptName: "IBMPlexMono-Regular")
         ]
 
-        for fontName in fontNames {
-            let font = CTFontCreateWithName(fontName as CFString, 16, nil)
+        for fontFile in fontFiles {
+            let url = try #require(
+                CCDesign.bundle.url(forResource: fontFile.fileName, withExtension: "ttf"),
+                "\(fontFile.fileName).ttf must be present in the DesignSystem resource bundle"
+            )
+            let provider = try #require(
+                CGDataProvider(url: url as CFURL),
+                "\(fontFile.fileName).ttf must be readable as font data"
+            )
+            let cgFont = try #require(
+                CGFont(provider),
+                "\(fontFile.fileName).ttf must create a CGFont"
+            )
+            #expect(cgFont.postScriptName as String? == fontFile.postScriptName)
+
+            let font = CTFontCreateWithGraphicsFont(cgFont, 16, nil, nil)
+            #expect(CTFontCopyPostScriptName(font) as String == fontFile.postScriptName)
+
             for sample in samples {
-                let characters = Array(sample)
-                let scalars = characters.map { UniChar(String($0).utf16.first!) }
+                let scalars = sample.utf16.map { UniChar($0) }
                 var glyphs = Array(repeating: CGGlyph(), count: scalars.count)
                 let hasGlyphs = CTFontGetGlyphsForCharacters(font, scalars, &glyphs, scalars.count)
-                #expect(hasGlyphs, "\(fontName) is missing glyphs for \(sample)")
+                #expect(hasGlyphs, "\(fontFile.postScriptName) is missing glyphs for \(sample)")
             }
         }
     }
