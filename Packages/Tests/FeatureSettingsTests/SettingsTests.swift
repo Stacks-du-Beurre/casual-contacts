@@ -23,6 +23,27 @@ import CoreModels
         _ = SettingsSheet(onAbout: {}, languagePreference: $preference).body
     }
 
+    @Test func selectedLanguagePreferenceOverridesInheritedSettingsLocale() {
+        #expect(
+            SettingsSheet.displayLocale(
+                inherited: Locale(identifier: "en"),
+                preference: .russian
+            ).identifier == "ru"
+        )
+        #expect(
+            SettingsSheet.displayLocale(
+                inherited: Locale(identifier: "en"),
+                preference: .ukrainian
+            ).identifier == "uk"
+        )
+        #expect(
+            SettingsSheet.displayLocale(
+                inherited: Locale(identifier: "en"),
+                preference: .system
+            ).identifier == "en"
+        )
+    }
+
     @Test func allLanguagePreferencesHaveDisplayNames() {
         for preference in AppLanguagePreference.allCases {
             #expect(String(localized: preference.displayName).isEmpty == false)
@@ -37,6 +58,21 @@ import CoreModels
     @Test func featureSettingsBundleLocalizesLanguageDisplayName() {
         #expect(FeatureSettingsLocalization.localizedString(AppLanguagePreference.russian.displayNameKey, localeIdentifier: "ru") == "Русский")
         #expect(FeatureSettingsLocalization.localizedString(AppLanguagePreference.ukrainian.displayNameKey, localeIdentifier: "uk") == "Українська")
+    }
+
+    @Test func languageSelectionDisplayNameUsesActiveLocale() {
+        #expect(
+            SettingsSheet.languageSelectionDisplayName(
+                for: .russian,
+                locale: Locale(identifier: "ru")
+            ) == "Русский"
+        )
+        #expect(
+            SettingsSheet.languageSelectionDisplayName(
+                for: .ukrainian,
+                locale: Locale(identifier: "uk")
+            ) == "Українська"
+        )
     }
 
     @Test func featureSettingsLocalizationUsesActiveLocaleForRemainingUILiterals() {

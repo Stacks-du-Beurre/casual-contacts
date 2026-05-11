@@ -1,20 +1,23 @@
 import Foundation
 import SwiftUI
+import CoreModels
 
-enum ModuleLocalization {
+enum VisualsLocalization {
     private static let catalog = StringCatalog.load()
 
-    static func text(_ key: String, locale: Locale) -> Text {
-        Text(string(key, locale: locale))
+    static func timeOfDayDisplayName(_ timeOfDay: TimeOfDay, locale: Locale) -> String {
+        string("timeOfDay.\(timeOfDay.rawValue)", locale: locale)
     }
 
-    static func string(_ key: String, locale: Locale, _ arguments: CVarArg...) -> String {
-        let format = localizedFormat(key, locale: locale)
-        guard !arguments.isEmpty else { return format }
-        return String(format: format, locale: locale, arguments: arguments)
+    static func moonPhaseDisplayName(_ phase: MoonPhase, locale: Locale) -> String {
+        string("moonPhase.\(phase.rawValue)", locale: locale)
     }
 
-    private static func localizedFormat(_ key: String, locale: Locale) -> String {
+    static func zodiacDisplayName(_ sign: ZodiacSign, locale: Locale) -> String {
+        string("zodiac.\(sign.rawValue)", locale: locale)
+    }
+
+    static func string(_ key: String, locale: Locale) -> String {
         if let value = bundleValue(for: key, locale: locale) {
             return value
         }

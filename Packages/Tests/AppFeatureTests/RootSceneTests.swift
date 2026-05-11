@@ -22,6 +22,19 @@ import StorageTestSupport
         #expect(RootScene.locale(for: .ukrainian)?.identifier == "uk")
     }
 
+    @Test func languagePreferenceReadsAndPersistsThroughDefaults() {
+        let suiteName = "RootSceneTests.languagePreference.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        #expect(RootScene.languagePreference(in: defaults) == .system)
+
+        RootScene.persistLanguagePreference(.russian, in: defaults)
+
+        #expect(defaults.string(forKey: RootScene.languagePreferenceDefaultsKey) == "ru")
+        #expect(RootScene.languagePreference(in: defaults) == .russian)
+    }
+
     @Test func deleteErrorMessageUsesProvidedLocale() {
         #expect(
             RootScene.deleteErrorMessage(forRecordName: "", locale: Locale(identifier: "ru"))

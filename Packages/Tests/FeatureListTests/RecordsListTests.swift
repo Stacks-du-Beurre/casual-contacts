@@ -36,6 +36,11 @@ struct NoopCardPathProvider: CardPathProvider {
         _ = EmptyStateView(paths: NoopCardPathProvider(), timeOfDay: .sunset).body
     }
 
+    @Test func listChromeLocalizesWithProvidedLocale() {
+        #expect(ModuleLocalization.string("MY CONTACTS", locale: Locale(identifier: "ru")) == "МОИ КОНТАКТЫ")
+        #expect(ModuleLocalization.string("Search", locale: Locale(identifier: "ru")) == "Поиск")
+    }
+
     @Test func sortByDistancePutsClosestFirst() {
         let origin = LocationInfo(latitude: 37.7749, longitude: -122.4194)
         let near = TestRecord(name: "Near", latOffset: 0.001, lngOffset: 0)

@@ -37,9 +37,11 @@ public struct RootScene: Scene {
     /// usable location fix (denied authorization or fix failure). Setting
     /// this to non-nil presents the alert with the message as the body.
     @State private var nearbyDebugError: String?
-    @AppStorage("appLanguagePreference") private var appLanguagePreferenceRawValue = AppLanguagePreference.system.rawValue
+    @State private var appLanguagePreferenceValue: AppLanguagePreference
     @Environment(\.scenePhase) private var scenePhase
     @Namespace private var zoomNamespace
+
+    static let languagePreferenceDefaultsKey = "appLanguagePreference"
 
     /// Inject an already-wired `AppEnvironment` (e.g. `.production()` from the
     /// app target, or `.testing()` in previews/tests). Registering bundled fonts
@@ -56,6 +58,7 @@ public struct RootScene: Scene {
         // boundaries while the app is open.
         let seed = environment.metadataGenerator.metadata(at: Date(), location: nil).timeOfDay
         _currentTimeOfDay = State(initialValue: seed)
+        _appLanguagePreferenceValue = State(initialValue: Self.languagePreference())
         FontRegistration.registerBundledFonts()
     }
 
@@ -76,9 +79,20 @@ public struct RootScene: Scene {
 
     private var appLanguagePreference: Binding<AppLanguagePreference> {
         Binding(
-            get: { AppLanguagePreference(storedValue: appLanguagePreferenceRawValue) },
-            set: { appLanguagePreferenceRawValue = $0.rawValue }
+            get: { appLanguagePreferenceValue },
+            set: { newValue in
+                appLanguagePreferenceValue = newValue
+                Self.persistLanguagePreference(newValue)
+            }
         )
+    }
+
+    static func languagePreference(in defaults: UserDefaults = .standard) -> AppLanguagePreference {
+        AppLanguagePreference(storedValue: defaults.string(forKey: languagePreferenceDefaultsKey) ?? AppLanguagePreference.system.rawValue)
+    }
+
+    static func persistLanguagePreference(_ preference: AppLanguagePreference, in defaults: UserDefaults = .standard) {
+        defaults.set(preference.rawValue, forKey: languagePreferenceDefaultsKey)
     }
 
     public static func locale(for preference: AppLanguagePreference) -> Locale? {
@@ -105,7 +119,8 @@ public struct RootScene: Scene {
     @MainActor
     @ViewBuilder
     private var localizedRootContent: some View {
-        if let locale = Self.locale(for: appLanguagePreference.wrappedValue) {
+        let preference = appLanguagePreference.wrappedValue
+        if let locale = Self.locale(for: preference) {
             rootContent.environment(\.locale, locale)
         } else {
             rootContent

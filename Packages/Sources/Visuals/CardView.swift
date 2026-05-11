@@ -174,6 +174,8 @@ struct CardLayout {
 }
 
 struct CardTextLayer<Backdrop: View>: View {
+    @Environment(\.locale) private var locale
+
     let record: Record
     let attitude: DeviceAttitude
     let layout: CardLayout
@@ -203,7 +205,7 @@ struct CardTextLayer<Backdrop: View>: View {
             .overlay(alignment: .topTrailing) {
                 // Top-right: date + time-of-day label, right-aligned two-line block.
                 // Equatable so it short-circuits on gyro updates (no attitude dep).
-                DateTimeBlock(record: record)
+                DateTimeBlock(record: record, locale: locale)
                     .equatable()
                     .padding(EdgeInsets(top: 14, leading: 0, bottom: 0, trailing: 8))
             }
@@ -237,7 +239,7 @@ struct CardTextLayer<Backdrop: View>: View {
                 // Zodiac label sits just above the top of the moon phase frame.
                 // Equatable — no attitude dep.
                 if let sign = record.zodiacSign {
-                    ZodiacLabel(sign: sign)
+                    ZodiacLabel(sign: sign, locale: locale)
                         .equatable()
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 77, trailing: 8))
                 }
@@ -245,7 +247,7 @@ struct CardTextLayer<Backdrop: View>: View {
             .overlay(alignment: .bottomTrailing) {
                 // Right-bottom: moon phase label, two lines right-aligned, with a
                 // 1pt dot floating 4pt above the label's right edge. Equatable.
-                MoonLabelColumn(phase: record.metadata.moonPhase)
+                MoonLabelColumn(phase: record.metadata.moonPhase, locale: locale)
                     .equatable()
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 8))
             }
@@ -320,26 +322,11 @@ private struct LocationPill<Backdrop: View>: View {
 
 private struct DateTimeBlock: View, Equatable {
     let record: Record
-
-    // DateFormatter allocation is expensive; share a single instance per format.
-    // Sendable as of Swift 6, safe to use across body evaluations.
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d, yyyy"
-        return f
-    }()
-
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "h:mm a"
-        f.amSymbol = "am"
-        f.pmSymbol = "pm"
-        return f
-    }()
+    let locale: Locale
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            Text(Self.dateFormatter.string(from: record.createdAt))
+            Text(Self.formattedDate(record.createdAt, locale: locale))
             Text(timeLine)
         }
         .font(CCDesign.Typography.caption2)
@@ -348,9 +335,23 @@ private struct DateTimeBlock: View, Equatable {
     }
 
     private var timeLine: String {
-        let time = Self.timeFormatter.string(from: record.createdAt)
-        let label = record.metadata.timeOfDay.rawValue.capitalized
+        let time = Self.formattedTime(record.createdAt, locale: locale)
+        let label = VisualsLocalization.timeOfDayDisplayName(record.metadata.timeOfDay, locale: locale)
         return "\(label), \(time)"
+    }
+
+    private static func formattedDate(_ date: Date, locale: Locale) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("MMM d yyyy")
+        return formatter.string(from: date)
+    }
+
+    private static func formattedTime(_ date: Date, locale: Locale) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("j:mm")
+        return formatter.string(from: date)
     }
 }
 
@@ -359,19 +360,21 @@ private struct DateTimeBlock: View, Equatable {
 /// the inner label. Inputs depend only on phase — attitude-independent.
 private struct MoonLabelColumn: View, Equatable {
     let phase: MoonPhase
+    let locale: Locale
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
             Rectangle()
                 .fill(Color.white)
                 .frame(width: 1, height: 1)
-            MoonLabel(phase: phase)
+            MoonLabel(phase: phase, locale: locale)
         }
     }
 }
 
 private struct MoonLabel: View, Equatable {
     let phase: MoonPhase
+    let locale: Locale
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
@@ -386,24 +389,18 @@ private struct MoonLabel: View, Equatable {
 
     /// Two-word split for a two-line right-aligned caption matching Figma `Cards/Full`.
     private var displayWords: [String] {
-        switch phase {
-        case .newMoon: return ["New", "Moon"]
-        case .waxingCrescent: return ["Waxing", "Crescent"]
-        case .firstQuarter: return ["First", "Quarter"]
-        case .waxingGibbous: return ["Waxing", "Gibbous"]
-        case .fullMoon: return ["Full", "Moon"]
-        case .waningGibbous: return ["Waning", "Gibbous"]
-        case .thirdQuarter: return ["Third", "Quarter"]
-        case .waningCrescent: return ["Waning", "Crescent"]
-        }
+        VisualsLocalization.moonPhaseDisplayName(phase, locale: locale)
+            .split(separator: " ")
+            .map(String.init)
     }
 }
 
 private struct ZodiacLabel: View, Equatable {
     let sign: ZodiacSign
+    let locale: Locale
 
     var body: some View {
-        Text(sign.rawValue.capitalized)
+        Text(VisualsLocalization.zodiacDisplayName(sign, locale: locale))
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(.white)
     }

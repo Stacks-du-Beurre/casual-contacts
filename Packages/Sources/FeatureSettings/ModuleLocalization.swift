@@ -30,12 +30,37 @@ enum FeatureSettingsLocalization {
     }
 
     private static func localizedFormat(_ key: String, locale: Locale) -> String {
+        if let value = bundleValue(for: key, locale: locale) {
+            return value
+        }
+
         let systemValue = String(localized: String.LocalizationValue(key), bundle: .module, locale: locale)
         if systemValue != key {
             return systemValue
         }
 
         return catalogValue(for: key, locale: locale) ?? systemValue
+    }
+
+    private static func bundleValue(for key: String, locale: Locale) -> String? {
+        for identifier in candidateIdentifiers(for: locale) {
+            guard
+                let url = Bundle.module.url(
+                    forResource: "Localizable",
+                    withExtension: "strings",
+                    subdirectory: "\(identifier).lproj"
+                ),
+                let data = try? Data(contentsOf: url),
+                let strings = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String],
+                let value = strings[key],
+                value != key
+            else {
+                continue
+            }
+
+            return value
+        }
+        return nil
     }
 
     private static func catalogValue(for key: String, locale: Locale) -> String? {

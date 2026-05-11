@@ -48,4 +48,10 @@ struct StubCardPathProvider: CardPathProvider {
             photo: Image(systemName: "photo")
         ).body
     }
+
+    @Test func cardMetadataLocalizesWithProvidedLocale() {
+        #expect(VisualsLocalization.timeOfDayDisplayName(.night, locale: Locale(identifier: "ru")) == "Ночь")
+        #expect(VisualsLocalization.moonPhaseDisplayName(.waningCrescent, locale: Locale(identifier: "ru")) == "Убывающий серп")
+        #expect(VisualsLocalization.zodiacDisplayName(.virgo, locale: Locale(identifier: "uk")) == "Діва")
+    }
 }

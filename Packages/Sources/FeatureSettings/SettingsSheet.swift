@@ -6,11 +6,12 @@ import DesignSystem
 public struct SettingsSheet: View {
 
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.locale) private var locale
+    @Environment(\.locale) private var inheritedLocale
     @State private var syncEnabled = false
     @State private var advancedCardStackEnabled = false
     @State private var path: [Route] = []
     @State private var locationAuthorization: LocationAuthorization = .notDetermined
+    @State private var showingLanguagePopover = false
     @Binding private var languagePreference: AppLanguagePreference
     #if os(iOS)
     @State private var detent: PresentationDetent = .medium
@@ -74,11 +75,12 @@ public struct SettingsSheet: View {
                         if let motionService {
                             MotionDebugScene(service: motionService)
                         } else {
-                            FeatureSettingsLocalization.text("Motion service unavailable", locale: locale)
+                            FeatureSettingsLocalization.text("Motion service unavailable", locale: displayLocale)
                         }
                     }
                 }
         }
+        .environment(\.locale, displayLocale)
         .onAppear { locationAuthorization = readLocationAuthorization() }
         #if os(iOS)
         .presentationDetents([.medium, .large], selection: $detent)
@@ -108,7 +110,7 @@ public struct SettingsSheet: View {
     }
 
     private var header: some View {
-        FeatureSettingsLocalization.text("Settings", locale: locale)
+        FeatureSettingsLocalization.text("Settings", locale: displayLocale)
             .font(CCDesign.Typography.headline)
             .tracking(CCDesign.Typography.Tracking.headline)
             .textCase(.uppercase)
@@ -180,22 +182,48 @@ public struct SettingsSheet: View {
     }
 
     private var languagePickerRow: some View {
-        HStack(spacing: 12) {
-            FeatureSettingsLocalization.text("settings.language", locale: locale)
-                .font(CCDesign.Typography.description)
-                .tracking(CCDesign.Typography.Tracking.description)
-                .foregroundStyle(SettingsPalette.label(scheme))
-                .frame(maxWidth: .infinity, alignment: .leading)
+        Button {
+            showingLanguagePopover = true
+        } label: {
+            HStack(spacing: 12) {
+                FeatureSettingsLocalization.text("settings.language", locale: displayLocale)
+                    .font(CCDesign.Typography.description)
+                    .tracking(CCDesign.Typography.Tracking.description)
+                    .foregroundStyle(SettingsPalette.label(scheme))
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            Picker(FeatureSettingsLocalization.string("settings.language", locale: locale), selection: $languagePreference) {
-                ForEach(AppLanguagePreference.allCases) { preference in
-                    Text(FeatureSettingsLocalization.languageDisplayName(for: preference, locale: locale)).tag(preference)
-                }
+                Text(Self.languageSelectionDisplayName(for: languagePreference, locale: displayLocale))
+                    .font(CCDesign.Typography.description)
+                    .tracking(CCDesign.Typography.Tracking.description)
+                    .foregroundStyle(SettingsPalette.footer(scheme))
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(SettingsPalette.icon(scheme))
+                    .frame(width: 16, height: 43)
+                    .accessibilityHidden(true)
             }
-            .labelsHidden()
+            .padding(.horizontal, 16)
+            .frame(minHeight: 43)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 16)
-        .frame(minHeight: 43)
+        .buttonStyle(.plain)
+        .accessibilityValue(Self.languageSelectionDisplayName(for: languagePreference, locale: displayLocale))
+        .popover(isPresented: $showingLanguagePopover, arrowEdge: .trailing) {
+            LanguagePreferencePopover(
+                selection: $languagePreference,
+                locale: displayLocale,
+                onSelect: { showingLanguagePopover = false }
+            )
+            #if os(iOS)
+            .presentationCompactAdaptation(.popover)
+            #endif
+        }
+    }
+
+    static func languageSelectionDisplayName(for preference: AppLanguagePreference, locale: Locale) -> String {
+        FeatureSettingsLocalization.languageDisplayName(for: preference, locale: locale)
     }
 
     private func handleLocationToggleTapped() {
@@ -224,6 +252,56 @@ public struct SettingsSheet: View {
 
     private var versionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        return FeatureSettingsLocalization.string("Casual Contacts Version %@", locale: locale, version)
+        return FeatureSettingsLocalization.string("Casual Contacts Version %@", locale: displayLocale, version)
+    }
+
+    private var displayLocale: Locale {
+        Self.displayLocale(inherited: inheritedLocale, preference: languagePreference)
+    }
+
+    static func displayLocale(inherited locale: Locale, preference: AppLanguagePreference) -> Locale {
+        guard let identifier = preference.localeIdentifier else { return locale }
+        return Locale(identifier: identifier)
+    }
+}
+
+private struct LanguagePreferencePopover: View {
+    @Environment(\.colorScheme) private var scheme
+    @Binding var selection: AppLanguagePreference
+    let locale: Locale
+    let onSelect: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(AppLanguagePreference.allCases) { preference in
+                Button {
+                    selection = preference
+                    onSelect()
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(SettingsSheet.languageSelectionDisplayName(for: preference, locale: locale))
+                            .font(CCDesign.Typography.description)
+                            .tracking(CCDesign.Typography.Tracking.description)
+                            .foregroundStyle(SettingsPalette.label(scheme))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if preference == selection {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(SettingsPalette.icon(scheme))
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(preference == selection ? .isSelected : [])
+            }
+        }
+        .frame(width: 240)
+        .padding(.vertical, 8)
+        .background(SettingsPalette.rowBackground(scheme))
     }
 }

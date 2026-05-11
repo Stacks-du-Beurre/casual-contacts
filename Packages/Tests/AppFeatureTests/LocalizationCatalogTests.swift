@@ -13,7 +13,8 @@ import Testing
             "Sources/FeatureCreate/Resources/Localizable.xcstrings",
             "Sources/FeatureDetail/Resources/Localizable.xcstrings",
             "Sources/FeatureList/Resources/Localizable.xcstrings",
-            "Sources/FeatureSettings/Resources/Localizable.xcstrings"
+            "Sources/FeatureSettings/Resources/Localizable.xcstrings",
+            "Sources/Visuals/Resources/Localizable.xcstrings"
         ]
 
         let discoveredCatalogPaths = try discoveredStringCatalogPaths(in: packageRoot)
