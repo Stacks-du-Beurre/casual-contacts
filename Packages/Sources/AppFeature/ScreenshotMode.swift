@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import CoreModels
 
 /// Launch-argument switches that put the app into a deterministic state for
 /// App Store screenshot generation. The UI test target enables these via
@@ -12,6 +13,7 @@ import SwiftUI
 ///     "-ScreenshotMode", "YES",
 ///     "-ScreenshotSeed", "YES",
 ///     "-AppearanceOverride", "dark",
+///     "-ScreenshotLanguage", "ru",
 /// ]
 /// ```
 public enum ScreenshotMode {
@@ -42,6 +44,26 @@ public enum ScreenshotMode {
         }
     }
 
+    /// Forces the app's in-app language preference for localized screenshot
+    /// runs. Unsupported values intentionally fall through to nil so normal
+    /// launches and future locale typos don't persist a bad preference.
+    public static var languagePreferenceOverride: AppLanguagePreference? {
+        languagePreferenceOverride(for: ProcessInfo.processInfo.arguments)
+    }
+
+    public static func languagePreferenceOverride(for arguments: [String]) -> AppLanguagePreference? {
+        switch value(for: "-ScreenshotLanguage", in: arguments)?.lowercased() {
+        case AppLanguagePreference.english.rawValue:
+            .english
+        case AppLanguagePreference.russian.rawValue:
+            .russian
+        case AppLanguagePreference.ukrainian.rawValue:
+            .ukrainian
+        default:
+            nil
+        }
+    }
+
     /// Seeds curated records into the live store if `shouldSeed` is on.
     /// Idempotent: re-running with the same fixtures is a no-op because
     /// `RecordStore.insert` upserts on the supplied UUID.
@@ -63,10 +85,13 @@ public enum ScreenshotMode {
     }
 
     private static func value(for name: String) -> String? {
-        let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: name), i + 1 < args.count else {
+        value(for: name, in: ProcessInfo.processInfo.arguments)
+    }
+
+    private static func value(for name: String, in arguments: [String]) -> String? {
+        guard let i = arguments.firstIndex(of: name), i + 1 < arguments.count else {
             return nil
         }
-        return args[i + 1]
+        return arguments[i + 1]
     }
 }

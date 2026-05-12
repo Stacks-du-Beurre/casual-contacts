@@ -22,6 +22,17 @@ import StorageTestSupport
         #expect(RootScene.locale(for: .ukrainian)?.identifier == "uk")
     }
 
+    @Test func screenshotLanguageOverrideUsesSupportedLanguageArguments() {
+        #expect(ScreenshotMode.languagePreferenceOverride(for: ["-ScreenshotLanguage", "en"]) == .english)
+        #expect(ScreenshotMode.languagePreferenceOverride(for: ["-ScreenshotLanguage", "ru"]) == .russian)
+        #expect(ScreenshotMode.languagePreferenceOverride(for: ["-ScreenshotLanguage", "uk"]) == .ukrainian)
+    }
+
+    @Test func screenshotLanguageOverrideIgnoresMissingOrUnsupportedArguments() {
+        #expect(ScreenshotMode.languagePreferenceOverride(for: []) == nil)
+        #expect(ScreenshotMode.languagePreferenceOverride(for: ["-ScreenshotLanguage", "fr"]) == nil)
+    }
+
     @Test func rootLocaleAlwaysResolvesToConcreteLocale() {
         let current = Locale(identifier: "en_US")
 

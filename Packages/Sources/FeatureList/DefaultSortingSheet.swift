@@ -94,6 +94,7 @@ struct DefaultSortingSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected == .distance ? .isSelected : [])
+        .accessibilityIdentifier("sortOption_distance")
     }
 
     private var cancelCard: some View {

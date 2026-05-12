@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Composite raw App Store screenshots into Apple device-frame templates.
 #
-# Operates on whatever PNGs already exist in Screenshots/{light,dark}/
+# Operates on whatever PNGs already exist in Screenshots/<language>/{light,dark}/
 # (produced by Tools/generate-screenshots.sh). Doesn't re-run the UI
 # tests — fast to iterate on framing alone.
 #
@@ -12,8 +12,9 @@
 # runs reuse the cache unless the SVG is newer.
 #
 # Usage:
-#   Tools/frame-screenshots.sh                                  # both appearances, default frame
+#   Tools/frame-screenshots.sh                                  # all languages, both appearances, default frame
 #   Tools/frame-screenshots.sh --appearance dark                # only dark mode
+#   Tools/frame-screenshots.sh --language uk                    # only Ukrainian
 #   Tools/frame-screenshots.sh --frame iphone-17-pro-max-black-titanium
 #       Use a different template. Argument is the file name in
 #       Tools/frame-templates/ without the .svg/.png extension.
@@ -28,6 +29,7 @@ COMPOSITOR="$REPO_ROOT/Tools/frame_compositor.py"
 
 frame_name="iphone-17-pro-max-natural-titanium"
 appearance_filter=""
+language_filter=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --frame)
@@ -41,8 +43,15 @@ while [ $# -gt 0 ]; do
                 *) echo "Unknown appearance: $1 (expected light or dark)" >&2; exit 1 ;;
             esac
             ;;
+        --language)
+            shift
+            case "$1" in
+                en|ru|uk) language_filter="$1" ;;
+                *) echo "Unknown language: $1 (expected en, ru, or uk)" >&2; exit 1 ;;
+            esac
+            ;;
         -h|--help)
-            sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -82,20 +91,27 @@ if [ ! -x "$VENV_DIR/bin/python3" ]; then
 fi
 
 PYTHON="$VENV_DIR/bin/python3"
+LANGUAGES=("en" "ru" "uk")
 APPEARANCES=("light" "dark")
 
-for appearance in "${APPEARANCES[@]}"; do
-    if [ -n "$appearance_filter" ] && [ "$appearance" != "$appearance_filter" ]; then
+for language in "${LANGUAGES[@]}"; do
+    if [ -n "$language_filter" ] && [ "$language" != "$language_filter" ]; then
         continue
     fi
-    dir="$SCREENSHOTS_DIR/$appearance"
-    if [ ! -d "$dir" ]; then
-        echo "Skipping $appearance — $dir doesn't exist. Run Tools/generate-screenshots.sh first." >&2
-        continue
-    fi
-    echo
-    echo "=== Framing $appearance ($frame_name) ==="
-    "$PYTHON" "$COMPOSITOR" "$template" "$dir"
+
+    for appearance in "${APPEARANCES[@]}"; do
+        if [ -n "$appearance_filter" ] && [ "$appearance" != "$appearance_filter" ]; then
+            continue
+        fi
+        dir="$SCREENSHOTS_DIR/$language/$appearance"
+        if [ ! -d "$dir" ]; then
+            echo "Skipping $language/$appearance — $dir doesn't exist. Run Tools/generate-screenshots.sh first." >&2
+            continue
+        fi
+        echo
+        echo "=== Framing $language/$appearance ($frame_name) ==="
+        "$PYTHON" "$COMPOSITOR" "$template" "$dir"
+    done
 done
 
 echo

@@ -3,9 +3,8 @@ import XCTest
 /// Generates the App Store / TestFlight marketing screenshots.
 ///
 /// Drive this from `Tools/generate-screenshots.sh`, which loops over the
-/// supported devices and appearances and sets `SCREENSHOT_OUTPUT_DIR`,
-/// `SCREENSHOT_DEVICE_TAG`, and `SCREENSHOT_APPEARANCE`. Each test method
-/// captures one shot. Six shots × two appearances × two devices = 24 PNGs.
+/// supported languages and appearances and sets `SCREENSHOT_LANGUAGE` and
+/// `SCREENSHOT_APPEARANCE`. Each test method captures one shot.
 ///
 /// Don't run this class as part of the regular UI test suite — the shell
 /// script invokes it explicitly via `-only-testing:`.
@@ -47,7 +46,7 @@ final class ScreenshotTests: XCTestCase {
         // mid-animation snapshot doesn't read empty.
         sleep(1)
         XCTAssertTrue(
-            app.buttons["By distance"].waitForExistence(timeout: 10),
+            app.buttons["sortOption_distance"].waitForExistence(timeout: 10),
             "Sort sheet never presented"
         )
         sleep(1)
@@ -143,7 +142,7 @@ final class ScreenshotTests: XCTestCase {
         // Sheet animates in; without this beat the existence check has been
         // observed to fire mid-transition and miss the row.
         sleep(1)
-        let row = app.buttons["By distance"]
+        let row = app.buttons["sortOption_distance"]
         XCTAssertTrue(row.waitForExistence(timeout: 10), "Distance sort row not found")
         row.tap()
     }
@@ -170,15 +169,19 @@ final class ScreenshotTests: XCTestCase {
         if seeded {
             args += ["-ScreenshotSeed", "YES"]
         }
-        // The driver script forwards SCREENSHOT_APPEARANCE via the
+        // The driver script forwards SCREENSHOT_APPEARANCE and
+        // SCREENSHOT_LANGUAGE via the
         // `TEST_RUNNER_` prefix convention so xcodebuild propagates it into
         // the test runner's environment. We then push it on as a launch
         // argument to the app under test, where `RootScene` reads it via
-        // `ScreenshotMode.appearanceOverride` and applies
-        // `.preferredColorScheme(...)`.
+        // `ScreenshotMode` and applies deterministic appearance + locale.
         if let appearance = ProcessInfo.processInfo.environment["SCREENSHOT_APPEARANCE"]?.lowercased(),
            appearance == "light" || appearance == "dark" {
             args += ["-AppearanceOverride", appearance]
+        }
+        if let language = ProcessInfo.processInfo.environment["SCREENSHOT_LANGUAGE"]?.lowercased(),
+           language == "en" || language == "ru" || language == "uk" {
+            args += ["-ScreenshotLanguage", language]
         }
         app.launchArguments = args
         app.launch()

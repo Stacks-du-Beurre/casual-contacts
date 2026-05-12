@@ -58,7 +58,7 @@ public struct RootScene: Scene {
         // boundaries while the app is open.
         let seed = environment.metadataGenerator.metadata(at: Date(), location: nil).timeOfDay
         _currentTimeOfDay = State(initialValue: seed)
-        _appLanguagePreferenceValue = State(initialValue: Self.languagePreference())
+        _appLanguagePreferenceValue = State(initialValue: Self.initialLanguagePreference())
         FontRegistration.registerBundledFonts()
     }
 
@@ -93,6 +93,10 @@ public struct RootScene: Scene {
 
     static func persistLanguagePreference(_ preference: AppLanguagePreference, in defaults: UserDefaults = .standard) {
         defaults.set(preference.rawValue, forKey: languagePreferenceDefaultsKey)
+    }
+
+    static func initialLanguagePreference(in defaults: UserDefaults = .standard) -> AppLanguagePreference {
+        ScreenshotMode.languagePreferenceOverride ?? Self.languagePreference(in: defaults)
     }
 
     public static func locale(for preference: AppLanguagePreference) -> Locale? {

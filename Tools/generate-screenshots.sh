@@ -2,24 +2,27 @@
 # Generate App Store screenshots for Casual Contacts.
 #
 # Runs the `ScreenshotTests` UI test class against iPhone 17 Pro Max (the
-# 6.9" required size) twice — once for light appearance, once for dark.
+# 6.9" required size) for every supported app language and appearance.
 # Each test attaches a named PNG to the xcresult bundle; this script
-# extracts them into `Screenshots/<appearance>/<screen>.png` at native
-# 1320×2868 resolution. These PNGs go straight to App Store Connect.
+# extracts them into `Screenshots/<language>/<appearance>/<screen>.png` at
+# native 1320×2868 resolution. These PNGs go straight to App Store Connect.
 #
 # For the framed marketing variants, run Tools/frame-screenshots.sh
 # after this script — it operates on whatever PNGs already exist in
-# Screenshots/{light,dark}/ and is fast to iterate on independently.
+# Screenshots/<language>/{light,dark}/ and is fast to iterate on independently.
 #
 # Output layout:
 #   Screenshots/
-#     light/01-empty-state.png …
-#     dark/01-empty-state.png …
+#     en/light/01-empty-state.png …
+#     en/dark/01-empty-state.png …
+#     ru/light/01-empty-state.png …
+#     uk/dark/01-empty-state.png …
 #
 # Usage:
-#   Tools/generate-screenshots.sh                        # both appearances
+#   Tools/generate-screenshots.sh                        # all languages, both appearances
 #   Tools/generate-screenshots.sh --appearance dark      # only dark mode
-#   Tools/generate-screenshots.sh --appearance light     # only light mode
+#   Tools/generate-screenshots.sh --language ru          # only Russian
+#   Tools/generate-screenshots.sh --language uk --appearance light
 
 set -euo pipefail
 
@@ -27,12 +30,14 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="$REPO_ROOT/CasualContacts"
 OUTPUT_DIR="$REPO_ROOT/Screenshots"
 SIM_NAME="iPhone 17 Pro Max"
+LANGUAGES=("en" "ru" "uk")
 APPEARANCES=("light" "dark")
 
 TMP_RESULTS_DIR="$(mktemp -d -t cc-screenshots)"
 trap 'rm -rf "$TMP_RESULTS_DIR"' EXIT
 
 appearance_filter=""
+language_filter=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --appearance)
@@ -42,8 +47,15 @@ while [ $# -gt 0 ]; do
                 *) echo "Unknown appearance: $1 (expected light or dark)" >&2; exit 1 ;;
             esac
             ;;
+        --language)
+            shift
+            case "$1" in
+                en|ru|uk) language_filter="$1" ;;
+                *) echo "Unknown language: $1 (expected en, ru, or uk)" >&2; exit 1 ;;
+            esac
+            ;;
         -h|--help)
-            sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -119,52 +131,59 @@ PY
     echo "${count:-0}"
 }
 
-for appearance in "${APPEARANCES[@]}"; do
-    if [ -n "$appearance_filter" ] && [ "$appearance" != "$appearance_filter" ]; then
+for language in "${LANGUAGES[@]}"; do
+    if [ -n "$language_filter" ] && [ "$language" != "$language_filter" ]; then
         continue
     fi
 
-    out="$OUTPUT_DIR/$appearance"
-    rm -rf "$out"
-    mkdir -p "$out"
+    for appearance in "${APPEARANCES[@]}"; do
+        if [ -n "$appearance_filter" ] && [ "$appearance" != "$appearance_filter" ]; then
+            continue
+        fi
 
-    result_bundle="$TMP_RESULTS_DIR/${appearance}.xcresult"
-    rm -rf "$result_bundle"
+        out="$OUTPUT_DIR/$language/$appearance"
+        rm -rf "$out"
+        mkdir -p "$out"
 
-    echo
-    echo "=== $SIM_NAME — $appearance ==="
-    echo "Output: $out"
+        result_bundle="$TMP_RESULTS_DIR/${language}-${appearance}.xcresult"
+        rm -rf "$result_bundle"
 
-    # Pass the appearance into the test runner via the `TEST_RUNNER_*`
-    # env-var convention. xcodebuild strips the prefix and forwards the
-    # value into the test process — the only reliable way to inject
-    # config since the test runs in a separate process inside the
-    # simulator (a clone, in fact). The test code reads
-    # SCREENSHOT_APPEARANCE from ProcessInfo and pushes
-    # `-AppearanceOverride <appearance>` onto the app's launchArguments.
-    #
-    # Don't bail on individual test failures — a flaky wait in one test
-    # shouldn't lose the screenshots from the other five. Extract
-    # whatever attachments did make it into the xcresult, warn after.
-    (cd "$APP_DIR" && \
-        TEST_RUNNER_SCREENSHOT_APPEARANCE="$appearance" \
-        xcodebuild test \
-            -scheme CasualContacts \
-            -destination "platform=iOS Simulator,name=$SIM_NAME" \
-            -only-testing:CasualContactsUITests/ScreenshotTests \
-            -resultBundlePath "$result_bundle" \
-            -quiet) || echo "Note: at least one test failed for $appearance — extracting whatever PNGs we did capture." >&2
+        echo
+        echo "=== $SIM_NAME — $language — $appearance ==="
+        echo "Output: $out"
 
-    if [ ! -d "$result_bundle" ]; then
-        echo "ERROR: no result bundle at $result_bundle. Build likely failed." >&2
-        exit 1
-    fi
+        # Pass the language and appearance into the test runner via the
+        # `TEST_RUNNER_*` env-var convention. xcodebuild strips the prefix and
+        # forwards the value into the test process — the only reliable way to
+        # inject config since the test runs in a separate process inside the
+        # simulator (a clone, in fact). The test code reads SCREENSHOT_LANGUAGE
+        # and SCREENSHOT_APPEARANCE from ProcessInfo and pushes launch
+        # arguments onto the app under test.
+        #
+        # Don't bail on individual test failures — a flaky wait in one test
+        # shouldn't lose the screenshots from the other five. Extract whatever
+        # attachments did make it into the xcresult, warn after.
+        (cd "$APP_DIR" && \
+            TEST_RUNNER_SCREENSHOT_LANGUAGE="$language" \
+            TEST_RUNNER_SCREENSHOT_APPEARANCE="$appearance" \
+            xcodebuild test \
+                -scheme CasualContacts \
+                -destination "platform=iOS Simulator,name=$SIM_NAME" \
+                -only-testing:CasualContactsUITests/ScreenshotTests \
+                -resultBundlePath "$result_bundle" \
+                -quiet) || echo "Note: at least one test failed for $language/$appearance — extracting whatever PNGs we did capture." >&2
 
-    count="$(extract_attachments "$result_bundle" "$out")"
-    echo "Extracted $count PNGs."
-    if [ "$count" -lt 6 ]; then
-        echo "Warning: expected 6 PNGs, got $count for $appearance." >&2
-    fi
+        if [ ! -d "$result_bundle" ]; then
+            echo "ERROR: no result bundle at $result_bundle. Build likely failed." >&2
+            exit 1
+        fi
+
+        count="$(extract_attachments "$result_bundle" "$out")"
+        echo "Extracted $count PNGs."
+        if [ "$count" -lt 6 ]; then
+            echo "Warning: expected 6 PNGs, got $count for $language/$appearance." >&2
+        fi
+    done
 done
 
 echo
