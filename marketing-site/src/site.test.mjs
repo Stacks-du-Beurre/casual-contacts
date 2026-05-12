@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { GENERATED_SITE_PATHS, shouldBuildMarketingSite } from "../precommit-build.mjs";
 import { buildSite } from "./site.mjs";
 
 test("buildSite emits every page for each locale", () => {
@@ -48,4 +49,28 @@ test("support contact helper lists are not nested inside paragraphs", () => {
   assert.doesNotMatch(files["support.html"], /<p><span class="privacy-aside">[\s\S]*?<dl class="permissions">/);
   assert.doesNotMatch(files["ru/support.html"], /<p><span class="privacy-aside">[\s\S]*?<dl class="permissions">/);
   assert.doesNotMatch(files["uk/support.html"], /<p><span class="privacy-aside">[\s\S]*?<dl class="permissions">/);
+});
+
+test("pre-commit generation runs only when marketing pipeline files are staged", () => {
+  assert.equal(shouldBuildMarketingSite(["marketing-site/src/locales/en.mjs"]), true);
+  assert.equal(shouldBuildMarketingSite(["marketing-site/build.mjs"]), true);
+  assert.equal(shouldBuildMarketingSite(["marketing-site/index.html"]), false);
+  assert.equal(shouldBuildMarketingSite(["Packages/Sources/Visuals/CardView.swift"]), false);
+});
+
+test("pre-commit generation stages every generated marketing page", () => {
+  assert.deepEqual(
+    GENERATED_SITE_PATHS,
+    [
+      "marketing-site/index.html",
+      "marketing-site/privacy.html",
+      "marketing-site/support.html",
+      "marketing-site/ru/index.html",
+      "marketing-site/ru/privacy.html",
+      "marketing-site/ru/support.html",
+      "marketing-site/uk/index.html",
+      "marketing-site/uk/privacy.html",
+      "marketing-site/uk/support.html",
+    ],
+  );
 });

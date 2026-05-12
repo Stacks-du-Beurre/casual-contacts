@@ -82,7 +82,7 @@ export const en = {
       colophon: {
         num: "&sect; 06",
         eyebrow: "colophon",
-        heading: "Made by three people, one note at a time.",
+        heading: "Made by two people, one note at a time.",
         creditsLabel: "credits",
         engineeringRole: "Concept &amp; engineering",
         designRole: "Design",
