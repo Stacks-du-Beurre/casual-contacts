@@ -76,6 +76,8 @@ public struct EmptyStateView: View {
             depthScale: blendDepthScale,
             reverseDepthOrder: blendTuning.reverseDepthOrder,
             reverseMotionDirection: blendTuning.reverseMotionDirection,
+            movementScaleX: blendTuning.guillocheMovementScaleX,
+            movementScaleY: blendTuning.guillocheMovementScaleY,
             perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
         let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
@@ -110,6 +112,8 @@ public struct EmptyStateView: View {
                 reversed: true,
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
                 reverseMotionDirection: blendTuning.reverseMotionDirection,
+                movementScaleX: blendTuning.guillocheMovementScaleX,
+                movementScaleY: blendTuning.guillocheMovementScaleY,
                 perspectiveAmount: elementDepthTuning.perspectiveAmount
             )
             .frame(width: 184, height: 160)

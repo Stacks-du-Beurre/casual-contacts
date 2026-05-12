@@ -12,6 +12,8 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let reversed: Bool
     public let reverseDepthOrder: Bool
     public let reverseMotionDirection: Bool
+    public let movementScaleX: Double
+    public let movementScaleY: Double
     public let perspectiveAmount: Double
     public let skewAmount: Double
     public var reveal: Double
@@ -43,6 +45,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         reversed: Bool = false,
         reverseDepthOrder: Bool = false,
         reverseMotionDirection: Bool = false,
+        movementScaleX: Double = 1.0,
+        movementScaleY: Double = 1.0,
         perspectiveAmount: Double = 1.0,
         skewAmount: Double = 0.08,
         reveal: Double = 1.0
@@ -55,6 +59,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.reversed = reversed
         self.reverseDepthOrder = reverseDepthOrder
         self.reverseMotionDirection = reverseMotionDirection
+        self.movementScaleX = movementScaleX
+        self.movementScaleY = movementScaleY
         self.perspectiveAmount = perspectiveAmount
         self.skewAmount = skewAmount
         self.reveal = reveal
@@ -87,6 +93,8 @@ public struct GuillocheBlendLayer: View, Animatable {
                         reversed: reversed,
                         reverseDepthOrder: reverseDepthOrder,
                         reverseMotionDirection: reverseMotionDirection,
+                        movementScaleX: movementScaleX,
+                        movementScaleY: movementScaleY,
                         perspectiveAmount: perspectiveAmount
                     ))
             }
@@ -119,6 +127,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         reversed: Bool = false,
         reverseDepthOrder: Bool = false,
         reverseMotionDirection: Bool = false,
+        movementScaleX: Double = 1.0,
+        movementScaleY: Double = 1.0,
         perspectiveAmount: Double = 1.0
     ) -> CGSize {
         // The anchored end of the stack stays put; the opposite end swims by
@@ -138,8 +148,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         )
         let direction: CGFloat = reverseMotionDirection ? -1 : 1
         return CGSize(
-            width: direction * CGFloat(attitude.roll) * depth,
-            height: direction * CGFloat(attitude.pitch) * depth
+            width: direction * CGFloat(attitude.roll) * depth * CGFloat(movementScaleX),
+            height: direction * CGFloat(attitude.pitch) * depth * CGFloat(movementScaleY)
         )
     }
 
@@ -158,6 +168,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         maxLayer: Int = GuillocheBlendLayer.defaultMaxDepthLayer,
         reverseDepthOrder: Bool = false,
         reverseMotionDirection: Bool = false,
+        movementScaleX: Double = 1.0,
+        movementScaleY: Double = 1.0,
         perspectiveAmount: Double = 1.0
     ) -> CGSize {
         let depth = perspectiveDepth(
@@ -169,8 +181,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         )
         let direction: CGFloat = reverseMotionDirection ? -1 : 1
         return CGSize(
-            width: direction * CGFloat(attitude.roll) * depth,
-            height: direction * CGFloat(attitude.pitch) * depth
+            width: direction * CGFloat(attitude.roll) * depth * CGFloat(movementScaleX),
+            height: direction * CGFloat(attitude.pitch) * depth * CGFloat(movementScaleY)
         )
     }
 
@@ -221,6 +233,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         depthScale: CGFloat = GuillocheBlendLayer.defaultDepthScale,
         reverseDepthOrder: Bool = false,
         reverseMotionDirection: Bool = false,
+        movementScaleX: Double = 1.0,
+        movementScaleY: Double = 1.0,
         perspectiveAmount: Double = 1.0
     ) -> CGSize {
         let maxLayer = max(pathCount - 1, 0)
@@ -231,6 +245,8 @@ public struct GuillocheBlendLayer: View, Animatable {
             maxLayer: maxLayer,
             reverseDepthOrder: reverseDepthOrder,
             reverseMotionDirection: reverseMotionDirection,
+            movementScaleX: movementScaleX,
+            movementScaleY: movementScaleY,
             perspectiveAmount: perspectiveAmount
         )
     }

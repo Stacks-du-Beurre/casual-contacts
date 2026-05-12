@@ -301,6 +301,22 @@ private struct DeveloperSettingsContent: View {
                 range: 0...20,
                 format: .decimal
             )
+            SettingsDivider()
+            SliderRow(
+                label: "Guilloche movement X",
+                value: $cardBlendTuning.guillocheMovementScaleX,
+                range: 0...3,
+                format: .decimal,
+                tick: SliderRow.Tick(value: CardBlendTuning.Defaults.guillocheMovementScaleX, label: "0.8")
+            )
+            SettingsDivider()
+            SliderRow(
+                label: "Guilloche movement Y",
+                value: $cardBlendTuning.guillocheMovementScaleY,
+                range: 0...3,
+                format: .decimal,
+                tick: SliderRow.Tick(value: CardBlendTuning.Defaults.guillocheMovementScaleY, label: "0.8")
+            )
         }
     }
 

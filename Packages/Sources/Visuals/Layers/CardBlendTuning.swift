@@ -17,8 +17,10 @@ public final class CardBlendTuning {
         public static let depthScale: Double = 5.0
         public static let hideBackdrop: Bool = false
         public static let reverseDepthOrder: Bool = false
-        public static let reverseMotionDirection: Bool = false
+        public static let reverseMotionDirection: Bool = true
         public static let rotationGuillocheMovesInsteadOfRotates: Bool = false
+        public static let guillocheMovementScaleX: Double = 0.8
+        public static let guillocheMovementScaleY: Double = 0.8
     }
 
     private enum Key {
@@ -27,6 +29,8 @@ public final class CardBlendTuning {
         static let reverseDepthOrder = "CardBlendTuning.reverseDepthOrder"
         static let reverseMotionDirection = "CardBlendTuning.reverseMotionDirection"
         static let rotationGuillocheMovesInsteadOfRotates = "CardBlendTuning.rotationGuillocheMovesInsteadOfRotates"
+        static let guillocheMovementScaleX = "CardBlendTuning.guillocheMovementScaleX"
+        static let guillocheMovementScaleY = "CardBlendTuning.guillocheMovementScaleY"
     }
 
     public var depthScale: Double {
@@ -67,6 +71,18 @@ public final class CardBlendTuning {
         }
     }
 
+    /// Multiplies the guilloche stack's roll-driven x translation after depth
+    /// projection. Defaults below full strength to keep card motion restrained.
+    public var guillocheMovementScaleX: Double {
+        didSet { defaults.set(guillocheMovementScaleX, forKey: Key.guillocheMovementScaleX) }
+    }
+
+    /// Multiplies the guilloche stack's pitch-driven y translation after depth
+    /// projection. Defaults below full strength to keep card motion restrained.
+    public var guillocheMovementScaleY: Double {
+        didSet { defaults.set(guillocheMovementScaleY, forKey: Key.guillocheMovementScaleY) }
+    }
+
     public var motionDirectionMultiplier: Double {
         reverseMotionDirection ? -1 : 1
     }
@@ -88,6 +104,16 @@ public final class CardBlendTuning {
             Key.rotationGuillocheMovesInsteadOfRotates,
             fallback: Defaults.rotationGuillocheMovesInsteadOfRotates
         )
+        self.guillocheMovementScaleX = Self.read(
+            defaults,
+            Key.guillocheMovementScaleX,
+            fallback: Defaults.guillocheMovementScaleX
+        )
+        self.guillocheMovementScaleY = Self.read(
+            defaults,
+            Key.guillocheMovementScaleY,
+            fallback: Defaults.guillocheMovementScaleY
+        )
     }
 
     public func reset() {
@@ -96,6 +122,8 @@ public final class CardBlendTuning {
         reverseDepthOrder = Defaults.reverseDepthOrder
         reverseMotionDirection = Defaults.reverseMotionDirection
         rotationGuillocheMovesInsteadOfRotates = Defaults.rotationGuillocheMovesInsteadOfRotates
+        guillocheMovementScaleX = Defaults.guillocheMovementScaleX
+        guillocheMovementScaleY = Defaults.guillocheMovementScaleY
     }
 
     private static func read(_ defaults: UserDefaults, _ key: String, fallback: Double) -> Double {

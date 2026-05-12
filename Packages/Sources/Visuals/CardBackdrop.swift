@@ -64,6 +64,8 @@ public struct CardBackdrop: View {
             depthScale: blendTuning.depthScale,
             reverseDepthOrder: blendTuning.reverseDepthOrder,
             reverseMotionDirection: blendTuning.reverseMotionDirection,
+            movementScaleX: blendTuning.guillocheMovementScaleX,
+            movementScaleY: blendTuning.guillocheMovementScaleY,
             perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
         let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
@@ -109,6 +111,8 @@ public struct CardBackdrop: View {
                 reversed: true,
                 reverseDepthOrder: blendTuning.reverseDepthOrder,
                 reverseMotionDirection: blendTuning.reverseMotionDirection,
+                movementScaleX: blendTuning.guillocheMovementScaleX,
+                movementScaleY: blendTuning.guillocheMovementScaleY,
                 perspectiveAmount: elementDepthTuning.perspectiveAmount,
                 skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
                 reveal: reveal

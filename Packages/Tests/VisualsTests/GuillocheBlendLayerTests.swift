@@ -53,6 +53,21 @@ import CoreModels
         #expect(reversed.height == -normal.height)
     }
 
+    @Test func depthOffsetAppliesIndependentMovementScales() {
+        let attitude = DeviceAttitude(pitch: 0.3, roll: -0.4)
+        let normal = GuillocheBlendLayer.depthOffset(layer: 15, attitude: attitude, depthScale: 5)
+        let scaled = GuillocheBlendLayer.depthOffset(
+            layer: 15,
+            attitude: attitude,
+            depthScale: 5,
+            movementScaleX: 0.5,
+            movementScaleY: 2.0
+        )
+
+        #expect(scaled.width == normal.width * 0.5)
+        #expect(scaled.height == normal.height * 2.0)
+    }
+
     @Test func maxDepthOffsetCarriesReversedMotionDirection() {
         let attitude = DeviceAttitude(pitch: -0.2, roll: 0.3)
         let viaMax = GuillocheBlendLayer.maxDepthOffset(
