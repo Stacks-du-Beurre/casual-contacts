@@ -96,6 +96,46 @@ body::before {
   color: var(--fg-5);
   text-transform: uppercase;
 }
+.topnav .nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border-muted);
+  border-radius: 999px;
+}
+.language-switcher a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  color: var(--fg-5);
+}
+.language-switcher a[aria-current="true"] {
+  background: var(--fg-1);
+  color: var(--bg-page);
+}
+@media (max-width: 540px) {
+  .topnav .nav-actions { gap: 10px; }
+  .language-switcher a {
+    min-width: 26px;
+    padding: 0 6px;
+  }
+  .nav-back { display: none; }
+}
 
 /* ----- hero ----- */
 .hero {
