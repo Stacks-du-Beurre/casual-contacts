@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Per-element depth-layer assignment for ornaments composited on top of the
 /// card backdrop (moon phase, zodiac glyph, zodiac constellation). Each
@@ -18,14 +19,14 @@ public final class CardElementDepthTuning {
     public static let layerRange: ClosedRange<Int> = 0...15
 
     public enum Defaults {
-        public static let moonPhaseLayer: Int = 12
-        public static let zodiacGlyphLayer: Int = 4
-        public static let zodiacConstellationLayer: Int = 12
-        public static let perspectiveAmount: Double = 1.0
+        public static let moonPhaseLayer: Int = VisualDeveloperSettingsDefaults.elementDepth.moonPhaseLayer
+        public static let zodiacGlyphLayer: Int = VisualDeveloperSettingsDefaults.elementDepth.zodiacGlyphLayer
+        public static let zodiacConstellationLayer: Int = VisualDeveloperSettingsDefaults.elementDepth.zodiacConstellationLayer
+        public static let perspectiveAmount: Double = VisualDeveloperSettingsDefaults.elementDepth.perspectiveAmount
         public static let perspectiveAmountMin: Double = 0.0
         public static let perspectiveAmountMax: Double = 3.0
-        public static let isSkewEnabled: Bool = false
-        public static let skewAmount: Double = 0.08
+        public static let isSkewEnabled: Bool = VisualDeveloperSettingsDefaults.elementDepth.isSkewEnabled
+        public static let skewAmount: Double = VisualDeveloperSettingsDefaults.elementDepth.skewAmount
         public static let skewAmountMin: Double = 0.0
         public static let skewAmountMax: Double = 0.2
     }

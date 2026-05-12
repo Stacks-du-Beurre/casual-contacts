@@ -159,6 +159,7 @@ private struct DeveloperSettingsContent: View {
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
     @Bindable private var motionTuning = MotionTuning.shared
     @Bindable private var cardAnimationDiagnostics = CardAnimationDiagnostics.shared
+    @State private var uploadStatus: DeveloperSettingsUploadStatus = .idle
 
     let onAddDebugRecords: () -> Void
     let onAddNearbyDebugRecords: () -> Void
@@ -178,6 +179,7 @@ private struct DeveloperSettingsContent: View {
                 zodiacGroup
                 mediumCardGroup
                 debugDataGroup
+                uploadGroup
                 resetGroup
             }
             .padding(.top, 8)
@@ -478,6 +480,22 @@ private struct DeveloperSettingsContent: View {
         }
     }
 
+    @ViewBuilder
+    private var uploadGroup: some View {
+        if let configuration = DeveloperSettingsUploadConfiguration.current() {
+            SettingsGroup(title: "Export") {
+                SettingsRow(label: uploadStatus.label, onTap: {
+                    uploadDeveloperSettings(configuration: configuration)
+                }) {
+                    uploadStatus.trailingIcon
+                        .font(.system(size: 18, weight: .regular))
+                        .frame(width: 44, height: 43)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+    }
+
     private var resetGroup: some View {
         SettingsGroup(title: "Reset") {
             SettingsRow(label: "Reset to defaults", onTap: {
@@ -497,6 +515,57 @@ private struct DeveloperSettingsContent: View {
                     .frame(width: 44, height: 43)
                     .accessibilityHidden(true)
             }
+        }
+    }
+
+    private func uploadDeveloperSettings(configuration: DeveloperSettingsUploadConfiguration) {
+        guard uploadStatus != .uploading else { return }
+
+        let snapshot = DeveloperSettingsSnapshotBuilder.current()
+        let client = DeveloperSettingsUploadClient(configuration: configuration)
+        uploadStatus = .uploading
+
+        Task { @MainActor in
+            do {
+                try await client.upload(snapshot)
+                uploadStatus = .uploaded
+            } catch {
+                uploadStatus = .failed
+            }
+        }
+    }
+}
+
+private enum DeveloperSettingsUploadStatus: Equatable {
+    case idle
+    case uploading
+    case uploaded
+    case failed
+
+    var label: String {
+        switch self {
+        case .idle:
+            return "Upload developer settings"
+        case .uploading:
+            return "Uploading developer settings"
+        case .uploaded:
+            return "Developer settings uploaded"
+        case .failed:
+            return "Developer settings upload failed"
+        }
+    }
+
+    @ViewBuilder
+    var trailingIcon: some View {
+        switch self {
+        case .idle:
+            Image(systemName: "square.and.arrow.up")
+        case .uploading:
+            ProgressView()
+        case .uploaded:
+            Image(systemName: "checkmark.circle")
+        case .failed:
+            Image(systemName: "exclamationmark.triangle")
         }
     }
 }

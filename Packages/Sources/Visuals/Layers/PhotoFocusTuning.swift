@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for `PhotoLayer` — focus shift + rendered
 /// opacity — exposed by the developer-settings panel.
@@ -17,10 +18,10 @@ public final class PhotoFocusTuning {
         /// card); 1 = `maxZoomMultiplier × scaledToFill` (max zoom-in,
         /// tightly framed on the face). Defaults at 0 so the photo renders
         /// at the widest possible framing by default.
-        public static let faceZoom: Double = 0.0
+        public static let faceZoom: Double = VisualDeveloperSettingsDefaults.zodiacAndPhoto.photoFaceZoom
 
         /// Opacity of the luminosity-blended photo over the card backdrop.
-        public static let opacity: Double = 0.35
+        public static let opacity: Double = VisualDeveloperSettingsDefaults.zodiacAndPhoto.photoOpacity
     }
 
     /// Slider value 1.0 maps to this multiplier on scaledToFill, so the face

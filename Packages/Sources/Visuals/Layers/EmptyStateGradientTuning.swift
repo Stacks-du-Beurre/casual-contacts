@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for `EmptyStateGradientBackdrop`, exposed by
 /// the developer-settings panel. Kept separate from `HologramTuning` because
@@ -19,7 +20,7 @@ public final class EmptyStateGradientTuning {
         /// scaled-to-fill the viewport. `1.0` = the far edge of the painting
         /// touches the viewport edge at `|roll| == 1`; the gradient never
         /// pans past it.
-        public static let edgeReach: Double = 1.0
+        public static let edgeReach: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.emptyStateEdgeReach
     }
 
     private enum Key {

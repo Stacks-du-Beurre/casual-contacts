@@ -13,9 +13,9 @@ public final class MotionTuning: @unchecked Sendable {
     public static let shared = MotionTuning()
 
     public enum Defaults {
-        public static let relativeFullScaleDegrees: Double = 45
-        public static let saveButtonGradientGain: Double = 2.5
-        public static let zeroPointSettleDuration: TimeInterval = 2.0
+        public static let relativeFullScaleDegrees: Double = CoreDeveloperSettingsDefaults.motion.relativeFullScaleDegrees
+        public static let saveButtonGradientGain: Double = CoreDeveloperSettingsDefaults.motion.saveButtonGradientGain
+        public static let zeroPointSettleDuration: TimeInterval = CoreDeveloperSettingsDefaults.motion.zeroPointSettleDuration
         public static let zeroPointSettleDurationMin: TimeInterval = 0.5
         public static let zeroPointSettleDurationMax: TimeInterval = 4.0
         public static let zeroPointMovementThresholdRadians: Double = 0.08

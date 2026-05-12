@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for `GuillocheRotationLayer`'s gyro-driven
 /// spin. Exposed by the developer-settings panel.
@@ -17,17 +18,17 @@ public final class GuillocheRotationTuning {
         /// Max rotation (degrees) the empty-state hero filigree spins when a
         /// single axis is at full tilt. See `rotationAngle(for:)` for the sign
         /// convention.
-        public static let emptyStateRotationDegrees: Double = 90
+        public static let emptyStateRotationDegrees: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.emptyStateRotationDegrees
         /// Same control, card-backdrop usage. Split so card + hero can be
         /// dialed in independently — the card's smaller canvas wants a
         /// subtler amount than the hero.
-        public static let cardRotationDegrees: Double = 45
+        public static let cardRotationDegrees: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.cardRotationDegrees
         /// Stroke opacity for the card-backdrop swirl filigree.
-        public static let cardOpacity: Double = 0.2
+        public static let cardOpacity: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.cardOpacity
         /// Stroke opacity for the card-backdrop swirl filigree when a photo is present.
-        public static let cardPhotoOpacity: Double = 0.23
+        public static let cardPhotoOpacity: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.cardPhotoOpacity
         /// Stroke opacity for the empty-state hero swirl filigree.
-        public static let emptyStateOpacity: Double = 0.3
+        public static let emptyStateOpacity: Double = VisualDeveloperSettingsDefaults.gradientAndFiligree.emptyStateOpacity
         /// Slider ceiling shared by the filigree opacity controls in the dev panel.
         public static let opacityMax: Double = 0.4
     }

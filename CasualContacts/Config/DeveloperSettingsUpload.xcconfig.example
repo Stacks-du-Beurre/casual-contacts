@@ -1,0 +1,4 @@
+// Copy to DeveloperSettingsUpload.xcconfig only for local testing, or reveal
+// the encrypted git-secret version when contributor access is configured.
+CC_DEVELOPER_SETTINGS_UPLOAD_URL = https:/$()/casualcontacts.app/api/developer-settings
+CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN = replace-with-shared-token

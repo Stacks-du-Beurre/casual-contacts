@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for the card's `GuillocheBlendLayer` parallax,
 /// exposed by the developer-settings panel.
@@ -14,13 +15,13 @@ public final class CardBlendTuning {
     public enum Defaults {
         /// Card parallax depth. Half the empty-state hero's `10.0` so rows in a
         /// list don't read as chaotic when the device tilts.
-        public static let depthScale: Double = 5.0
-        public static let hideBackdrop: Bool = false
-        public static let reverseDepthOrder: Bool = false
-        public static let reverseMotionDirection: Bool = true
-        public static let rotationGuillocheMovesInsteadOfRotates: Bool = false
-        public static let guillocheMovementScaleX: Double = 0.8
-        public static let guillocheMovementScaleY: Double = 0.8
+        public static let depthScale: Double = VisualDeveloperSettingsDefaults.cardBackdrop.depthScale
+        public static let hideBackdrop: Bool = VisualDeveloperSettingsDefaults.cardBackdrop.hideBackdrop
+        public static let reverseDepthOrder: Bool = VisualDeveloperSettingsDefaults.cardBackdrop.reverseDepthOrder
+        public static let reverseMotionDirection: Bool = VisualDeveloperSettingsDefaults.cardBackdrop.reverseMotionDirection
+        public static let rotationGuillocheMovesInsteadOfRotates: Bool = VisualDeveloperSettingsDefaults.cardBackdrop.rotationGuillocheMovesInsteadOfRotates
+        public static let guillocheMovementScaleX: Double = VisualDeveloperSettingsDefaults.cardBackdrop.guillocheMovementScaleX
+        public static let guillocheMovementScaleY: Double = VisualDeveloperSettingsDefaults.cardBackdrop.guillocheMovementScaleY
     }
 
     private enum Key {

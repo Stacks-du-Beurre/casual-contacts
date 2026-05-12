@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for `HologramText`, exposed by the
 /// developer-settings panel. Shipped defaults mirror the static constants
@@ -14,13 +15,13 @@ public final class HologramTuning {
     public static let shared = HologramTuning()
 
     public enum Defaults {
-        public static let backdropBlurOpacity: Double = 1.0
-        public static let whiteFillOpacity: Double = 0.56
-        public static let lightenOpacity: Double = 0.20
-        public static let luminosityOpacity: Double = 0.35
-        public static let translationScaleX: Double = 90
-        public static let translationScaleY: Double = 90
-        public static let rotationDegrees: Double = 30
+        public static let backdropBlurOpacity: Double = VisualDeveloperSettingsDefaults.hologram.backdropBlurOpacity
+        public static let whiteFillOpacity: Double = VisualDeveloperSettingsDefaults.hologram.whiteFillOpacity
+        public static let lightenOpacity: Double = VisualDeveloperSettingsDefaults.hologram.lightenOpacity
+        public static let luminosityOpacity: Double = VisualDeveloperSettingsDefaults.hologram.luminosityOpacity
+        public static let translationScaleX: Double = VisualDeveloperSettingsDefaults.hologram.translationScaleX
+        public static let translationScaleY: Double = VisualDeveloperSettingsDefaults.hologram.translationScaleY
+        public static let rotationDegrees: Double = VisualDeveloperSettingsDefaults.hologram.rotationDegrees
     }
 
     private enum Key {

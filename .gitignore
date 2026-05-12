@@ -34,6 +34,7 @@ Tools/*/Package.resolved
 *.p8
 *.p12
 *.mobileprovision
+CasualContacts/Config/DeveloperSettingsUpload.xcconfig
 
 # MetricKit payload dumps pulled from device/sim — local-only, not for commit.
 docs/research/metrics/
@@ -53,3 +54,6 @@ Tools/frame-templates/*.png
 # Don't commit; they're scratch space. The README equivalent lives at
 # docs/marketing-site-design.md.
 design_handoff_marketing_site*/
+.gitsecret/keys/random_seed
+!*.secret
+remote/developer-settings-worker/.wrangler/

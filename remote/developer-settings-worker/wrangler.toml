@@ -1,0 +1,11 @@
+name = "casual-contacts-developer-settings"
+main = "src/worker.mjs"
+compatibility_date = "2026-05-12"
+
+routes = [
+  { pattern = "casualcontacts.app/api/developer-settings", zone_name = "casualcontacts.app" }
+]
+
+[[r2_buckets]]
+binding = "DEVELOPER_SETTINGS_BUCKET"
+bucket_name = "casual-contacts-developer-settings"

@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable aspect ratio (height ÷ width) for the medium-sized
 /// `CardView` shown in the tapped-card modal. Range spans from the list-row
@@ -15,7 +16,7 @@ public final class MediumCardSizeTuning {
     public static let shared = MediumCardSizeTuning()
 
     public enum Defaults {
-        public static let aspectRatio: Double = 1.0
+        public static let aspectRatio: Double = VisualDeveloperSettingsDefaults.mediumCard.aspectRatio
         /// Matches the list row's 211pt height against the iPhone 17 row width
         /// (402pt screen − 32pt horizontal padding = 370pt). Used as the slider
         /// minimum so the user can pull the medium card down to the same shape

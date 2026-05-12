@@ -103,5 +103,6 @@ Required after any change under `Tools/SVGToSwift/` or a new drop of SVGs in `de
 ## Further reading
 
 - `docs/DESIGN.md` — screen-to-Figma map and designer techniques
+- `docs/developer-settings-export.md` — developer settings upload, remote collector, and defaults ingestion workflow
 - `docs/superpowers/specs/2026-04-17-casual-contacts-design.md` — architecture, data model, visual system
 - `docs/CC Design Specifications.pdf` — designer-authored specs for guilloche, holographic blends, photo treatments

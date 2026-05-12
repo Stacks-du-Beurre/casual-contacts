@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreModels
 
 /// Runtime-tunable parameters for the holographic chromatic fill inside
 /// `HolographicZodiac`. The fill is a single hologram texture masked by the
@@ -12,7 +13,7 @@ public final class ZodiacHologramTuning {
     public static let shared = ZodiacHologramTuning()
 
     public enum Defaults {
-        public static let rotationDegrees: Double = 300
+        public static let rotationDegrees: Double = VisualDeveloperSettingsDefaults.zodiacAndPhoto.zodiacRotationDegrees
     }
 
     private enum Key {

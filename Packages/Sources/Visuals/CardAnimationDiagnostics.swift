@@ -1,4 +1,5 @@
 import Foundation
+import CoreModels
 
 @Observable
 @MainActor
@@ -6,7 +7,7 @@ public final class CardAnimationDiagnostics {
     public static let shared = CardAnimationDiagnostics()
 
     public enum Defaults {
-        public static let showsOverlay = false
+        public static let showsOverlay = VisualDeveloperSettingsDefaults.diagnostics.showsCardAnimationOverlay
         public static let showsOverlayKey = "CardAnimationDiagnostics.showsOverlay"
     }
 

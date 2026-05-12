@@ -1,0 +1,4 @@
+CC_DEVELOPER_SETTINGS_UPLOAD_URL =
+CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN =
+
+#include? "DeveloperSettingsUpload.xcconfig"

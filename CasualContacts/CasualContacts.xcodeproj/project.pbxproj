@@ -23,6 +23,7 @@
 /* Begin PBXFileReference section */
 		66EB55DF2F934D5900452128 /* CasualContacts.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CasualContacts.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66EB56092F9412E300452128 /* CasualContactsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CasualContactsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		66EB56302FAA000000452128 /* DeveloperSettingsUpload.base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/DeveloperSettingsUpload.base.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -62,6 +63,7 @@
 			children = (
 				66EB55E12F934D5900452128 /* CasualContacts */,
 				66EB560A2F9412E300452128 /* CasualContactsUITests */,
+				66EB56302FAA000000452128 /* DeveloperSettingsUpload.base.xcconfig */,
 				66EB55E02F934D5900452128 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -325,6 +327,7 @@
 		};
 		66EB55EB2F934D5B00452128 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 66EB56302FAA000000452128 /* DeveloperSettingsUpload.base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -374,6 +377,7 @@
 		};
 		66EB55EC2F934D5B00452128 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 66EB56302FAA000000452128 /* DeveloperSettingsUpload.base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
