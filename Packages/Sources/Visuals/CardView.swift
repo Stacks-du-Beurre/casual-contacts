@@ -326,7 +326,7 @@ private struct DateTimeBlock: View, Equatable {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 0) {
-            Text(Self.formattedDate(record.createdAt, locale: locale))
+            Text(Self.formattedDate(record.createdAt))
             Text(timeLine)
         }
         .font(CCDesign.Typography.caption2)
@@ -335,23 +335,16 @@ private struct DateTimeBlock: View, Equatable {
     }
 
     private var timeLine: String {
-        let time = Self.formattedTime(record.createdAt, locale: locale)
-        let label = VisualsLocalization.timeOfDayDisplayName(record.metadata.timeOfDay, locale: locale)
-        return "\(label), \(time)"
+        LocalizedDateDisplayFormatter.formattedTimeLine(
+            record.createdAt,
+            timeOfDay: record.metadata.timeOfDay,
+            labelLocale: locale,
+            timeOfDayDisplayName: VisualsLocalization.timeOfDayDisplayName
+        )
     }
 
-    private static func formattedDate(_ date: Date, locale: Locale) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("MMM d yyyy")
-        return formatter.string(from: date)
-    }
-
-    private static func formattedTime(_ date: Date, locale: Locale) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("j:mm")
-        return formatter.string(from: date)
+    private static func formattedDate(_ date: Date) -> String {
+        LocalizedDateDisplayFormatter.formattedDate(date)
     }
 }
 

@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import CoreModels
 import DesignSystem
+import Visuals
 
 /// 40pt glass strip under the card. Left half: two-line uppercase address +
 /// hologram-masked pin glyph. Right half: two-line date + `{timeOfDay}, h:mm a`.
@@ -50,8 +51,8 @@ struct LocationTimeStrip: View {
 
             // Right half — date + time.
             VStack(alignment: .trailing, spacing: 0) {
-                Text(Self.formattedDate(createdAt, timeZone: zone, locale: locale))
-                Text(Self.formattedTimeLine(createdAt, timeOfDay: timeOfDay, timeZone: zone, locale: locale))
+                Text(Self.formattedDate(createdAt, timeZone: zone))
+                Text(Self.formattedTimeLine(createdAt, timeOfDay: timeOfDay, timeZone: zone, labelLocale: locale))
             }
             .font(CCDesign.Typography.caption2)
             .foregroundStyle(CCDesign.Colors.L0)
@@ -70,27 +71,29 @@ struct LocationTimeStrip: View {
 
     // MARK: - Formatters
 
-    nonisolated static func formattedDate(_ date: Date, timeZone: TimeZone, locale: Locale) -> String {
-        let f = DateFormatter()
-        f.locale = locale
-        f.timeZone = timeZone
-        f.setLocalizedDateFormatFromTemplate("MMM d, yyyy")
-        return f.string(from: date)
+    nonisolated static func formattedDate(
+        _ date: Date,
+        timeZone: TimeZone,
+        dateLocale: Locale = .autoupdatingCurrent
+    ) -> String {
+        LocalizedDateDisplayFormatter.formattedDate(date, timeZone: timeZone, dateLocale: dateLocale)
     }
 
     nonisolated static func formattedTimeLine(
         _ date: Date,
         timeOfDay: TimeOfDay,
         timeZone: TimeZone,
-        locale: Locale
+        labelLocale: Locale,
+        dateLocale: Locale = .autoupdatingCurrent
     ) -> String {
-        let f = DateFormatter()
-        f.locale = locale
-        f.timeZone = timeZone
-        f.setLocalizedDateFormatFromTemplate("j:mm")
-        let time = f.string(from: date)
-        let label = Self.timeOfDayDisplayName(timeOfDay, locale: locale)
-        return "\(label), \(time)"
+        LocalizedDateDisplayFormatter.formattedTimeLine(
+            date,
+            timeOfDay: timeOfDay,
+            timeZone: timeZone,
+            labelLocale: labelLocale,
+            dateLocale: dateLocale,
+            timeOfDayDisplayName: Self.timeOfDayDisplayName
+        )
     }
 
     nonisolated static func timeOfDayDisplayName(_ timeOfDay: TimeOfDay, locale: Locale) -> String {

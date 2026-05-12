@@ -13,7 +13,7 @@ import CoreModels
         let formatted = LocationTimeStrip.formattedDate(
             sampleDate,
             timeZone: TimeZone(identifier: "UTC")!,
-            locale: Locale(identifier: "en")
+            dateLocale: Locale(identifier: "en")
         )
         #expect(formatted == "Aug 25, 2020")
     }
@@ -23,7 +23,8 @@ import CoreModels
             sampleDate,
             timeOfDay: .sunset,
             timeZone: TimeZone(identifier: "UTC")!,
-            locale: Locale(identifier: "en")
+            labelLocale: Locale(identifier: "en"),
+            dateLocale: Locale(identifier: "en")
         )
         #expect(formatted.contains("Sunset"))
         #expect(formatted.contains("5:20"))
@@ -34,9 +35,22 @@ import CoreModels
             sampleDate,
             timeOfDay: .midday,
             timeZone: TimeZone(identifier: "UTC")!,
-            locale: Locale(identifier: "uk")
+            labelLocale: Locale(identifier: "uk"),
+            dateLocale: Locale(identifier: "uk")
         )
         #expect(formatted.contains("Полудень"))
+    }
+
+    @Test func timeLineUsesDeviceLocaleForTimeAndAppLocaleForLabel() {
+        let formatted = LocationTimeStrip.formattedTimeLine(
+            sampleDate,
+            timeOfDay: .sunset,
+            timeZone: TimeZone(identifier: "UTC")!,
+            labelLocale: Locale(identifier: "ru"),
+            dateLocale: Locale(identifier: "en_GB")
+        )
+
+        #expect(formatted == "Закат, 17:20")
     }
 
     @Test func timeOfDayDisplayNamesUseProvidedLocale() {
