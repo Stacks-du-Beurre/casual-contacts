@@ -349,6 +349,22 @@ struct NoopCardPathProvider: CardPathProvider {
         ))
     }
 
+    @Test func cardFramePreferenceKeepsLatestRowFrames() {
+        var value = CardFrameSnapshot(
+            global: CGRect(x: 0, y: 0, width: 100, height: 211),
+            scroll: CGRect(x: 0, y: 720, width: 100, height: 211)
+        )
+        let latest = CardFrameSnapshot(
+            global: CGRect(x: 0, y: 0, width: 100, height: 211),
+            scroll: CGRect(x: 0, y: 420, width: 100, height: 211)
+        )
+
+        CardFramePreferenceKey.reduce(value: &value) { latest }
+
+        #expect(value == latest)
+        #expect(CardAnimationVisibility.isActive(rowFrame: value.scroll, viewportHeight: 600))
+    }
+
     @Test func scrollInteractionPolicyDoesNotPauseForProgrammaticAnimation() {
         #expect(ScrollInteractionPolicy.shouldPauseMotion(for: .userInteraction))
         #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .programmaticAnimation))

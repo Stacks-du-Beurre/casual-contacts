@@ -525,6 +525,7 @@ private struct RecordCardRow: View {
 
     @Bindable private var diagnostics = CardAnimationDiagnostics.shared
     @State private var frame: CGRect = .zero
+    @State private var scrollFrame: CGRect = .zero
     @State private var isActiveForAnimation = false
 
     var body: some View {
@@ -549,27 +550,24 @@ private struct RecordCardRow: View {
         .background(
             GeometryReader { geo in
                 Color.clear
-                    .onAppear {
-                        diagnostics.registerMountedCard(id: record.id)
-                        updateFrames(
-                            globalFrame: geo.frame(in: .global),
-                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
+                    .preference(
+                        key: CardFramePreferenceKey.self,
+                        value: CardFrameSnapshot(
+                            global: geo.frame(in: .global),
+                            scroll: geo.frame(in: .named(scrollCoordinateSpace))
                         )
-                    }
-                    .onChange(of: geo.frame(in: .global)) { _, new in
-                        updateFrames(
-                            globalFrame: new,
-                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
-                        )
-                    }
-                    .onChange(of: viewportHeight) { _, _ in
-                        updateFrames(
-                            globalFrame: geo.frame(in: .global),
-                            scrollFrame: geo.frame(in: .named(scrollCoordinateSpace))
-                        )
-                    }
+                    )
             }
         )
+        .onAppear {
+            diagnostics.registerMountedCard(id: record.id)
+        }
+        .onPreferenceChange(CardFramePreferenceKey.self) { snapshot in
+            updateFrames(globalFrame: snapshot.global, scrollFrame: snapshot.scroll)
+        }
+        .onChange(of: viewportHeight) { _, _ in
+            updateFrames(globalFrame: frame, scrollFrame: scrollFrame)
+        }
         .onDisappear {
             isActiveForAnimation = false
             diagnostics.unregisterMountedCard(id: record.id)
@@ -579,12 +577,26 @@ private struct RecordCardRow: View {
 
     private func updateFrames(globalFrame: CGRect, scrollFrame: CGRect) {
         frame = globalFrame
+        self.scrollFrame = scrollFrame
         let isActive = CardAnimationVisibility.isActive(
             rowFrame: scrollFrame,
             viewportHeight: viewportHeight
         )
         isActiveForAnimation = isActive
         diagnostics.updateCardAnimation(id: record.id, isActive: isActive)
+    }
+}
+
+struct CardFrameSnapshot: Equatable {
+    let global: CGRect
+    let scroll: CGRect
+}
+
+struct CardFramePreferenceKey: PreferenceKey {
+    static let defaultValue = CardFrameSnapshot(global: .zero, scroll: .zero)
+
+    static func reduce(value: inout CardFrameSnapshot, nextValue: () -> CardFrameSnapshot) {
+        value = nextValue()
     }
 }
 
