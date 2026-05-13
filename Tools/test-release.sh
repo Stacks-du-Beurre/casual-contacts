@@ -10,10 +10,12 @@ ORIGIN_REPO="$TMP_ROOT/origin.git"
 
 mkdir -p "$WORK_REPO/Tools" \
     "$WORK_REPO/CasualContacts/CasualContacts.xcodeproj" \
+    "$WORK_REPO/ci_scripts" \
     "$WORK_REPO/marketing-site"
 
 cp "$REPO_ROOT/Tools/release.sh" "$WORK_REPO/Tools/release.sh"
 cp "$REPO_ROOT/Tools/testflight.sh" "$WORK_REPO/Tools/testflight.sh"
+cp "$REPO_ROOT/ci_scripts/ci_post_clone.sh" "$WORK_REPO/ci_scripts/ci_post_clone.sh"
 cp "$REPO_ROOT/CasualContacts/CasualContacts.xcodeproj/project.pbxproj" \
     "$WORK_REPO/CasualContacts/CasualContacts.xcodeproj/project.pbxproj"
 cp "$REPO_ROOT/marketing-site/index.html" "$WORK_REPO/marketing-site/index.html"

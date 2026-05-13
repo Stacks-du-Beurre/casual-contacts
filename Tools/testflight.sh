@@ -14,11 +14,16 @@
 # After running, check the build's progress at:
 #   https://appstoreconnect.apple.com  → TestFlight → Builds
 # (Or watch the Xcode Cloud reports tab in Xcode.)
+#
+# Xcode Cloud upload-enabled builds require secret environment variables:
+#   CC_DEVELOPER_SETTINGS_UPLOAD_URL
+#   CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PBXPROJ="$REPO_ROOT/CasualContacts/CasualContacts.xcodeproj/project.pbxproj"
+XCODE_CLOUD_POST_CLONE="$REPO_ROOT/ci_scripts/ci_post_clone.sh"
 
 compare_versions() {
     local left="$1"
@@ -48,6 +53,29 @@ compare_versions() {
 
 version_gt() {
     [ "$(compare_versions "$1" "$2")" = "1" ]
+}
+
+require_xcode_cloud_upload_config_script() {
+    local relative_script="ci_scripts/ci_post_clone.sh"
+
+    if ! git -C "$REPO_ROOT" ls-files --error-unmatch "$relative_script" >/dev/null 2>&1; then
+        echo "ERROR: $relative_script must be committed before tagging TestFlight builds." >&2
+        echo "It writes DeveloperSettingsUpload.xcconfig from Xcode Cloud secret environment variables." >&2
+        exit 1
+    fi
+
+    if [ ! -x "$XCODE_CLOUD_POST_CLONE" ]; then
+        echo "ERROR: $relative_script must be executable. Run: chmod +x $relative_script" >&2
+        exit 1
+    fi
+
+    if ! grep -q 'CC_DEVELOPER_SETTINGS_UPLOAD_URL' "$XCODE_CLOUD_POST_CLONE" ||
+       ! grep -q 'CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN' "$XCODE_CLOUD_POST_CLONE"; then
+        echo "ERROR: $relative_script must write developer settings upload config from:" >&2
+        echo "  CC_DEVELOPER_SETTINGS_UPLOAD_URL" >&2
+        echo "  CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN" >&2
+        exit 1
+    fi
 }
 
 highest_tagged_marketing_version() {
@@ -105,6 +133,8 @@ if [ ! -f "$PBXPROJ" ]; then
     echo "ERROR: pbxproj not found at $PBXPROJ" >&2
     exit 1
 fi
+
+require_xcode_cloud_upload_config_script
 
 current_marketing="$(grep -m1 'MARKETING_VERSION = ' "$PBXPROJ" | sed -E 's/.*MARKETING_VERSION = ([^;]+);.*/\1/')"
 if ! [[ "$current_marketing" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
