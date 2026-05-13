@@ -365,6 +365,12 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(CardAnimationVisibility.isActive(rowFrame: value.scroll, viewportHeight: 600))
     }
 
+    @Test func mountedRowsRenderWithLiveAttitudeEvenWhenVisibilityStateIsStale() {
+        let attitude = DeviceAttitude(pitch: 0.25, roll: -0.5)
+
+        #expect(CardRowMotionPolicy.renderedAttitude(attitude) == attitude)
+    }
+
     @Test func scrollInteractionPolicyDoesNotPauseForProgrammaticAnimation() {
         #expect(ScrollInteractionPolicy.shouldPauseMotion(for: .userInteraction))
         #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .programmaticAnimation))

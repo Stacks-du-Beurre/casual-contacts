@@ -532,7 +532,7 @@ private struct RecordCardRow: View {
         CardView(
             record: record,
             size: .small,
-            attitude: isActiveForAnimation ? attitude : .zero,
+            attitude: CardRowMotionPolicy.renderedAttitude(attitude),
             paths: paths,
             photo: photo,
             photoSize: photoSize
@@ -584,6 +584,12 @@ private struct RecordCardRow: View {
         )
         isActiveForAnimation = isActive
         diagnostics.updateCardAnimation(id: record.id, isActive: isActive)
+    }
+}
+
+enum CardRowMotionPolicy {
+    static func renderedAttitude(_ attitude: DeviceAttitude) -> DeviceAttitude {
+        attitude
     }
 }
 
