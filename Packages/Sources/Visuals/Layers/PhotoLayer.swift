@@ -6,6 +6,8 @@ public struct PhotoLayer: View {
     public let image: Image
     public let imageSize: CGSize?
     public let focus: NormalizedPoint?
+    public let parallaxOffset: CGSize
+    public let parallaxOverscan: CGSize?
     public let style: Style
 
     public enum Style: Sendable {
@@ -20,11 +22,15 @@ public struct PhotoLayer: View {
         image: Image,
         imageSize: CGSize? = nil,
         focus: NormalizedPoint? = nil,
+        parallaxOffset: CGSize = .zero,
+        parallaxOverscan: CGSize? = nil,
         style: Style = .card
     ) {
         self.image = image
         self.imageSize = imageSize
         self.focus = focus
+        self.parallaxOffset = parallaxOffset
+        self.parallaxOverscan = parallaxOverscan
         self.style = style
     }
 
@@ -58,20 +64,21 @@ public struct PhotoLayer: View {
         }
     }
 
-    /// Renders the image at `zoomMultiplier × scaledToFill` and shifts it so
-    /// the focus point lands at the card's center (clamped to image bounds).
-    /// `zoomMultiplier = 1.0` is the max zoom-out — scaledToFill, the photo
-    /// fully covers the card. Multipliers above 1.0 zoom in on the face.
-    /// Without image size, falls back to plain `.scaledToFill()`.
+    /// Renders the image at `zoomMultiplier × scaledToFill`, with enough
+    /// overscan for parallax movement, and shifts it so the focus point lands
+    /// at the card's center (clamped to image bounds). Without image size,
+    /// falls back to plain `.scaledToFill()`.
     @ViewBuilder
     private var framedImage: some View {
-        if let focus, let imageSize, imageSize.width > 0, imageSize.height > 0 {
+        if let imageSize, imageSize.width > 0, imageSize.height > 0 {
             GeometryReader { geo in
                 let result = PhotoLayer.focusLayout(
                     container: geo.size,
                     imageSize: imageSize,
-                    focus: focus,
-                    zoomMultiplier: CGFloat(focusTuning.zoomMultiplier)
+                    focus: focus ?? .center,
+                    zoomMultiplier: CGFloat(focusTuning.zoomMultiplier),
+                    parallaxOffset: parallaxOffset,
+                    parallaxOverscan: parallaxOverscan
                 )
                 image
                     .resizable()
@@ -97,7 +104,9 @@ public struct PhotoLayer: View {
         container: CGSize,
         imageSize: CGSize,
         focus: NormalizedPoint,
-        zoomMultiplier: CGFloat
+        zoomMultiplier: CGFloat,
+        parallaxOffset: CGSize = .zero,
+        parallaxOverscan: CGSize? = nil
     ) -> (scaled: CGSize, offset: CGSize) {
         guard container.width > 0, container.height > 0,
               imageSize.width > 0, imageSize.height > 0
@@ -118,13 +127,18 @@ public struct PhotoLayer: View {
             fillHeight = container.width / imageAspect
         }
 
-        // Never allow scale below fill — that would expose empty margin.
-        let zoom = max(1.0, zoomMultiplier)
+        // Never allow scale below fill, and reserve a stable parallax budget
+        // so live attitude changes move the photo without resizing it.
+        let overscan = parallaxOverscan ?? parallaxOffset
+        let requiredWidth = container.width + 2 * abs(overscan.width)
+        let requiredHeight = container.height + 2 * abs(overscan.height)
+        let parallaxZoom = max(requiredWidth / fillWidth, requiredHeight / fillHeight)
+        let zoom = max(1.0, zoomMultiplier, parallaxZoom)
         let scaledWidth = fillWidth * zoom
         let scaledHeight = fillHeight * zoom
 
-        let desiredDX = (0.5 - focus.x) * scaledWidth
-        let desiredDY = (0.5 - focus.y) * scaledHeight
+        let desiredDX = (0.5 - focus.x) * scaledWidth + parallaxOffset.width
+        let desiredDY = (0.5 - focus.y) * scaledHeight + parallaxOffset.height
 
         let maxDX = max(0, (scaledWidth - container.width) / 2)
         let maxDY = max(0, (scaledHeight - container.height) / 2)

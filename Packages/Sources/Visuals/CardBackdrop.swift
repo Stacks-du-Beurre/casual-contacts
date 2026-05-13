@@ -26,6 +26,7 @@ public struct CardBackdrop: View {
     /// the blend-path stack together, so the per-path slot is
     /// `revealDuration / path_count`.
     private static let revealDuration: Double = 0.4
+    static let photoDepthLayer = 16
 
     public init(
         record: Record,
@@ -71,6 +72,23 @@ public struct CardBackdrop: View {
         let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
         let rotationGuillocheAttitude: DeviceAttitude = movesRotationGuilloche ? .zero : attitude
         let rotationGuillocheOffset: CGSize = movesRotationGuilloche ? coupledOffset : .zero
+        let photoParallaxOffset = Self.photoParallaxOffset(
+            attitude: attitude,
+            depthScale: blendTuning.depthScale,
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection,
+            movementScaleX: blendTuning.guillocheMovementScaleX,
+            movementScaleY: blendTuning.guillocheMovementScaleY,
+            perspectiveAmount: elementDepthTuning.perspectiveAmount
+        )
+        let photoParallaxOverscan = Self.photoParallaxOverscan(
+            depthScale: blendTuning.depthScale,
+            reverseDepthOrder: blendTuning.reverseDepthOrder,
+            reverseMotionDirection: blendTuning.reverseMotionDirection,
+            movementScaleX: blendTuning.guillocheMovementScaleX,
+            movementScaleY: blendTuning.guillocheMovementScaleY,
+            perspectiveAmount: elementDepthTuning.perspectiveAmount
+        )
 
         ZStack {
             GradientLayer(
@@ -98,6 +116,8 @@ public struct CardBackdrop: View {
                     image: photo,
                     imageSize: photoSize,
                     focus: record.photoFocus,
+                    parallaxOffset: photoParallaxOffset,
+                    parallaxOverscan: photoParallaxOverscan,
                     style: .card
                 )
             }
@@ -146,5 +166,46 @@ public struct CardBackdrop: View {
 
     static func rotationGuillocheUsage(hasPhoto: Bool) -> GuillocheRotationLayer.Usage {
         hasPhoto ? .cardPhoto : .card
+    }
+
+    static func photoParallaxOffset(
+        attitude: DeviceAttitude,
+        depthScale: CGFloat,
+        reverseDepthOrder: Bool,
+        reverseMotionDirection: Bool,
+        movementScaleX: Double,
+        movementScaleY: Double,
+        perspectiveAmount: Double
+    ) -> CGSize {
+        GuillocheBlendLayer.maxDepthOffset(
+            pathCount: photoDepthLayer + 1,
+            attitude: attitude,
+            depthScale: depthScale,
+            reverseDepthOrder: reverseDepthOrder,
+            reverseMotionDirection: reverseMotionDirection,
+            movementScaleX: movementScaleX,
+            movementScaleY: movementScaleY,
+            perspectiveAmount: perspectiveAmount
+        )
+    }
+
+    static func photoParallaxOverscan(
+        depthScale: CGFloat,
+        reverseDepthOrder: Bool,
+        reverseMotionDirection: Bool,
+        movementScaleX: Double,
+        movementScaleY: Double,
+        perspectiveAmount: Double
+    ) -> CGSize {
+        let maxOffset = photoParallaxOffset(
+            attitude: DeviceAttitude(pitch: 1, roll: 1),
+            depthScale: depthScale,
+            reverseDepthOrder: reverseDepthOrder,
+            reverseMotionDirection: reverseMotionDirection,
+            movementScaleX: movementScaleX,
+            movementScaleY: movementScaleY,
+            perspectiveAmount: perspectiveAmount
+        )
+        return CGSize(width: abs(maxOffset.width), height: abs(maxOffset.height))
     }
 }
