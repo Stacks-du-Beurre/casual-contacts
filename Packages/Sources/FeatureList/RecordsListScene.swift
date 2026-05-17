@@ -560,6 +560,7 @@ private struct RecordCardRow: View {
             }
         )
         .onAppear {
+            isActiveForAnimation = true
             diagnostics.registerMountedCard(id: record.id)
         }
         .onPreferenceChange(CardFramePreferenceKey.self) { snapshot in
