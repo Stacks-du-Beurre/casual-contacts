@@ -152,16 +152,10 @@ public struct RootScene: Scene {
             onTapSettings: {
                 router.showingSettings = true
             },
-            onScrollInteractionChange: { interacting in
-                // Pause the gyro pipeline the moment the user touches the
-                // list (not just once scrolling begins) and resume on idle.
-                // Reduce-motion takes precedence — never resume CoreMotion if
-                // the user has it on.
-                if interacting {
-                    environment.motionService.stop()
-                } else if !reduceMotionEnabled {
-                    environment.motionService.start()
-                }
+            onScrollInteractionChange: { _ in
+                // Keep the global motion stream alive while scrolling. SwiftUI
+                // can miss an idle transition during lazy-list churn; stopping
+                // CoreMotion here leaves visible cards stuck on the last sample.
             },
             onEditRecord: { record in
                 router.editingRecord = record

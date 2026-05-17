@@ -371,10 +371,10 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(CardRowMotionPolicy.renderedAttitude(attitude) == attitude)
     }
 
-    @Test func scrollInteractionPolicyDoesNotPauseForProgrammaticAnimation() {
-        #expect(ScrollInteractionPolicy.shouldPauseMotion(for: .userInteraction))
-        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .programmaticAnimation))
-        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .idle))
+    @Test func scrollInteractionPolicyDistinguishesUserInteractionFromProgrammaticAnimation() {
+        #expect(ScrollInteractionPolicy.isUserInteraction(for: .userInteraction))
+        #expect(!ScrollInteractionPolicy.isUserInteraction(for: .programmaticAnimation))
+        #expect(!ScrollInteractionPolicy.isUserInteraction(for: .idle))
     }
 
     @Test func cardAnimationDiagnosticsTracksMountedAndActiveCounts() throws {
