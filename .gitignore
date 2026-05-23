@@ -39,6 +39,9 @@ CasualContacts/Config/DeveloperSettingsUpload.xcconfig
 # MetricKit payload dumps pulled from device/sim — local-only, not for commit.
 docs/research/metrics/
 
+# Developer settings submissions pulled from R2 for local review.
+developer-settings-downloads/
+
 # Git worktrees (local-only isolated workspaces)
 .worktrees/
 Screenshots/

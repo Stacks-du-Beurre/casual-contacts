@@ -53,12 +53,29 @@ wrangler deploy
 
 The Worker route is configured for `casualcontacts.app/api/developer-settings`.
 
+## Pulling Submissions
+
+Download all R2 submissions into a local review directory:
+
+```bash
+Tools/developer-settings-pull.mjs
+```
+
+By default this writes ignored files under `developer-settings-downloads/`:
+
+- each `developer-settings/*.json` object as a local JSON file
+- `index.json` with object and snapshot metadata
+- `README.md` with a quick review table
+
+The pull tool does not ingest or delete anything. Review the downloaded files,
+delete the ones you do not want locally, then ingest the chosen JSON.
+
 ## Ingesting A Submission
 
 Download or export one R2 JSON object, then regenerate defaults:
 
 ```bash
-Tools/developer-settings-ingest.mjs /path/to/submission.json
+Tools/developer-settings-ingest.mjs developer-settings-downloads/<chosen-file>.json
 cd Packages
 swift test
 ```
