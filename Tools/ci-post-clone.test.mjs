@@ -14,6 +14,10 @@ test("ci_post_clone writes xcconfig-safe developer settings upload URL", () => {
       cwd: workspace,
       env: {
         ...process.env,
+        CI: "TRUE",
+        CI_XCODE_CLOUD: "TRUE",
+        CI_XCODEBUILD_ACTION: "archive",
+        CI_WORKFLOW: "Testflight Tagged Workflow",
         CC_DEVELOPER_SETTINGS_UPLOAD_URL: "https://casualcontacts.app/api/developer-settings",
         CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN: "test-token"
       }
@@ -31,7 +35,32 @@ test("ci_post_clone writes xcconfig-safe developer settings upload URL", () => {
   }
 });
 
-test("ci_post_clone fails upload verification builds when secrets are missing", () => {
+test("ci_post_clone ignores upload variables outside TestFlight archives", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
+  try {
+    execFileSync("sh", [script], {
+      cwd: workspace,
+      env: {
+        ...process.env,
+        CI: "TRUE",
+        CI_XCODE_CLOUD: "TRUE",
+        CI_XCODEBUILD_ACTION: "build",
+        CI_WORKFLOW: "Testflight Tagged Workflow",
+        CC_DEVELOPER_SETTINGS_UPLOAD_URL: "https://casualcontacts.app/api/developer-settings",
+        CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN: "test-token"
+      }
+    });
+
+    assert.equal(
+      fs.existsSync(path.join(workspace, "CasualContacts/Config/DeveloperSettingsUpload.xcconfig")),
+      false
+    );
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("ci_post_clone fails TestFlight archives when secrets are missing", () => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
   try {
     assert.throws(
@@ -41,7 +70,8 @@ test("ci_post_clone fails upload verification builds when secrets are missing", 
           ...process.env,
           CI: "TRUE",
           CI_XCODE_CLOUD: "TRUE",
-          CI_TAG: "tf-developer-settings-upload-verify-107-20260524"
+          CI_XCODEBUILD_ACTION: "archive",
+          CI_WORKFLOW: "Testflight Tagged Workflow"
         },
         stdio: ["ignore", "pipe", "pipe"]
       }),

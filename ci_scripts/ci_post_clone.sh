@@ -2,30 +2,40 @@
 set -eu
 
 CONFIG_PATH="CasualContacts/Config/DeveloperSettingsUpload.xcconfig"
-build_ref="${CI_TAG:-${CI_GIT_REF:-}}"
-requires_upload_config=false
+is_testflight_archive=false
 
-case "$build_ref" in
-  tf-developer-settings-upload*|refs/tags/tf-developer-settings-upload*)
-    requires_upload_config=true
-    ;;
-esac
+workflow="$(printf '%s' "${CI_WORKFLOW:-}" | tr '[:upper:]' '[:lower:]')"
+if [ "${CI_XCODE_CLOUD:-}" = "TRUE" ] && [ "${CI_XCODEBUILD_ACTION:-}" = "archive" ]; then
+  case "$workflow" in
+    *testflight*)
+      is_testflight_archive=true
+      ;;
+  esac
+fi
 
-if [ -z "${CC_DEVELOPER_SETTINGS_UPLOAD_URL:-}" ] || [ -z "${CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN:-}" ]; then
-  if [ "$requires_upload_config" = "true" ]; then
-    echo "ERROR: developer settings upload verification builds require Xcode Cloud secret environment variables:" >&2
-    if [ -z "${CC_DEVELOPER_SETTINGS_UPLOAD_URL:-}" ]; then
-      echo "  CC_DEVELOPER_SETTINGS_UPLOAD_URL" >&2
-    fi
-    if [ -z "${CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN:-}" ]; then
-      echo "  CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN" >&2
-    fi
-    exit 1
-  fi
-
-  echo "Developer settings upload secrets are not configured; using empty upload defaults."
+if [ "$is_testflight_archive" != "true" ]; then
+  echo "Not an Xcode Cloud TestFlight archive; using empty upload defaults."
   exit 0
 fi
+
+case "${CC_DEVELOPER_SETTINGS_UPLOAD_URL:-}:${CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN:-}" in
+  :)
+    echo "ERROR: TestFlight archives require Xcode Cloud secret environment variables:" >&2
+    echo "  CC_DEVELOPER_SETTINGS_UPLOAD_URL" >&2
+    echo "  CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN" >&2
+    exit 1
+    ;;
+  *:)
+    echo "ERROR: TestFlight archives require Xcode Cloud secret environment variables:" >&2
+    echo "  CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN" >&2
+    exit 1
+    ;;
+  :*)
+    echo "ERROR: TestFlight archives require Xcode Cloud secret environment variables:" >&2
+    echo "  CC_DEVELOPER_SETTINGS_UPLOAD_URL" >&2
+    exit 1
+    ;;
+esac
 
 mkdir -p "$(dirname "$CONFIG_PATH")"
 
