@@ -1,7 +1,14 @@
 #!/bin/sh
 set -eu
 
-CONFIG_PATH="CasualContacts/Config/DeveloperSettingsUpload.xcconfig"
+if [ -n "${CI_PROJECT_FILE_PATH:-}" ]; then
+  PROJECT_DIR="$(cd "$(dirname "$CI_PROJECT_FILE_PATH")" && pwd)"
+else
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+CONFIG_PATH="$PROJECT_DIR/Config/DeveloperSettingsUpload.xcconfig"
 is_testflight_archive=false
 
 workflow="$(printf '%s' "${CI_WORKFLOW:-}" | tr '[:upper:]' '[:lower:]')"

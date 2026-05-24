@@ -23,7 +23,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PBXPROJ="$REPO_ROOT/CasualContacts/CasualContacts.xcodeproj/project.pbxproj"
-XCODE_CLOUD_POST_CLONE="$REPO_ROOT/ci_scripts/ci_post_clone.sh"
+XCODE_CLOUD_POST_CLONE="$REPO_ROOT/CasualContacts/ci_scripts/ci_post_clone.sh"
 
 compare_versions() {
     local left="$1"
@@ -56,7 +56,7 @@ version_gt() {
 }
 
 require_xcode_cloud_upload_config_script() {
-    local relative_script="ci_scripts/ci_post_clone.sh"
+    local relative_script="CasualContacts/ci_scripts/ci_post_clone.sh"
 
     if ! git -C "$REPO_ROOT" ls-files --error-unmatch "$relative_script" >/dev/null 2>&1; then
         echo "ERROR: $relative_script must be committed before tagging TestFlight builds." >&2
