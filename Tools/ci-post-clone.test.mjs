@@ -30,3 +30,35 @@ test("ci_post_clone writes xcconfig-safe developer settings upload URL", () => {
     fs.rmSync(workspace, { recursive: true, force: true });
   }
 });
+
+test("ci_post_clone fails upload verification builds when secrets are missing", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
+  try {
+    assert.throws(
+      () => execFileSync("sh", [script], {
+        cwd: workspace,
+        env: {
+          ...process.env,
+          CI: "TRUE",
+          CI_XCODE_CLOUD: "TRUE",
+          CI_TAG: "tf-developer-settings-upload-verify-107-20260524"
+        },
+        stdio: ["ignore", "pipe", "pipe"]
+      }),
+      (error) => {
+        assert.equal(error.status, 1);
+        const stderr = error.stderr.toString();
+        assert.match(stderr, /CC_DEVELOPER_SETTINGS_UPLOAD_URL/);
+        assert.match(stderr, /CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN/);
+        return true;
+      }
+    );
+
+    assert.equal(
+      fs.existsSync(path.join(workspace, "CasualContacts/Config/DeveloperSettingsUpload.xcconfig")),
+      false
+    );
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
