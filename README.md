@@ -92,6 +92,28 @@ xcrun simctl install "iPhone 17" \
 xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
 ```
 
+### Release and TestFlight scripts
+
+Release automation lives in `Tools/release.sh` and TestFlight triggering lives in `Tools/testflight.sh`. Both scripts require a clean working tree so every release or TestFlight build maps back to a committed, reproducible state.
+
+Use `Tools/release.sh` when you need to change the app version or build number. By default it bumps the final component of `MARKETING_VERSION`, resets `CURRENT_PROJECT_VERSION` to `1`, updates the marketing-site version display, commits the change, creates a `v-*` tag, and pushes the branch and tag. For another build of the same app version, use `--build-only`; this only increments `CURRENT_PROJECT_VERSION` and leaves the marketing-site version alone.
+
+```bash
+# New marketing version, build 1
+Tools/release.sh --version 1.0.8 -m "Release 1.0.8 build 1"
+
+# New build of the current marketing version
+Tools/release.sh --build-only 1.0.7-build6 -m "Release 1.0.7 build 6"
+```
+
+Use `Tools/testflight.sh` after the release commit exists. It tags the current `HEAD` with `tf-*`, pushes the branch and tag, and lets the Xcode Cloud workflow that watches `tf-*` tags archive and upload the build to internal TestFlight.
+
+```bash
+Tools/testflight.sh 1.0.8-build1 -m "TestFlight 1.0.8 build 1"
+```
+
+After triggering TestFlight, watch progress in Xcode's Report navigator or App Store Connect under TestFlight -> Builds. Xcode Cloud upload builds also require the secret environment variables documented in `Tools/testflight.sh`.
+
 ### Regenerate guilloche Swift files
 
 Required after any change under `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Guilloche/App/`:
