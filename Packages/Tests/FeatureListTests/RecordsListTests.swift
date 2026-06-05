@@ -365,6 +365,33 @@ struct NoopCardPathProvider: CardPathProvider {
         #expect(CardAnimationVisibility.isActive(rowFrame: value.scroll, viewportHeight: 600))
     }
 
+    @Test func recordRowIdentitySurvivesMovingBetweenDistanceBuckets() throws {
+        let record = Record(
+            id: UUID(),
+            name: "Traveler",
+            description: "",
+            photoID: nil,
+            location: nil,
+            zodiacSign: nil,
+            createdAt: Date(),
+            updatedAt: Date(),
+            metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .firstQuarter)
+        )
+
+        let nearRows = RecordsListScene.rows(
+            for: BucketedRecords(near: [record], far: [])
+        )
+        let farRows = RecordsListScene.rows(
+            for: BucketedRecords(near: [], far: [record])
+        )
+
+        #expect(nearRows.compactMap(\.recordID) == [record.id])
+        #expect(farRows.compactMap(\.recordID) == [record.id])
+        let nearRecordRow = try #require(nearRows.first { $0.recordID == record.id })
+        let farRecordRow = try #require(farRows.first { $0.recordID == record.id })
+        #expect(nearRecordRow.id == farRecordRow.id)
+    }
+
     @Test func mountedRowsRenderWithLiveAttitudeEvenWhenVisibilityStateIsStale() {
         let attitude = DeviceAttitude(pitch: 0.25, roll: -0.5)
 
@@ -372,9 +399,9 @@ struct NoopCardPathProvider: CardPathProvider {
     }
 
     @Test func scrollInteractionPolicyDistinguishesUserInteractionFromProgrammaticAnimation() {
-        #expect(ScrollInteractionPolicy.isUserInteraction(for: .userInteraction))
-        #expect(!ScrollInteractionPolicy.isUserInteraction(for: .programmaticAnimation))
-        #expect(!ScrollInteractionPolicy.isUserInteraction(for: .idle))
+        #expect(ScrollInteractionPolicy.shouldPauseMotion(for: .userInteraction))
+        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .programmaticAnimation))
+        #expect(!ScrollInteractionPolicy.shouldPauseMotion(for: .idle))
     }
 
     @Test func cardAnimationDiagnosticsTracksMountedAndActiveCounts() throws {

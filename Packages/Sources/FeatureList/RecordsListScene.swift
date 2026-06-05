@@ -234,6 +234,15 @@ public struct RecordsListScene: View {
         )
     }
 
+    static func rows(for buckets: BucketedRecords) -> [RecordsListRow] {
+        var rows = buckets.near.map(RecordsListRow.record)
+        if !buckets.near.isEmpty {
+            rows.append(.distanceSeparator)
+        }
+        rows.append(contentsOf: buckets.far.map(RecordsListRow.record))
+        return rows
+    }
+
     @MainActor
     private var isStoreEmpty: Bool { store.records.isEmpty }
 
@@ -391,46 +400,36 @@ public struct RecordsListScene: View {
                 noVisibleMatchesContent
             case .showingRecords:
                 let buckets = bucketedVisibleRecords
+                let rows = Self.rows(for: buckets)
                 GeometryReader { listProxy in
                     ScrollView {
                         LazyVStack(spacing: 8) {
-                            ForEach(buckets.near) { record in
-                                RecordCardRow(
-                                    record: record,
-                                    attitude: attitude,
-                                    paths: paths,
-                                    photo: photoFor(record),
-                                    photoSize: photoSizeFor(record),
-                                    isHidden: hiddenRecordID == record.id,
-                                    viewportHeight: listProxy.size.height,
-                                    scrollCoordinateSpace: Self.scrollCoordinateSpace,
-                                    onTap: onTapRecord
-                                )
-                            }
-                            if !buckets.near.isEmpty {
-                                // 1-mile group separator. Token color matches
-                                // Figma `Line 60` from `D_Collection_View` /
-                                // `L_Collection_View`. Spans the full list
-                                // width — the LazyVStack's 16pt horizontal
-                                // padding already insets the line to the same
-                                // edges as the cards.
-                                Rectangle()
-                                    .fill(navBarBottomLineColor)
-                                    .frame(height: 0.5)
-                                    .accessibilityHidden(true)
-                            }
-                            ForEach(buckets.far) { record in
-                                RecordCardRow(
-                                    record: record,
-                                    attitude: attitude,
-                                    paths: paths,
-                                    photo: photoFor(record),
-                                    photoSize: photoSizeFor(record),
-                                    isHidden: hiddenRecordID == record.id,
-                                    viewportHeight: listProxy.size.height,
-                                    scrollCoordinateSpace: Self.scrollCoordinateSpace,
-                                    onTap: onTapRecord
-                                )
+                            ForEach(rows) { row in
+                                switch row {
+                                case let .record(record):
+                                    RecordCardRow(
+                                        record: record,
+                                        attitude: attitude,
+                                        paths: paths,
+                                        photo: photoFor(record),
+                                        photoSize: photoSizeFor(record),
+                                        isHidden: hiddenRecordID == record.id,
+                                        viewportHeight: listProxy.size.height,
+                                        scrollCoordinateSpace: Self.scrollCoordinateSpace,
+                                        onTap: onTapRecord
+                                    )
+                                case .distanceSeparator:
+                                    // 1-mile group separator. Token color matches
+                                    // Figma `Line 60` from `D_Collection_View` /
+                                    // `L_Collection_View`. Spans the full list
+                                    // width — the LazyVStack's 16pt horizontal
+                                    // padding already insets the line to the same
+                                    // edges as the cards.
+                                    Rectangle()
+                                        .fill(navBarBottomLineColor)
+                                        .frame(height: 0.5)
+                                        .accessibilityHidden(true)
+                                }
                             }
                         }
                         .padding(.horizontal, 16)
@@ -507,6 +506,34 @@ public struct RecordsListScene: View {
         }
     }
 
+}
+
+enum RecordsListRow: Identifiable, Equatable {
+    case record(Record)
+    case distanceSeparator
+
+    enum ID: Hashable {
+        case record(Record.ID)
+        case distanceSeparator
+    }
+
+    var id: ID {
+        switch self {
+        case let .record(record):
+            return .record(record.id)
+        case .distanceSeparator:
+            return .distanceSeparator
+        }
+    }
+
+    var recordID: Record.ID? {
+        switch self {
+        case let .record(record):
+            return record.id
+        case .distanceSeparator:
+            return nil
+        }
+    }
 }
 
 /// One row of the records list. Owns its own `@State` for the card's current
