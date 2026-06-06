@@ -52,6 +52,9 @@ public struct RootScene: Scene {
             stored: environment.listSortPreferenceStore.sortOption,
             authorization: environment.locationService.currentAuthorization()
         ))
+        _listCurrentLocation = State(initialValue: ListCurrentLocationResolver.initialLocation(
+            cached: environment.lastLocationStore.location
+        ))
         // Seed the current time-of-day from the metadata generator so the
         // empty-state gradient paints the correct PNG on first frame. Refreshed
         // on every `.active` scene phase so it stays accurate across dawn/dusk
@@ -265,9 +268,18 @@ public struct RootScene: Scene {
                 createdAt: createdAt,
                 metadata: metadata,
                 location: nil,
-                locationProvider: { [locationService = environment.locationService] in
+                locationProvider: { [
+                    locationService = environment.locationService,
+                    lastLocationStore = environment.lastLocationStore
+                ] in
                     guard locationService.currentAuthorization() == .authorized else { return nil }
-                    return try? await locationService.currentLocation()
+                    let fix = try? await locationService.currentLocation()
+                    if let fix {
+                        await MainActor.run {
+                            lastLocationStore.location = fix
+                        }
+                    }
+                    return fix
                 },
                 onCancel: { router.showingCreate = false },
                 onSave: { outcome in
@@ -288,6 +300,10 @@ public struct RootScene: Scene {
                             metadata: saveMetadata,
                             photoID: photoID
                         )
+                        if let location = draft.location {
+                            listCurrentLocation = location
+                            environment.lastLocationStore.location = location
+                        }
                         router.showingCreate = false
                     }
                 }
@@ -575,6 +591,7 @@ public struct RootScene: Scene {
         await MainActor.run {
             guard let fix else { return }
             listCurrentLocation = fix
+            environment.lastLocationStore.location = fix
             listSortOption = .distance
             environment.listSortPreferenceStore.sortOption = .distance
         }
@@ -593,8 +610,13 @@ public struct RootScene: Scene {
 
         let fix = try? await environment.locationService.currentLocation()
         await MainActor.run {
-            listCurrentLocation = fix
-            if fix == nil, listSortOption == .distance {
+            if let fix {
+                listCurrentLocation = fix
+                environment.lastLocationStore.location = fix
+                return
+            }
+            listCurrentLocation = environment.lastLocationStore.location
+            if listCurrentLocation == nil, listSortOption == .distance {
                 listSortOption = .alphabetical
             }
         }
@@ -644,6 +666,9 @@ public struct RootScene: Scene {
                     )
                 }
                 return
+            }
+            await MainActor.run {
+                environment.lastLocationStore.location = origin
             }
             let store = environment.recordStore
             for record in DebugRecordSeeder.nearbyRecords(around: origin) {

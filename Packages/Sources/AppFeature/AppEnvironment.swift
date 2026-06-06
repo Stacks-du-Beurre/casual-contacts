@@ -23,6 +23,7 @@ public final class AppEnvironment {
     public let locationService: any LocationService
     public let locationPermissionPrimerStore: any LocationPermissionPrimerStore
     public let listSortPreferenceStore: any ListSortPreferenceStore
+    public let lastLocationStore: any LastLocationStore
     public let motionService: any MotionService
     public let metadataGenerator: any MetadataGenerator
     public let cardPathProvider: any CardPathProvider
@@ -34,6 +35,7 @@ public final class AppEnvironment {
         locationService: any LocationService,
         locationPermissionPrimerStore: any LocationPermissionPrimerStore,
         listSortPreferenceStore: any ListSortPreferenceStore,
+        lastLocationStore: any LastLocationStore,
         motionService: any MotionService,
         metadataGenerator: any MetadataGenerator,
         cardPathProvider: any CardPathProvider,
@@ -44,6 +46,7 @@ public final class AppEnvironment {
         self.locationService = locationService
         self.locationPermissionPrimerStore = locationPermissionPrimerStore
         self.listSortPreferenceStore = listSortPreferenceStore
+        self.lastLocationStore = lastLocationStore
         self.motionService = motionService
         self.metadataGenerator = metadataGenerator
         self.cardPathProvider = cardPathProvider
@@ -75,6 +78,7 @@ public final class AppEnvironment {
             locationService: CoreLocationService(),
             locationPermissionPrimerStore: UserDefaultsLocationPermissionPrimerStore(),
             listSortPreferenceStore: UserDefaultsListSortPreferenceStore(),
+            lastLocationStore: UserDefaultsLastLocationStore(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
@@ -112,6 +116,7 @@ public final class AppEnvironment {
             locationService: CoreLocationService(),
             locationPermissionPrimerStore: UserDefaultsLocationPermissionPrimerStore(),
             listSortPreferenceStore: UserDefaultsListSortPreferenceStore(),
+            lastLocationStore: UserDefaultsLastLocationStore(),
             motionService: CoreMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),
@@ -141,6 +146,7 @@ public final class AppEnvironment {
             locationService: ScreenshotLocationService(),
             locationPermissionPrimerStore: InMemoryLocationPermissionPrimerStore(decision: .accepted),
             listSortPreferenceStore: InMemoryListSortPreferenceStore(),
+            lastLocationStore: InMemoryLastLocationStore(location: ScreenshotLocationService.origin),
             motionService: ScreenshotMotionService(),
             metadataGenerator: SystemMetadataGenerator(),
             cardPathProvider: RealCardPathProvider(),

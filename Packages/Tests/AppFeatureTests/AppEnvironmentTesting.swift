@@ -15,7 +15,8 @@ extension AppEnvironment {
         photoStore: (any PhotoStore)? = nil,
         locationService: (any LocationService)? = nil,
         locationPermissionPrimerStore: (any LocationPermissionPrimerStore)? = nil,
-        listSortPreferenceStore: (any ListSortPreferenceStore)? = nil
+        listSortPreferenceStore: (any ListSortPreferenceStore)? = nil,
+        lastLocationStore: (any LastLocationStore)? = nil
     ) -> AppEnvironment {
         AppEnvironment(
             recordStore: recordStore ?? InMemoryRecordStore(),
@@ -23,6 +24,7 @@ extension AppEnvironment {
             locationService: locationService ?? MockLocationService(),
             locationPermissionPrimerStore: locationPermissionPrimerStore ?? InMemoryLocationPermissionPrimerStore(),
             listSortPreferenceStore: listSortPreferenceStore ?? InMemoryListSortPreferenceStore(),
+            lastLocationStore: lastLocationStore ?? InMemoryLastLocationStore(),
             motionService: StaticMotionService(),
             metadataGenerator: FixedMetadataGenerator(),
             cardPathProvider: NoopCardPathProvider(),

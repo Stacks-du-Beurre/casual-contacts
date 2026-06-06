@@ -57,6 +57,40 @@ import FeatureList
         #expect(store.sortOption == nil)
     }
 
+    @Test func userDefaultsLastLocationStoreRoundTripsAcrossInstances() throws {
+        let suiteName = "UserDefaultsLastLocationStore.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let location = LocationInfo(latitude: 41.8781, longitude: -87.6298, label: "Chicago")
+        let store = UserDefaultsLastLocationStore(defaults: defaults, key: "lastLocation")
+        #expect(store.location == nil)
+
+        store.location = location
+        let reloaded = UserDefaultsLastLocationStore(defaults: defaults, key: "lastLocation")
+        #expect(reloaded.location == location)
+
+        reloaded.location = nil
+        #expect(store.location == nil)
+    }
+
+    @Test func userDefaultsLastLocationStoreIgnoresInvalidData() throws {
+        let suiteName = "UserDefaultsLastLocationStore.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(Data("not-json".utf8), forKey: "lastLocation")
+
+        let store = UserDefaultsLastLocationStore(defaults: defaults, key: "lastLocation")
+        #expect(store.location == nil)
+    }
+
+    @Test func listCurrentLocationDefaultsToCachedLocationOnLaunch() {
+        let cached = LocationInfo(latitude: 34.0522, longitude: -118.2437, label: "Downtown LA")
+
+        #expect(ListCurrentLocationResolver.initialLocation(cached: cached) == cached)
+        #expect(ListCurrentLocationResolver.initialLocation(cached: nil) == nil)
+    }
+
     @Test func listSortDefaultsToDistanceWhenLocationIsAuthorizedAndNoChoiceIsSaved() {
         #expect(ListSortPreferenceResolver.initialSortOption(
             stored: nil,
