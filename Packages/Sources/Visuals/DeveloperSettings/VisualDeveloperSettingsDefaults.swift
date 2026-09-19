@@ -18,7 +18,7 @@ public enum VisualDeveloperSettingsDefaults {
         hideBackdrop: false,
         reverseDepthOrder: false,
         reverseMotionDirection: true,
-        rotationGuillocheMovesInsteadOfRotates: false,
+        rotationGuillocheMovesInsteadOfRotates: true,
         guillocheMovementScaleX: 0.8,
         guillocheMovementScaleY: 0.8
     )

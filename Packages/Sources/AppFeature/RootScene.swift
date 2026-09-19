@@ -66,18 +66,23 @@ public struct RootScene: Scene {
     }
 
     public var body: some Scene {
-        WindowGroup {
-            #if os(iOS)
-            localizedRootContent
-                .environment(\.zoomNamespace, zoomNamespace)
-                .preferredColorScheme(ScreenshotMode.appearanceOverride)
-                .task {
-                    await ScreenshotMode.seedIfNeeded(into: environment)
-                }
-            #else
-            ModuleLocalization.text("RootScene is iOS-only", locale: activeLocalizationLocale)
-            #endif
-        }
+        #if os(iOS)
+        // Build actor-isolated content here. SwiftUI can evaluate the deferred
+        // WindowGroup content closure on a background rendering thread.
+        let content = localizedRootContent
+            .environment(\.zoomNamespace, zoomNamespace)
+            .preferredColorScheme(ScreenshotMode.appearanceOverride)
+            .task {
+                await ScreenshotMode.seedIfNeeded(into: environment)
+            }
+        #else
+        let content = ModuleLocalization.text("RootScene is iOS-only", locale: activeLocalizationLocale)
+        #endif
+        return Self.windowGroup(content: content)
+    }
+
+    private nonisolated static func windowGroup<Content: View>(content: Content) -> WindowGroup<Content> {
+        WindowGroup { content }
     }
 
     private var appLanguagePreference: Binding<AppLanguagePreference> {
