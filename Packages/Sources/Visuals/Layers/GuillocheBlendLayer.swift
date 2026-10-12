@@ -26,6 +26,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.windowSceneProjection) private var windowScene
 
     /// Default depth-scaling — how many points the Nth path offsets per unit of
     /// roll/pitch at the maximum depth. Empty-state hero uses a larger value for
@@ -81,11 +82,12 @@ public struct GuillocheBlendLayer: View, Animatable {
                     perspectiveAmount: perspectiveAmount,
                     skewAmount: skewAmount
                 )
-                let transformedPath = path.applying(Self.centeredSkewTransform(bounds: path.boundingRect, skew: skew))
+                let transformedPath = windowScene == nil
+                    ? path.applying(Self.centeredSkewTransform(bounds: path.boundingRect, skew: skew)) : path
 
                 transformedPath
                     .stroke(tint.opacity(0.8 * localReveal(forIndex: index)), lineWidth: 0.5)
-                    .offset(Self.offset(
+                    .offset(windowScene == nil ? Self.offset(
                         forPathIndex: index,
                         pathCount: paths.count,
                         attitude: attitude,
@@ -96,6 +98,10 @@ public struct GuillocheBlendLayer: View, Animatable {
                         movementScaleX: movementScaleX,
                         movementScaleY: movementScaleY,
                         perspectiveAmount: perspectiveAmount
+                    ) : .zero)
+                    .windowDepth(CardSceneDepth.blendFraction(
+                        index: index, count: paths.count,
+                        reversed: windowScene?.reverseGuillocheDepthOrder == true
                     ))
             }
         }

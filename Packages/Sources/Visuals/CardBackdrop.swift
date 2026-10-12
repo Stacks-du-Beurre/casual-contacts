@@ -16,6 +16,7 @@ public struct CardBackdrop: View {
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
+    @Environment(\.windowSceneProjection) private var windowScene
     @State private var reveal: Double = 0
     /// Letter last used to seed the blend paths while the guilloche was
     /// visible. Held across the exit animation so deleting the final letter
@@ -70,8 +71,8 @@ public struct CardBackdrop: View {
             perspectiveAmount: elementDepthTuning.perspectiveAmount
         )
         let movesRotationGuilloche = blendTuning.rotationGuillocheMovesInsteadOfRotates
-        let rotationGuillocheAttitude: DeviceAttitude = movesRotationGuilloche ? .zero : attitude
-        let rotationGuillocheOffset: CGSize = movesRotationGuilloche ? coupledOffset : .zero
+        let rotationGuillocheAttitude: DeviceAttitude = (movesRotationGuilloche || windowScene != nil) ? .zero : attitude
+        let rotationGuillocheOffset: CGSize = (movesRotationGuilloche && windowScene == nil) ? coupledOffset : .zero
         let photoParallaxOffset = Self.photoParallaxOffset(
             attitude: attitude,
             depthScale: blendTuning.depthScale,
@@ -93,9 +94,11 @@ public struct CardBackdrop: View {
         ZStack {
             GradientLayer(
                 timeOfDay: record.metadata.timeOfDay,
-                attitude: attitude,
+                attitude: windowScene == nil ? attitude : .zero,
                 mode: .balancedAtRest
             )
+            .scaleEffect(windowScene == nil ? 1 : 1.8)
+            .windowDepth(1)
 
             // Always mount both guilloche layers so the `reveal` driver can
             // animate per-path opacity into and out of view. At `reveal == 0`
@@ -110,16 +113,21 @@ public struct CardBackdrop: View {
                 reveal: reveal
             )
             .offset(rotationGuillocheOffset)
+            // Share the deepest blend plane exactly, including its scale and
+            // global translation, rather than adding a separate swirl depth.
+            .windowDepth(CardSceneDepth.deepestBlendFraction)
 
             if let photo {
                 PhotoLayer(
                     image: photo,
                     imageSize: photoSize,
                     focus: record.photoFocus,
-                    parallaxOffset: photoParallaxOffset,
-                    parallaxOverscan: photoParallaxOverscan,
+                    parallaxOffset: windowScene == nil ? photoParallaxOffset : .zero,
+                    parallaxOverscan: windowScene == nil ? photoParallaxOverscan : .zero,
                     style: .card
                 )
+                .scaleEffect(windowScene == nil ? 1 : 1.3)
+                .windowDepth(0.75)
             }
 
             GuillocheBlendLayer(

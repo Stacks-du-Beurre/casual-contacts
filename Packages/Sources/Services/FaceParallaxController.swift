@@ -12,6 +12,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public private(set) var status = "Face parallax off"
     public private(set) var enabled = false
     public var fallback: DeviceAttitude = .zero
+    public var smoothingSeconds: Double = 0.035
+    public private(set) var eyePosition: ViewerPosition?
+    public private(set) var referenceEye: ViewerPosition?
     public var renderingAttitude: DeviceAttitude { displayLink == nil ? fallback : attitude }
 
     @ObservationIgnored private let session = ARSession()
@@ -20,6 +23,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var projection = ViewerParallax()
     @ObservationIgnored private var smoother = DisplayAttitudeSmoother()
     @ObservationIgnored private var target: DeviceAttitude?
+    @ObservationIgnored private var targetEye: ViewerPosition?
     @ObservationIgnored private var lastFaceTime: TimeInterval = 0
     @ObservationIgnored private var lastDisplayTime: TimeInterval = 0
     @ObservationIgnored private var active = false
@@ -49,6 +53,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public func recenter() {
         projection.reset()
         target = nil
+        referenceEye = nil
         status = "Finding your face"
     }
 
@@ -83,6 +88,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         #endif
         projection.reset()
         target = nil
+        targetEye = nil
+        eyePosition = nil
+        referenceEye = nil
         lastFaceTime = 0
         lastDisplayTime = 0
         smoother.reset(to: fallback)
@@ -110,6 +118,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         displayLink = nil
         linkTarget = nil
         target = nil
+        targetEye = nil
+        eyePosition = nil
+        referenceEye = nil
         projection.reset()
         attitude = fallback
         status = enabled ? "Face parallax paused" : "Face parallax off"
@@ -131,6 +142,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let eye = frame.camera.viewMatrix(for: .portrait) * face.transform * midpoint
         let position = ViewerPosition(x: Double(eye.x), y: Double(eye.y), distance: Double(-eye.z))
         guard let value = projection.attitude(for: position) else { return }
+        if referenceEye == nil { referenceEye = position }
+        targetEye = position
         target = value
         lastFaceTime = CACurrentMediaTime()
     }
@@ -162,6 +175,17 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
         attitude = smoother.step(toward: next, elapsed: elapsed)
+        if tracked, let targetEye {
+            let previous = eyePosition ?? referenceEye ?? targetEye
+            let alpha = 1 - exp(-max(0, min(elapsed, 0.1)) / max(0.01, smoothingSeconds))
+            eyePosition = ViewerPosition(
+                x: previous.x + alpha * (targetEye.x - previous.x),
+                y: previous.y + alpha * (targetEye.y - previous.y),
+                distance: previous.distance + alpha * (targetEye.distance - previous.distance)
+            )
+        } else {
+            eyePosition = nil
+        }
         #if DEBUG
         displayTicks += 1
         let interval = now - diagnosticStart

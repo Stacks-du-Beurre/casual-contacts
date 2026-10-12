@@ -24,6 +24,7 @@ public struct TappedCardModalScene: View {
     public let faceTrackingStatus: String
     public let onToggleFaceTracking: (() -> Void)?
     public let onRecenterFaceTracking: (() -> Void)?
+    public let onSceneSettings: (() -> Void)?
 
     public init(
         record: Record,
@@ -38,7 +39,8 @@ public struct TappedCardModalScene: View {
         faceTrackingEnabled: Bool = false,
         faceTrackingStatus: String = "Face parallax off",
         onToggleFaceTracking: (() -> Void)? = nil,
-        onRecenterFaceTracking: (() -> Void)? = nil
+        onRecenterFaceTracking: (() -> Void)? = nil,
+        onSceneSettings: (() -> Void)? = nil
     ) {
         self.record = record
         self.sourceFrame = sourceFrame
@@ -53,6 +55,7 @@ public struct TappedCardModalScene: View {
         self.faceTrackingStatus = faceTrackingStatus
         self.onToggleFaceTracking = onToggleFaceTracking
         self.onRecenterFaceTracking = onRecenterFaceTracking
+        self.onSceneSettings = onSceneSettings
     }
 
     @State private var cardVisible = false
@@ -150,24 +153,26 @@ public struct TappedCardModalScene: View {
             Spacer()
 
             if let onToggleFaceTracking {
-                Menu {
-                    Button(faceTrackingEnabled ? "Turn off face parallax" : "Turn on face parallax",
-                           systemImage: "faceid", action: onToggleFaceTracking)
-                    if faceTrackingEnabled {
-                        Text(faceTrackingStatus)
-                        if let onRecenterFaceTracking {
-                            Button("Recenter face parallax", systemImage: "scope",
-                                   action: onRecenterFaceTracking)
+                VStack(spacing: 3) {
+                    Toggle("Face parallax", isOn: Binding(
+                        get: { faceTrackingEnabled },
+                        set: { value in
+                            if value != faceTrackingEnabled { onToggleFaceTracking() }
                         }
+                    ))
+                    .toggleStyle(.switch)
+                    .fixedSize()
+                    .font(.caption)
+                    .accessibilityIdentifier("tappedCardModalFaceParallax")
+                    Text(faceTrackingStatus)
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .accessibilityIdentifier("tappedCardModalFaceParallaxStatus")
+                    if let onSceneSettings {
+                        Button("Scene settings", action: onSceneSettings)
+                            .font(.caption2)
                     }
-                } label: {
-                    Label("Face parallax", systemImage: "faceid")
-                        .labelStyle(.iconOnly)
-                        .font(CCDesign.Typography.headline)
-                        .foregroundStyle(faceTrackingEnabled ? Color.accentColor : Color.primary)
                 }
-                .accessibilityIdentifier("tappedCardModalFaceParallax")
-                .accessibilityLabel("Face parallax. \(faceTrackingStatus)")
                 Spacer()
             }
 
