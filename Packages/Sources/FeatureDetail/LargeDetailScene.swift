@@ -13,10 +13,6 @@ public struct LargeDetailScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
-    public let faceTrackingEnabled: Bool
-    public let faceTrackingStatus: String
-    public let onToggleFaceTracking: (() -> Void)?
-    public let onRecenterFaceTracking: (() -> Void)?
     @Environment(\.locale) private var locale
 
     public init(
@@ -27,11 +23,7 @@ public struct LargeDetailScene: View {
         photoSize: CGSize? = nil,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
-        onDismiss: @escaping () -> Void,
-        faceTrackingEnabled: Bool = false,
-        faceTrackingStatus: String = "Face parallax off",
-        onToggleFaceTracking: (() -> Void)? = nil,
-        onRecenterFaceTracking: (() -> Void)? = nil
+        onDismiss: @escaping () -> Void
     ) {
         self.record = record
         self.attitude = attitude
@@ -41,10 +33,6 @@ public struct LargeDetailScene: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
-        self.faceTrackingEnabled = faceTrackingEnabled
-        self.faceTrackingStatus = faceTrackingStatus
-        self.onToggleFaceTracking = onToggleFaceTracking
-        self.onRecenterFaceTracking = onRecenterFaceTracking
     }
 
     public var body: some View {
@@ -70,18 +58,6 @@ public struct LargeDetailScene: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
-                            if let onToggleFaceTracking {
-                                Button(faceTrackingEnabled ? "Turn off face parallax" : "Turn on face parallax",
-                                       systemImage: "faceid", action: onToggleFaceTracking)
-                                if faceTrackingEnabled {
-                                    Text(faceTrackingStatus)
-                                    if let onRecenterFaceTracking {
-                                        Button("Recenter face parallax", systemImage: "scope",
-                                               action: onRecenterFaceTracking)
-                                    }
-                                }
-                                Divider()
-                            }
                             Button(ModuleLocalization.string("Edit", locale: locale), action: onEdit)
                             Button(role: .destructive, action: onDelete) {
                                 ModuleLocalization.text("Delete", locale: locale)

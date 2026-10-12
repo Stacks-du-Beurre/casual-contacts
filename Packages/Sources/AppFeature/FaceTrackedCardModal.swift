@@ -5,8 +5,9 @@ import Services
 import Visuals
 import FeatureDetail
 
-struct FaceTrackedDetail: View {
+struct FaceTrackedCardModal: View {
     let record: Record
+    let sourceFrame: CGRect
     let attitude: DeviceAttitude
     let paths: any CardPathProvider
     let photo: Image?
@@ -19,8 +20,9 @@ struct FaceTrackedDetail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        LargeDetailScene(
+        TappedCardModalScene(
             record: record,
+            sourceFrame: sourceFrame,
             attitude: reduceMotion ? .zero : (tracker.enabled ? tracker.renderingAttitude : attitude),
             paths: paths,
             photo: photo,

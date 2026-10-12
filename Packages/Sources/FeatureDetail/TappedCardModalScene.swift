@@ -20,6 +20,10 @@ public struct TappedCardModalScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
+    public let faceTrackingEnabled: Bool
+    public let faceTrackingStatus: String
+    public let onToggleFaceTracking: (() -> Void)?
+    public let onRecenterFaceTracking: (() -> Void)?
 
     public init(
         record: Record,
@@ -30,7 +34,11 @@ public struct TappedCardModalScene: View {
         photoSize: CGSize? = nil,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        faceTrackingEnabled: Bool = false,
+        faceTrackingStatus: String = "Face parallax off",
+        onToggleFaceTracking: (() -> Void)? = nil,
+        onRecenterFaceTracking: (() -> Void)? = nil
     ) {
         self.record = record
         self.sourceFrame = sourceFrame
@@ -41,6 +49,10 @@ public struct TappedCardModalScene: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
+        self.faceTrackingEnabled = faceTrackingEnabled
+        self.faceTrackingStatus = faceTrackingStatus
+        self.onToggleFaceTracking = onToggleFaceTracking
+        self.onRecenterFaceTracking = onRecenterFaceTracking
     }
 
     @State private var cardVisible = false
@@ -136,6 +148,28 @@ public struct TappedCardModalScene: View {
             .accessibilityIdentifier("tappedCardModalEdit")
 
             Spacer()
+
+            if let onToggleFaceTracking {
+                Menu {
+                    Button(faceTrackingEnabled ? "Turn off face parallax" : "Turn on face parallax",
+                           systemImage: "faceid", action: onToggleFaceTracking)
+                    if faceTrackingEnabled {
+                        Text(faceTrackingStatus)
+                        if let onRecenterFaceTracking {
+                            Button("Recenter face parallax", systemImage: "scope",
+                                   action: onRecenterFaceTracking)
+                        }
+                    }
+                } label: {
+                    Label("Face parallax", systemImage: "faceid")
+                        .labelStyle(.iconOnly)
+                        .font(CCDesign.Typography.headline)
+                        .foregroundStyle(faceTrackingEnabled ? Color.accentColor : Color.primary)
+                }
+                .accessibilityIdentifier("tappedCardModalFaceParallax")
+                .accessibilityLabel("Face parallax. \(faceTrackingStatus)")
+                Spacer()
+            }
 
             Button(role: .destructive) { beginDismiss(then: onDelete) } label: {
                 ModuleLocalization.text("DELETE", locale: locale)

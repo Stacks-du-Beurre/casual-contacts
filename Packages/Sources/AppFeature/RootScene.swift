@@ -318,7 +318,7 @@ public struct RootScene: Scene {
         }
         .overlay {
             if let tapped = router.tappedRecord {
-                TappedCardModalScene(
+                FaceTrackedCardModal(
                     record: tapped,
                     sourceFrame: router.tappedRecordSourceFrame,
                     attitude: currentAttitude,
@@ -374,7 +374,7 @@ public struct RootScene: Scene {
             .presentationCornerRadius(12)
         }
         .fullScreenCover(item: $router.selectedRecordForLargeDetail) { record in
-            FaceTrackedDetail(
+            LargeDetailScene(
                 record: record,
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
