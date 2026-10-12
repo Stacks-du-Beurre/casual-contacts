@@ -16,6 +16,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public var smoothingSeconds: Double = 0.035
     public private(set) var eyePosition: ViewerPosition?
     public private(set) var referenceEye: ViewerPosition?
+    public private(set) var sceneActivation = 0.0
     public var renderingAttitude: DeviceAttitude { displayLink == nil ? fallback : attitude }
 
     @ObservationIgnored private let session = ARSession()
@@ -33,6 +34,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var lastDisplayTime: TimeInterval = 0
     @ObservationIgnored private var active = false
     @ObservationIgnored private var requestID = 0
+    @ObservationIgnored private var acquisition = SceneAcquisitionEasing()
     @ObservationIgnored private var trackingInputState = "waiting"
     #if DEBUG
     @ObservationIgnored private var diagnosticStart: TimeInterval = 0
@@ -106,7 +108,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         inertialViewer = InertialViewer()
         target = nil
         targetEye = nil
-        eyePosition = nil
+        eyePosition = neutralReference
+        acquisition = SceneAcquisitionEasing()
+        sceneActivation = 0
         referenceEye = nil
         lastFaceTime = 0
         lastDisplayTime = 0
@@ -153,6 +157,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         targetEye = nil
         eyePosition = nil
         referenceEye = nil
+        acquisition = SceneAcquisitionEasing()
+        sceneActivation = 0
         projection.reset()
         attitude = fallback
         status = enabled ? "Face parallax paused" : "Face parallax off"
@@ -239,14 +245,16 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude))
         let nextStatus = tracked ? "Face parallax on" :
             (estimate != nil ? "Gyro estimate; face out of view" :
-             (eyePosition == nil ? "Finding your face; using gyro" : "Tracking lost; holding scene"))
+             (targetEye == nil ? "Finding your face" : "Tracking lost; holding scene"))
         if status != nextStatus { status = nextStatus }
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
+        sceneActivation = acquisition.step(hasPose: targetEye != nil, elapsed: elapsed)
         attitude = smoother.step(toward: next, elapsed: elapsed)
         if let targetEye = nextEye {
             let previous = eyePosition ?? referenceEye ?? targetEye
-            let alpha = 1 - exp(-max(0, min(elapsed, 0.1)) / max(0.01, smoothingSeconds))
+            let acquisitionSmoothing = 0.12 * (1 - sceneActivation)
+            let alpha = 1 - exp(-max(0, min(elapsed, 0.1)) / max(0.01, smoothingSeconds, acquisitionSmoothing))
             eyePosition = ViewerPosition(
                 x: previous.x + alpha * (targetEye.x - previous.x),
                 y: previous.y + alpha * (targetEye.y - previous.y),

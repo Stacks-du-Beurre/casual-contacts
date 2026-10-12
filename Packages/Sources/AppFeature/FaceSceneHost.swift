@@ -56,7 +56,7 @@ struct FaceSceneHost<Content: View>: View {
                 distance: eye.distance
             ),
             reference: ViewerPosition(x: 0, y: 0, distance: 0.4),
-            backingDepthMeters: max(0, backingDepthMM) / 1000,
+            backingDepthMeters: max(0, backingDepthMM) / 1000 * tracker.sceneActivation,
             spacing: max(0.5, min(2, layerSpacing)),
             screenWidthMeters: max(55, min(90, screenWidthMM)) / 1000,
             viewport: UIScreen.main.bounds.size,
