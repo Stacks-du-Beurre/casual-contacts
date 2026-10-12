@@ -29,7 +29,8 @@
     "zodiac.sagittarius" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sagittarius" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Стрелец" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Стрілець" } } } },
     "zodiac.scorpio" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Scorpio" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Скорпион" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Скорпіон" } } } },
     "zodiac.taurus" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Taurus" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Телец" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Телець" } } } },
-    "zodiac.virgo" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Virgo" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Дева" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Діва" } } } }
+    "zodiac.virgo" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Virgo" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Дева" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Діва" } } } },
+    "Scene settings" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Scene settings"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Настройки сцены"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Налаштування сцени"}}}}
   },
   "version" : "1.0"
 }

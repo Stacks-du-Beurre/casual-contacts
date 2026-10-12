@@ -102,7 +102,8 @@
     "language.ukrainian" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Ukrainian" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Украинский" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Українська" } } } },
     "rebase" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "rebase" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "перебаз." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "перебаз." } } } },
     "settings.language" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Язык" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Мова" } } } },
-    "settle" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "settle" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "стабилиз." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "стабіл." } } } }
+    "settle" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "settle" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "стабилиз." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "стабіл." } } } },
+    "3D scene" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "3D scene"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "3D-сцена"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "3D-сцена"}}}}
   },
   "version" : "1.0"
 }

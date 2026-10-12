@@ -169,7 +169,7 @@ public struct TappedCardModalScene: View {
                         .lineLimit(1)
                         .accessibilityIdentifier("tappedCardModalFaceParallaxStatus")
                     if let onSceneSettings {
-                        Button("Scene settings", action: onSceneSettings)
+                        Button(ModuleLocalization.string("Scene settings", locale: locale), action: onSceneSettings)
                             .font(.caption2)
                     }
                 }

@@ -21,6 +21,7 @@ struct FaceSceneHost<Content: View>: View {
     @AppStorage("FaceScene.cameraHeightMM") private var cameraHeightMM = 65.0
     @AppStorage("FaceScene.savedPreset") private var savedPreset = ""
     @Bindable private var blendTuning = CardBlendTuning.shared
+    @Environment(\.locale) private var locale
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -68,41 +69,42 @@ struct FaceSceneHost<Content: View>: View {
     private var sceneSettings: some View {
         NavigationStack {
             Form {
-                Section("Enable 3D simulation") {
-                    Toggle("Cards in the list", isOn: $listEnabled)
-                    Toggle("Expanded card", isOn: $expandedEnabled)
-                    Text(tracker.status).font(.caption)
-                    Text("Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded.").font(.caption)
+                Section(ModuleLocalization.string("Enable 3D simulation", locale: locale)) {
+                    Toggle(ModuleLocalization.string("Cards in the list", locale: locale), isOn: $listEnabled)
+                    Toggle(ModuleLocalization.string("Expanded card", locale: locale), isOn: $expandedEnabled)
+                    ModuleLocalization.text(tracker.status, locale: locale).font(.caption)
+                    ModuleLocalization.text("Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded.", locale: locale).font(.caption)
+                    Link(ModuleLocalization.string("Privacy policy", locale: locale), destination: URL(string: "https://casualcontacts.app/privacy.html")!)
                 }
-                Section("Scene") {
+                Section(ModuleLocalization.string("Scene", locale: locale)) {
                     parameter("Backing depth", value: $backingDepthMM, range: 0...150, step: 5, unit: "mm")
                     parameter("Layer spacing", value: $layerSpacing, range: 0.5...2, step: 0.1, unit: "")
-                    Text("The rotation guilloche stays on the deepest blend layer.")
+                    ModuleLocalization.text("The rotation guilloche stays on the deepest blend layer.", locale: locale)
                         .font(.caption)
-                    Text("The backing sits behind the phone screen. Text stays on the front surface.")
+                    ModuleLocalization.text("The backing sits behind the phone screen. Text stays on the front surface.", locale: locale)
                         .font(.caption)
                 }
-                Section("Tracking") {
+                Section(ModuleLocalization.string("Tracking", locale: locale)) {
                     parameter("Smoothing", value: $smoothingMS, range: 10...150, step: 5, unit: "ms")
                     if let eye = tracker.eyePosition {
-                        Text("Eye distance: \(Int(eye.distance * 1000)) mm")
+                        ModuleLocalization.text("Eye distance: \(Int(eye.distance * 1000)) mm", locale: locale)
                     }
-                    Button("Reset tracking") { tracker.recenter() }
+                    Button(ModuleLocalization.string("Reset tracking", locale: locale)) { tracker.recenter() }
                 }
-                Section("Screen calibration") {
-                    Text("The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it.").font(.caption)
+                Section(ModuleLocalization.string("Screen calibration", locale: locale)) {
+                    ModuleLocalization.text("The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it.", locale: locale).font(.caption)
                     parameter("Screen width", value: $screenWidthMM, range: 55...90, step: 0.5, unit: "mm")
                     parameter("Camera above screen center", value: $cameraHeightMM, range: 40...80, step: 1, unit: "mm")
-                    Text("Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength.")
+                    ModuleLocalization.text("Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength.", locale: locale)
                         .font(.caption)
                 }
-                Section("Presets") {
-                    Button("Shallow · 20 mm") { backingDepthMM = 20; layerSpacing = 1; smoothingMS = 35 }
-                    Button("Balanced · 60 mm") { backingDepthMM = 60; layerSpacing = 1; smoothingMS = 35 }
-                    Button("Deep · 120 mm") { backingDepthMM = 120; layerSpacing = 1; smoothingMS = 35 }
-                    Button("Save my preset", action: saveScenePreset)
+                Section(ModuleLocalization.string("Presets", locale: locale)) {
+                    Button(ModuleLocalization.string("Shallow · 20 mm", locale: locale)) { backingDepthMM = 20; layerSpacing = 1; smoothingMS = 35 }
+                    Button(ModuleLocalization.string("Balanced · 60 mm", locale: locale)) { backingDepthMM = 60; layerSpacing = 1; smoothingMS = 35 }
+                    Button(ModuleLocalization.string("Deep · 120 mm", locale: locale)) { backingDepthMM = 120; layerSpacing = 1; smoothingMS = 35 }
+                    Button(ModuleLocalization.string("Save my preset", locale: locale), action: saveScenePreset)
                     if !savedPreset.isEmpty {
-                        Button("Load my preset") {
+                        Button(ModuleLocalization.string("Load my preset", locale: locale)) {
                             guard let values = try? JSONDecoder().decode([Double].self, from: Data(savedPreset.utf8)),
                                   (values.count == 5 || values.count == 7), values.allSatisfy(\.isFinite) else { return }
                             backingDepthMM = max(0, min(150, values[0]))
@@ -114,8 +116,8 @@ struct FaceSceneHost<Content: View>: View {
                     }
                 }
             }
-            .navigationTitle("3D scene")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingSceneSettings = false } } }
+            .navigationTitle(ModuleLocalization.string("3D scene", locale: locale))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(ModuleLocalization.string("Done", locale: locale)) { showingSceneSettings = false } } }
         }
     }
 
@@ -123,11 +125,11 @@ struct FaceSceneHost<Content: View>: View {
                            step: Double, unit: String) -> some View {
         VStack(alignment: .leading) {
             HStack {
-                Text(title)
+                ModuleLocalization.text(title, locale: locale)
                 Spacer()
-                Text("\(value.wrappedValue, specifier: "%.1f") \(unit)").monospacedDigit()
+                Text(verbatim: String(format: "%.1f %@", locale: locale, value.wrappedValue, unit)).monospacedDigit()
             }
-            Slider(value: value, in: range, step: step) { Text(title) }
+            Slider(value: value, in: range, step: step) { ModuleLocalization.text(title, locale: locale) }
         }
     }
 
