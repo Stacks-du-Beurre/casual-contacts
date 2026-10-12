@@ -11,6 +11,13 @@ fi
 CONFIG_PATH="$PROJECT_DIR/Config/DeveloperSettingsUpload.xcconfig"
 is_testflight_archive=false
 
+if [ "${CI_XCODE_CLOUD:-}" = "TRUE" ] && [ "${CI_WORKFLOW:-}" = "Development TestFlight" ]; then
+  case "${CI_BRANCH:-}" in
+    dev/?*) ;;
+    *) echo "ERROR: Development TestFlight requires a dev/* branch." >&2; exit 1 ;;
+  esac
+fi
+
 workflow="$(printf '%s' "${CI_WORKFLOW:-}" | tr '[:upper:]' '[:lower:]')"
 if [ "${CI_XCODE_CLOUD:-}" = "TRUE" ] && [ "${CI_XCODEBUILD_ACTION:-}" = "archive" ]; then
   case "$workflow" in

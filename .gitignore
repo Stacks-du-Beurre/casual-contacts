@@ -35,6 +35,7 @@ Tools/*/Package.resolved
 *.p12
 *.mobileprovision
 CasualContacts/Config/DeveloperSettingsUpload.xcconfig
+CasualContacts/TestFlight/WhatToTest.en-US.txt
 
 # MetricKit payload dumps pulled from device/sim — local-only, not for commit.
 docs/research/metrics/

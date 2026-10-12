@@ -7,6 +7,19 @@ import test from "node:test";
 
 const script = path.resolve("CasualContacts/ci_scripts/ci_post_clone.sh");
 
+test("development workflow refuses a main branch build before writing config", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
+  try {
+    assert.throws(() => execFileSync("sh", [script], {
+      env: projectEnvironment(workspace, {
+        CI_XCODEBUILD_ACTION: "archive", CI_WORKFLOW: "Development TestFlight", CI_BRANCH: "main"
+      }), stdio: "pipe"
+    }), error => /requires a dev\/\* branch/.test(error.stderr.toString()));
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 function projectEnvironment(workspace, overrides = {}) {
   fs.mkdirSync(path.join(workspace, "CasualContacts/CasualContacts.xcodeproj"), { recursive: true });
 
