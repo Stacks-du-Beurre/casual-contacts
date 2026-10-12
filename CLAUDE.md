@@ -82,6 +82,8 @@ Use `dev/*` branches for development TestFlight builds. A push starts the
 and distributes it only to the `Development` group. Use
 `Tools/testflight-dev.sh` to push a clean development branch. See
 `docs/development-testflight.md` for setup and verification.
+Markdown-only changes, including `CLAUDE.md`, do not start an app build. A push
+with both Markdown and app code changes still starts a build.
 
 `Tools/release.sh` and `Tools/testflight.sh` create and push tags for the existing
 release and core-test workflows. Use them only for an authorized release or
