@@ -374,7 +374,7 @@ public struct RootScene: Scene {
             .presentationCornerRadius(12)
         }
         .fullScreenCover(item: $router.selectedRecordForLargeDetail) { record in
-            LargeDetailScene(
+            FaceTrackedDetail(
                 record: record,
                 attitude: currentAttitude,
                 paths: environment.cardPathProvider,
