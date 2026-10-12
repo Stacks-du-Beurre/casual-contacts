@@ -28,6 +28,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var lastDisplayTime: TimeInterval = 0
     @ObservationIgnored private var active = false
     @ObservationIgnored private var requestID = 0
+    @ObservationIgnored private var trackingInputState = "waiting"
     #if DEBUG
     @ObservationIgnored private var diagnosticStart: TimeInterval = 0
     @ObservationIgnored private var cameraFrames = 0
@@ -130,9 +131,11 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         #if DEBUG
         cameraFrames += 1
         #endif
-        guard active, enabled, displayLink != nil,
-              let face = frame.anchors.compactMap({ $0 as? ARFaceAnchor }).first,
-              face.isTracked else { return }
+        guard active, enabled, displayLink != nil else { return }
+        guard let face = frame.anchors.compactMap({ $0 as? ARFaceAnchor }).first, face.isTracked else {
+            recordTrackingInput("ARKit face anchor unavailable or untracked")
+            return
+        }
         let left = face.leftEyeTransform.columns.3
         let right = face.rightEyeTransform.columns.3
         let midpoint = SIMD4<Float>((left.x + right.x) / 2, (left.y + right.y) / 2,
@@ -141,7 +144,11 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         // camera axes into the screen's right/up convention, without mirroring.
         let eye = frame.camera.viewMatrix(for: .portrait) * face.transform * midpoint
         let position = ViewerPosition(x: Double(eye.x), y: Double(eye.y), distance: Double(-eye.z))
-        guard let value = projection.attitude(for: position) else { return }
+        guard let value = projection.attitude(for: position) else {
+            recordTrackingInput("pose rejected by distance/finite-value guard")
+            return
+        }
+        recordTrackingInput("valid face pose")
         if referenceEye == nil { referenceEye = position }
         targetEye = position
         target = value
@@ -158,7 +165,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     public func sessionWasInterrupted(_ session: ARSession) {
         target = nil
-        status = "Face tracking interrupted; using gyro"
+        lastFaceTime = 0
+        status = "Face tracking interrupted; holding scene"
     }
 
     public func sessionInterruptionEnded(_ session: ARSession) {
@@ -169,8 +177,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     fileprivate func tick(_ link: CADisplayLink) {
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
-        let next = tracked ? (target ?? fallback) : fallback
-        let nextStatus = tracked ? "Face parallax on" : "Finding your face; using gyro"
+        let next = tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude)
+        let nextStatus = tracked ? "Face parallax on" :
+            (eyePosition == nil ? "Finding your face; using gyro" : "Tracking lost; holding scene")
         if status != nextStatus { status = nextStatus }
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
@@ -183,8 +192,6 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
                 y: previous.y + alpha * (targetEye.y - previous.y),
                 distance: previous.distance + alpha * (targetEye.distance - previous.distance)
             )
-        } else {
-            eyePosition = nil
         }
         #if DEBUG
         displayTicks += 1
@@ -195,6 +202,14 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
             displayTicks = 0
             diagnosticStart = now
         }
+        #endif
+    }
+
+    private func recordTrackingInput(_ state: String) {
+        guard state != trackingInputState else { return }
+        trackingInputState = state
+        #if DEBUG
+        print("[FaceParallax] Input: \(state)")
         #endif
     }
 }

@@ -46,7 +46,10 @@ struct FaceTrackedCardModal: View {
         )
         .environment(\.windowSceneProjection, windowProjection)
         .sheet(isPresented: $showingSceneSettings) { sceneSettings }
-        .onAppear { updateTracking() }
+        .onAppear {
+            updateTracking()
+            if savedPreset.isEmpty { saveScenePreset() }
+        }
         .onChange(of: attitude) { _, value in tracker.fallback = value }
         .onChange(of: scenePhase) { _, _ in updateTracking() }
         .onChange(of: reduceMotion) { _, _ in updateTracking() }
@@ -103,12 +106,7 @@ struct FaceTrackedCardModal: View {
                     Button("Shallow · 20 mm") { backingDepthMM = 20; layerSpacing = 1; smoothingMS = 35 }
                     Button("Balanced · 60 mm") { backingDepthMM = 60; layerSpacing = 1; smoothingMS = 35 }
                     Button("Deep · 120 mm") { backingDepthMM = 120; layerSpacing = 1; smoothingMS = 35 }
-                    Button("Save my preset") {
-                        let values = [backingDepthMM, layerSpacing, smoothingMS, screenWidthMM, cameraHeightMM]
-                        if let data = try? JSONEncoder().encode(values), let text = String(data: data, encoding: .utf8) {
-                            savedPreset = text
-                        }
-                    }
+                    Button("Save my preset", action: saveScenePreset)
                     if !savedPreset.isEmpty {
                         Button("Load my preset") {
                             guard let values = try? JSONDecoder().decode([Double].self, from: Data(savedPreset.utf8)),
@@ -136,6 +134,13 @@ struct FaceTrackedCardModal: View {
                 Text("\(value.wrappedValue, specifier: "%.1f") \(unit)").monospacedDigit()
             }
             Slider(value: value, in: range, step: step) { Text(title) }
+        }
+    }
+
+    private func saveScenePreset() {
+        let values = [backingDepthMM, layerSpacing, smoothingMS, screenWidthMM, cameraHeightMM]
+        if let data = try? JSONEncoder().encode(values), let text = String(data: data, encoding: .utf8) {
+            savedPreset = text
         }
     }
 

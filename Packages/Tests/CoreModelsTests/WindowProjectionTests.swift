@@ -4,6 +4,15 @@ import CoreModels
 @Suite struct WindowProjectionTests {
     let neutral = ViewerPosition(x: 0, y: 0, distance: 0.4)
 
+    @Test func closeRangeFacePosesRemainValidAndProjectWithoutSingularities() {
+        let close = ViewerPosition(x: 0.01, y: 0.02, distance: 0.08)
+        #expect(close.isValid)
+        let projected = WindowPlaneProjection(eye: close, reference: neutral, depth: 0.15)!
+        #expect(projected.scale.isFinite && projected.scale > 0)
+        #expect(projected.translationX.isFinite && projected.translationY.isFinite)
+        #expect(!ViewerPosition(x: 0, y: 0, distance: 0).isValid)
+    }
+
     @Test func rotationTracksDeepestBlendPlaneInBothOrders() {
         #expect(CardSceneDepth.blendFraction(index: 14, count: 15, reversed: false)
                 == CardSceneDepth.deepestBlendFraction)

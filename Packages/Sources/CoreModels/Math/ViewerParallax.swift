@@ -13,7 +13,7 @@ public struct ViewerPosition: Equatable, Sendable {
     }
 
     public var isValid: Bool {
-        x.isFinite && y.isFinite && distance.isFinite && (0.15...1.2).contains(distance)
+        x.isFinite && y.isFinite && distance.isFinite && (0.05...1.2).contains(distance)
     }
 }
 
