@@ -565,6 +565,7 @@ private struct RecordCardRow: View {
             photoSize: photoSize
         )
         .frame(height: 211)
+        .environment(\.windowCardFrame, frame == .zero ? nil : frame)
         // Rasterize each card's full blend stack into a single Metal texture
         // per row instead of paying ~20 offscreen passes per card per frame
         // for the hologram blur + blend chains. opaque: false preserves the

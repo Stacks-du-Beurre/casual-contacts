@@ -2,7 +2,12 @@ import SwiftUI
 import CoreModels
 import DesignSystem
 
-public struct GuillocheRotationLayer: View, Animatable {
+public struct GuillocheRotationLayer: View, Animatable, Equatable {
+
+    nonisolated public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.paths == rhs.paths && lhs.tint == rhs.tint && lhs.attitude == rhs.attitude
+            && lhs.usage == rhs.usage && lhs.reveal == rhs.reveal
+    }
 
     /// Which calling context the layer is used in — picks the matching
     /// tuning value so card variants and the empty-state hero can be dialed

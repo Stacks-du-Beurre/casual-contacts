@@ -17,6 +17,8 @@ public struct CardView: View {
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var depthTuning = CardElementDepthTuning.shared
+    @Environment(\.windowSceneProjection) private var windowScene
+    @Environment(\.windowCardFrame) private var cardFrame
 
     public init(
         record: Record,
@@ -76,6 +78,7 @@ public struct CardView: View {
             .clipped()
             .contentShape(Rectangle())
             .coordinateSpace(.named(Self.cardCoordinateSpace))
+            .environment(\.windowCardFrame, cardFrame ?? geo.frame(in: .global))
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityLabel(for: record))
@@ -114,6 +117,7 @@ public struct CardView: View {
                     .frame(width: 100, height: 90)
                     .padding(.top, 37)
                     .offset(depthOffset(layer: depthTuning.zodiacConstellationLayer))
+                    .windowDepth(0.25)
                     .accessibilityHidden(true)
             }
         }
@@ -134,6 +138,7 @@ public struct CardView: View {
                     HolographicZodiac(sign: sign, attitude: attitude)
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 79, trailing: 54))
                         .offset(depthOffset(layer: depthTuning.zodiacGlyphLayer))
+                        .windowDepth(0.12)
                 }
             }
             .overlay(alignment: .bottomTrailing) {
@@ -141,12 +146,14 @@ public struct CardView: View {
                 MoonPhaseLayer(phase: record.metadata.moonPhase)
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 14, trailing: 54))
                     .offset(depthOffset(layer: depthTuning.moonPhaseLayer))
+                    .windowDepth(0.12)
             }
     }
 
     /// Depth-layer translation matching the card's blend stack physics.
     private func depthOffset(layer: Int) -> CGSize {
-        GuillocheBlendLayer.depthOffset(
+        if windowScene != nil { return .zero }
+        return GuillocheBlendLayer.depthOffset(
             layer: layer,
             attitude: attitude,
             depthScale: blendTuning.depthScale,

@@ -20,6 +20,11 @@ public struct TappedCardModalScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
+    public let faceTrackingEnabled: Bool
+    public let faceTrackingStatus: String
+    public let onToggleFaceTracking: (() -> Void)?
+    public let onRecenterFaceTracking: (() -> Void)?
+    public let onSceneSettings: (() -> Void)?
 
     public init(
         record: Record,
@@ -30,7 +35,12 @@ public struct TappedCardModalScene: View {
         photoSize: CGSize? = nil,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
-        onDismiss: @escaping () -> Void
+        onDismiss: @escaping () -> Void,
+        faceTrackingEnabled: Bool = false,
+        faceTrackingStatus: String = "Face parallax off",
+        onToggleFaceTracking: (() -> Void)? = nil,
+        onRecenterFaceTracking: (() -> Void)? = nil,
+        onSceneSettings: (() -> Void)? = nil
     ) {
         self.record = record
         self.sourceFrame = sourceFrame
@@ -41,6 +51,11 @@ public struct TappedCardModalScene: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
+        self.faceTrackingEnabled = faceTrackingEnabled
+        self.faceTrackingStatus = faceTrackingStatus
+        self.onToggleFaceTracking = onToggleFaceTracking
+        self.onRecenterFaceTracking = onRecenterFaceTracking
+        self.onSceneSettings = onSceneSettings
     }
 
     @State private var cardVisible = false
@@ -136,6 +151,30 @@ public struct TappedCardModalScene: View {
             .accessibilityIdentifier("tappedCardModalEdit")
 
             Spacer()
+
+            if let onToggleFaceTracking {
+                VStack(spacing: 3) {
+                    Toggle("Face parallax", isOn: Binding(
+                        get: { faceTrackingEnabled },
+                        set: { value in
+                            if value != faceTrackingEnabled { onToggleFaceTracking() }
+                        }
+                    ))
+                    .toggleStyle(.switch)
+                    .fixedSize()
+                    .font(.caption)
+                    .accessibilityIdentifier("tappedCardModalFaceParallax")
+                    Text(faceTrackingStatus)
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .accessibilityIdentifier("tappedCardModalFaceParallaxStatus")
+                    if let onSceneSettings {
+                        Button("Scene settings", action: onSceneSettings)
+                            .font(.caption2)
+                    }
+                }
+                Spacer()
+            }
 
             Button(role: .destructive) { beginDismiss(then: onDelete) } label: {
                 ModuleLocalization.text("DELETE", locale: locale)

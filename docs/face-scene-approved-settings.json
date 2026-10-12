@@ -1,0 +1,16 @@
+{
+  "approvedDate": "2026-10-11",
+  "source": "Effective scene defaults and allowlisted on-device visual preferences",
+  "faceScene": {
+    "backingDepthMM": 60.0,
+    "layerSpacing": 1.0,
+    "smoothingMS": 35.0,
+    "screenWidthMM": 66.6,
+    "cameraHeightMM": 65.0
+  },
+  "inheritedCardSettings": {
+    "reverseDepthOrder": false,
+    "reverseMotionDirection": true,
+    "rotationGuillocheMovesInsteadOfRotates": true
+  }
+}
