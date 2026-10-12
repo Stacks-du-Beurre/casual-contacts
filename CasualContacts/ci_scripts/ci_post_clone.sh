@@ -16,6 +16,29 @@ if [ "${CI_XCODE_CLOUD:-}" = "TRUE" ] && [ "${CI_WORKFLOW:-}" = "Development Tes
     dev/?*) ;;
     *) echo "ERROR: Development TestFlight requires a dev/* branch." >&2; exit 1 ;;
   esac
+  if [ "${CI_XCODEBUILD_ACTION:-}" = "archive" ]; then
+    # Apple closes a marketing-version train after approval. Use the next
+    # patch version for development archives, only in the cloud checkout.
+    project_file="$PROJECT_DIR/CasualContacts.xcodeproj/project.pbxproj"
+    next_version="$(awk '
+      $1 == "MARKETING_VERSION" {
+        version = $3
+        sub(/;$/, "", version)
+        if (version !~ /^[0-9]+\.[0-9]+(\.[0-9]+)?$/) exit 1
+        split(version, parts, ".")
+        printf "%d.%d.%d", parts[1], parts[2], parts[3] + 1
+        found = 1
+        exit
+      }
+      END { if (!found) exit 1 }
+    ' "$project_file")" || {
+      echo "ERROR: could not calculate the next development marketing version." >&2
+      exit 1
+    }
+    sed -E "s/(MARKETING_VERSION = )[^;]+;/\\1${next_version};/g" "$project_file" > "$project_file.tmp"
+    mv "$project_file.tmp" "$project_file"
+    echo "Development archive marketing version: $next_version (cloud checkout only)."
+  fi
 fi
 
 workflow="$(printf '%s' "${CI_WORKFLOW:-}" | tr '[:upper:]' '[:lower:]')"

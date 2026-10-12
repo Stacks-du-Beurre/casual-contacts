@@ -7,6 +7,40 @@ import test from "node:test";
 
 const script = path.resolve("CasualContacts/ci_scripts/ci_post_clone.sh");
 
+test("development archives use the next patch version only in the cloud checkout", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
+  try {
+    const env = projectEnvironment(workspace, {
+      CI_XCODEBUILD_ACTION: "archive", CI_WORKFLOW: "Development TestFlight", CI_BRANCH: "dev/cards",
+      CC_DEVELOPER_SETTINGS_UPLOAD_URL: "https://example.invalid/upload",
+      CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN: "test-token"
+    });
+    const project = path.join(env.CI_PROJECT_FILE_PATH, "project.pbxproj");
+    fs.writeFileSync(project, "MARKETING_VERSION = 1.0.9;\nMARKETING_VERSION = 1.0.9;\n");
+    execFileSync("sh", [script], { env, stdio: "pipe" });
+    assert.equal(fs.readFileSync(project, "utf8"), "MARKETING_VERSION = 1.0.10;\nMARKETING_VERSION = 1.0.10;\n");
+    fs.writeFileSync(project, "MARKETING_VERSION = 1.0.9;\n");
+    execFileSync("sh", [script], { env: { ...env, CI_WORKFLOW: "Testflight Tagged Workflow" }, stdio: "pipe" });
+    assert.equal(fs.readFileSync(project, "utf8"), "MARKETING_VERSION = 1.0.9;\n");
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test("development archives fail clearly for an invalid marketing version", () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
+  try {
+    const env = projectEnvironment(workspace, {
+      CI_XCODEBUILD_ACTION: "archive", CI_WORKFLOW: "Development TestFlight", CI_BRANCH: "dev/cards"
+    });
+    fs.writeFileSync(path.join(env.CI_PROJECT_FILE_PATH, "project.pbxproj"), "MARKETING_VERSION = invalid;\n");
+    assert.throws(() => execFileSync("sh", [script], { env, stdio: "pipe" }),
+      error => /could not calculate/.test(error.stderr.toString()));
+  } finally {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 test("development workflow refuses a main branch build before writing config", () => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "cc-ci-post-clone-"));
   try {
