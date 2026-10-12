@@ -4,9 +4,9 @@ import Foundation
 public enum CardSceneDepth {
     public static let deepestBlendFraction = 0.70
     public static func blendFraction(index: Int, count: Int, reversed: Bool) -> Double {
-        guard count > 1 else { return deepestBlendFraction }
+        guard count > 1 else { return 0 }
         let t = Double(min(max(index, 0), count - 1)) / Double(count - 1)
-        return reversed ? 0.45 + 0.25 * t : deepestBlendFraction - 0.25 * t
+        return reversed ? deepestBlendFraction * (1 - t) : deepestBlendFraction * t
     }
 }
 

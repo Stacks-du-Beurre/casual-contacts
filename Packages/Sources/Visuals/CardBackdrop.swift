@@ -115,7 +115,7 @@ public struct CardBackdrop: View {
             .offset(rotationGuillocheOffset)
             // Share the deepest blend plane exactly, including its scale and
             // global translation, rather than adding a separate swirl depth.
-            .windowDepth(CardSceneDepth.deepestBlendFraction)
+            .windowDepth(blendPaths.count > 1 ? CardSceneDepth.deepestBlendFraction : 0)
 
             if let photo {
                 PhotoLayer(

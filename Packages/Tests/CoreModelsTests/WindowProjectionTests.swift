@@ -5,12 +5,22 @@ import CoreModels
     let neutral = ViewerPosition(x: 0, y: 0, distance: 0.4)
 
     @Test func rotationTracksDeepestBlendPlaneInBothOrders() {
-        #expect(CardSceneDepth.blendFraction(index: 0, count: 15, reversed: false)
+        #expect(CardSceneDepth.blendFraction(index: 14, count: 15, reversed: false)
                 == CardSceneDepth.deepestBlendFraction)
-        #expect(CardSceneDepth.blendFraction(index: 14, count: 15, reversed: true)
+        #expect(CardSceneDepth.blendFraction(index: 0, count: 15, reversed: true)
                 == CardSceneDepth.deepestBlendFraction)
         #expect(CardSceneDepth.blendFraction(index: 0, count: 1, reversed: true)
-                == CardSceneDepth.deepestBlendFraction)
+                == 0)
+    }
+
+    @Test func nearestBlendPlaneStaysOnTheScreenInBothOrders() {
+        #expect(CardSceneDepth.blendFraction(index: 0, count: 15, reversed: false) == 0)
+        #expect(CardSceneDepth.blendFraction(index: 14, count: 15, reversed: true) == 0)
+        #expect(CardSceneDepth.blendFraction(index: 0, count: 1, reversed: false) == 0)
+        let moved = ViewerPosition(x: 0.08, y: 0.04, distance: 0.25)
+        let front = WindowPlaneProjection(eye: moved, reference: neutral,
+            depth: CardSceneDepth.blendFraction(index: 0, count: 15, reversed: false))!
+        #expect(front.scale == 1 && front.translationX == 0 && front.translationY == 0)
     }
 
     @Test func screenPlaneNeverMovesAndCalibrationPreservesArtwork() {
