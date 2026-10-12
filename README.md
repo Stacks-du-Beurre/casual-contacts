@@ -94,6 +94,10 @@ xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
 
 ### Release and TestFlight scripts
 
+For branch builds, use the separate internal-only development workflow and
+`Tools/testflight-dev.sh`. See [Development TestFlight builds](docs/development-testflight.md)
+for cloud setup, linked worktrees, and installation on a phone.
+
 Release automation lives in `Tools/release.sh` and TestFlight triggering lives in `Tools/testflight.sh`. Both scripts require a clean working tree so every release or TestFlight build maps back to a committed, reproducible state.
 
 Use `Tools/release.sh` when you need to change the app version or build number. By default it bumps the final component of `MARKETING_VERSION`, resets `CURRENT_PROJECT_VERSION` to `1`, updates the marketing-site version display, commits the change, creates a `v-*` tag, and pushes the branch and tag. For another build of the same app version, use `--build-only`; this only increments `CURRENT_PROJECT_VERSION` and leaves the marketing-site version alone.

@@ -2,16 +2,16 @@
 
 iOS app for quickly recording people you've just met in casual settings — cafés, parties, concerts — where you might only have a first name and a short association. The app auto-captures ambient metadata (time, time-of-day label, moon phase, optional location) and derives a unique visual "card" from that metadata to reinforce memory through mental association.
 
-**Status (2026-04-18):** Plans 1–3 merged to `main`. Installable v1 running on iPhone 17 simulator, empty state visible. Plan 3.1 tracks remaining polish.
+Use the current source, Git history, and `TODO.md` to check project status. Plans in `docs/superpowers/` are historical context; check their requirements against the current source before you use them.
 
 ## Canonical docs
 
 - **Design reference (screen → Figma map + designer techniques):** `docs/DESIGN.md` — Figma layer + node ID for every screen, component, token, gradient, guilloche, hologram, moon phase, zodiac sign, plus the designer's PDF notes inlined per category. Load on-demand when touching visuals. **Design fidelity directives are below** — read them every session.
-- **Design spec:** `docs/superpowers/specs/2026-04-17-casual-contacts-design.md` — architecture, data model, screens, visual system, testing strategy, accessibility. If anything here conflicts, the spec wins.
+- **Design spec:** `docs/superpowers/specs/2026-04-17-casual-contacts-design.md` — architecture, data model, screens, visual system, testing strategy, accessibility. Use it for design and architecture context. Current user instructions and repository policies take precedence over historical specifications.
 - **Design specifications PDF:** `docs/CC Design Specifications.pdf` — designer-authored, explains guilloche techniques (rotation + blend), holographic blend-mode stacks, photo treatments.
 - **Original proposal:** `docs/proposal/Casual_Contacts_App_Proposal.pdf` — 2020-era pitch; functional requirements are still valid, aesthetic direction was superseded by the Figma designs.
-- **Figma file:** aesthetic source of truth. Pages + node IDs in `docs/casual-contacts-figma.md`. Figma MCP is authenticated for `hello@therealadammork.com`; both Stacks du Beurre and Beonest teams give Expert access.
-- **Plans:** `docs/superpowers/plans/` — each plan is a TDD-driven task list. Read the relevant plan before starting a task.
+- **Figma file:** aesthetic source of truth. Pages + node IDs in `docs/casual-contacts-figma.md`. Check the available Figma connection when you need access; do not assume an account or permission level.
+- **Plans:** `docs/superpowers/plans/` — read a relevant plan when it helps with the task. Do not require a new plan for routine changes.
 
 ## Design fidelity directives
 
@@ -66,110 +66,102 @@ AppFeature                            ← wiring layer, only module that sees co
 
 **Rule:** Feature modules only import `CoreModels` protocols, `DesignSystem`, and `Visuals`. They never see SwiftData, CoreLocation, or CoreMotion directly. The compiler enforces this via Swift Package target dependencies.
 
+## Worktree and Git policy
+
+Keep the root checkout on `main`. Create a separate branch in a linked worktree
+under `.worktrees/<branch-name>/`. Use relative paths from that worktree.
+Do not link dependencies, credentials, data, or build output to another checkout.
+
+Agents may commit and push task-related branches to GitHub without a separate
+permission request. Do not force-push, delete remote branches, publish a release,
+or merge into `main` unless the current task authorizes that action. Check the
+staged diff for secrets before a commit.
+
+Use `dev/*` branches for development TestFlight builds. A push starts the
+`Development TestFlight` Xcode Cloud workflow. It produces an internal-only build
+and distributes it only to the `Development` group. Use
+`Tools/testflight-dev.sh` to push a clean development branch. See
+`docs/development-testflight.md` for setup and verification.
+Markdown-only changes, including `CLAUDE.md`, do not start an app build. A push
+with both Markdown and app code changes still starts a build.
+
+`Tools/release.sh` and `Tools/testflight.sh` create and push tags for the existing
+release and core-test workflows. Use them only for an authorized release or
+core-test build. Do not use them for development branch builds.
+
 ## Common workflows
 
-### Run tests on macOS host
+Run commands from the active checkout. Prefix shell commands with `rtk` as
+specified in the local machine instructions.
 
-```bash
-cd /Users/adam/Projects/cc/Packages
-swift test
+### Fast checks
+
+For pure Swift changes, run the relevant host tests from `Packages`:
+
+```sh
+cd Packages
+rtk proxy swift test
 ```
 
-Expected: ~125 tests pass across ~36 suites. Fast, no simulator needed. Use this for quick feedback while iterating on pure-Swift code.
+For CI script changes:
 
-### Run tests on iOS simulator
-
-```bash
-cd /Users/adam/Projects/cc/Packages
-xcodebuild test \
-    -scheme CasualContactsPackages-Package \
-    -destination 'platform=iOS Simulator,name=iPhone 17'
+```sh
+rtk proxy node --test Tools/ci-post-clone.test.mjs Tools/testflight-dev.test.mjs
 ```
 
-Needed for: `CardSnapshotTests` (UIKit-gated), `AppEnvironmentTests.production()` (CoreMotion-gated), anything that exercises actual iOS APIs.
+For iOS-specific tests, select an available simulator and run the smallest
+relevant test set. Do not assume a simulator name is available. Read the local
+Simulator lifecycle skill before you create, boot, or shut down a simulator.
+Use existing coverage. Add tests when they preserve an important behavior.
 
-### Build + install the app
+### Build and run
 
-```bash
-cd /Users/adam/Projects/cc
-xcodebuild build \
-    -scheme CasualContacts \
-    -destination 'platform=iOS Simulator,name=iPhone 17'
+Prefer available XcodeBuildMCP tools for supported build and simulator actions.
+For a physical phone, discover the device with `xcrun devicectl list devices`.
+Build the `CasualContacts` scheme from
+`CasualContacts/CasualContacts.xcodeproj` for that device. Use a derived-data
+path inside the active worktree, then install and launch with `devicectl`.
+Do not assume a device identifier, pairing state, or network route.
 
-xcrun simctl boot "iPhone 17" 2>/dev/null || true
-xcrun simctl install "iPhone 17" \
-    /Users/adam/Projects/cc/CasualContacts/build/Debug-iphonesimulator/CasualContacts.app
-xcrun simctl launch "iPhone 17" com.stacksdubeurre.CasualContacts
-```
+For simulator builds, select an available simulator, use derived data inside the
+active worktree, and install the resulting app. The bundle ID is
+`com.stacksdubeurre.CasualContacts`.
 
-### Inspect / debug the running app (iOS Simulator MCP)
-
-The `ios-simulator` MCP (joshuayoes/ios-simulator-mcp, configured in `.mcp.json`) is the preferred way to drive, screenshot, and inspect the simulator from within a session. Use it whenever you need to verify a visual change, reproduce a UI bug, or debug a layout issue — don't ask the user to describe what they see if you can look yourself.
-
-Tools most relevant to this project (all namespaced `mcp__ios-simulator__*`):
-
-**Prefer `ui_describe_all` over screenshots whenever possible** — the view hierarchy is structured text and uses far less context than an image. Reach for `screenshot` / `ui_view` only when you genuinely need to *see* the rendered pixels (Figma diffs, blend-mode validation, font rendering). For "is the element on screen, where, and what does it say?" the hierarchy tells you everything without burning image tokens.
-
-- **`screenshot` / `ui_view`** — visual check after a build+install. Use only when pixels matter (Figma comparison, visual regressions). `ui_view` returns an inline compressed image; `screenshot` writes a file.
-- **`ui_describe_all`** — **the default tool for inspecting the running app and debugging layout issues.** Returns the full accessibility hierarchy for the current screen: every element's frame, label, identifier, traits, and nesting. Use this instead of guessing — and instead of a screenshot — when:
-  - Something is "not showing up" — check whether the element is in the tree at all, and if so what its frame is (off-screen? zero-sized? covered?).
-  - A tap isn't landing — confirm the actual on-screen bounds before re-running `ui_tap`.
-  - A card/row looks wrong — compare reported frames against Figma's expected proportions.
-  - VoiceOver labels need auditing for the accessibility pass (Plan 3.1 T10).
-- **`ui_describe_point`** — element at specific x,y. Useful when you have a screenshot with a suspicious region and want to know *which* element is there.
-- **`ui_tap` / `ui_swipe` / `ui_type`** — drive flows (e.g. empty state → tap + → type name → Save) to reach the screen you need to inspect.
-- **`launch_app` / `install_app`** — after a fresh `xcodebuild build`, `install_app` + `launch_app com.stacksdubeurre.CasualContacts` is equivalent to the `simctl` commands above.
-
-Typical debugging loop: build + install → `launch_app` → `ui_describe_all` to understand the current tree → adjust SwiftUI → rebuild → re-inspect. Only fall back to `screenshot` if the hierarchy can't answer the question (e.g. you need to see actual rendered pixels). This is much faster, cheaper on context, and more reliable than eyeballing screenshots alone when the issue is a frame/layout bug.
-
-Prerequisites: Facebook IDB (`brew install idb-companion` + `pipx install fb-idb --python python3.11`). If IDB isn't installed, the MCP tools will fail with a connection error — ask the user to install it rather than falling back to guesses.
+Use an available accessibility hierarchy tool to inspect controls and text.
+Use screenshots when pixels matter, including Figma comparisons and blend-mode
+checks. Do not require one particular simulator plugin or ask for dependency
+installation if an available tool can perform the check.
 
 ### Regenerate guilloche Swift files
 
-After any change to `Tools/SVGToSwift/` or a new drop of SVGs in `design-assets/Guilloche/App/`:
+After changes under `Tools/SVGToSwift/` or new SVGs in
+`design-assets/Guilloche/App/`, run:
 
-```bash
-cd /Users/adam/Projects/cc
-./Tools/regenerate-svg.sh
+```sh
+rtk proxy ./Tools/regenerate-svg.sh
 ```
 
-Produces Swift files in `Packages/Sources/Visuals/Guilloche/Generated/`. Without this, `RealCardPathProvider` fails to compile. The script also packages finalized Cyrillic pipeline output before converting SVGs.
+This produces files in `Packages/Sources/Visuals/Guilloche/Generated/`.
 
-### Run snapshot tests (visual regression)
+### Snapshot tests
 
-Reference images live at `Packages/Tests/VisualsTests/__Snapshots__/CardSnapshotTests/`. Committed. Only re-run when visuals intentionally change:
+Committed reference images are in
+`Packages/Tests/VisualsTests/__Snapshots__/CardSnapshotTests/`.
+Run the relevant snapshot tests for visual changes. Inspect diffs before you
+update reference images. Do not delete the references to make a failure pass.
 
-```bash
-cd /Users/adam/Projects/cc/Packages
-xcodebuild test \
-    -scheme CasualContactsPackages-Package \
-    -destination 'platform=iOS Simulator,name=iPhone 17' \
-    -only-testing:VisualsTests/CardSnapshotTests
-```
+### Motion diagnostics
 
-Delete the PNGs first if you want to re-record from scratch.
+Debug builds expose Settings → Motion debug. Use it to inspect the CoreMotion
+pipeline when the task requires motion diagnostics.
 
-### Inspect the motion pipeline live (DEBUG only)
+## Task execution
 
-Settings → "Motion debug" exposes raw Euler, quaternion, gravity, every
-intermediate stage of the CoreMotion pipeline, and the throttled output
-as live numerics + 10 s sparklines. Use it to investigate gimbal-lock
-behavior near vertical or any other discontinuity in the signal.
-Disposable — gets removed once the pipeline-fix spec lands.
-
-## Plan execution workflow
-
-We use the `superpowers:subagent-driven-development` skill. One plan per major chunk of work. Branch → execute tasks → review → merge fast-forward to main.
-
-1. Read the plan file from `docs/superpowers/plans/`.
-2. `git checkout -b plan/<N>-<short-name>`.
-3. Create TaskCreate entries for each task in the plan.
-4. Dispatch implementer subagent per task with the task text + scene-setting context. Agents should `Read` the plan file for details; don't inline 500-line task descriptions.
-5. After each task: verify tests pass, commit, mark task complete.
-6. For mechanical tasks a combined spec+quality review works; for substantive tasks run them separately per the skill.
-7. After all tasks: merge fast-forward, delete branch.
-
-Plans 1, 2, and 3 followed this pattern. Each produced 15–20 TDD commits.
+Use the smallest workflow that completes the requested task. Read relevant
+project documentation, make the change in the active worktree, run appropriate
+checks, and report the result with a verification path. Work sequentially unless
+the user requests delegation. Keep release and App Store actions within the
+scope the user authorized.
 
 ## Patterns that have emerged (follow these)
 
@@ -181,57 +173,19 @@ Plans 1, 2, and 3 followed this pattern. Each produced 15–20 TDD commits.
 - **Font names:** `CormorantInfant` is a variable-axis font; use `Font.custom("CormorantInfant", size:)` plus `.fontWeight(.semibold)` rather than a named SemiBold variant.
 - **UUID hashing for stable derivations:** Swift's `String.hashValue` is process-seeded. For deterministic cross-launch derivations, hash the raw UUID bytes (see `VisualAccoutrements.accoutrements` for the byte-sum pattern).
 
-## Outstanding work — Plan 3.1
+## Backlog
 
-Polish tasks deferred from Plan 3:
-
-- **T10 — Accessibility pass**
-  - Dynamic Type scaling verified at XXXL on all cards
-  - Composite VoiceOver labels on every card
-  - `.accessibilityHidden(true)` on decorative layers (gradients, guilloche, holograms)
-
-- **T11 — Reduce Motion / Reduce Transparency**
-  - `MotionService` publishes `.zero` permanently when `UIAccessibility.isReduceMotionEnabled`
-  - Blend-mode stacks collapse to solid fills when `isReduceTransparencyEnabled`
-  - Hologram rotations, transfusion opacity shifts, letter-blend parallax all static in reduced-motion mode
-
-- **T13 — XCUITest suite**
-  - Target creation may require manual Xcode UI step (File → New → Target → iOS UI Testing Bundle)
-  - Cover: first launch → empty state → tap + → enter name → Save → verify row appears
-
-- **T14 — App icon**
-  - Export from Figma node `388:13592` at iOS 18 required sizes
-  - Populate `CasualContacts/CasualContacts/Assets.xcassets/AppIcon.appiconset/`
-  - Verify release-mode `xcodebuild build -configuration Release` succeeds
-
-## Known rough edges worth verifying on simulator
-
-- Fonts may not visually resolve as Cormorant even though `FontRegistration` runs — snapshot pass last verified before `FontRegistration` wiring. Do a visual QA pass on an iOS simulator build.
-- CardView layout in small/medium/large sizes may need proportional tweaks — the zodiac layer currently takes a large chunk of the card with no frame constraint in the snapshot that was captured.
-- Empty-state placeholder glyph is a rounded rectangle; should eventually use the `A/Polygon` asset from design-assets.
-
-## Deferred to v1.1+ (beyond Plan 3.1)
-
-Per the design spec Section 8. Clean seams exist for each:
-
-- Recommended section (location-proximity retrieval)
-- Default + Advanced Sorting screens
-- 2-person add flow
-- iCloud sync (SwiftData `ModelConfiguration(cloudKitDatabase:)`)
-- Advanced Card Stack list layout
-- Phone / email fields
+Use `TODO.md` and current task requirements for the backlog. Historical plans
+contain proposed work and past observations; do not treat them as verified
+current defects or incomplete tasks. The app already has a UI test target and
+Icon Composer artwork.
 
 ## Quirks & conventions
 
 - **Source filename typos preserved:** the designer's SVG filenames include `Waxing_Crescennt` and `Waning_Crescennt` (double-n). The `MoonPhase` enum uses correct spelling; `MoonPhaseLayer.assetName(for:)` maps between them.
 - **Cyrillic folder name preserved:** `design-assets/Zodiac/Сonstellations/` starts with Cyrillic С, not Latin C. We copy the files into a normalized `Zodiac.xcassets` at build time so the Cyrillic leak doesn't reach the app bundle.
-- **Nobody pushes to GitHub from the agent.** Push is a user-visible action — ask first. Currently `main` is 43 commits ahead of `origin/main` (all local).
 
-## Memory
+## Local machine configuration
 
-Auto-memory at `/Users/adam/.claude/projects/-Users-adam-Projects-cc/memory/`. Honored in every session automatically. Current entries:
-
-- `feedback_avoid_political_references.md` — no political figures in examples
-- `feedback_structure_for_future_refactor.md` — skip deferred features, but keep boundaries clean for later
-
-Add to `MEMORY.md` when you learn something durable about the user or project that isn't obvious from code.
+Read `~/.codex/AGENTS.machine.md` when present. Keep local account, credential,
+tool installation, and memory paths out of shared repository instructions.
