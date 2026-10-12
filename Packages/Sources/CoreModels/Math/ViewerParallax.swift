@@ -12,6 +12,12 @@ public struct ViewerPosition: Equatable, Sendable {
         self.distance = distance
     }
 
+    /// Neutral viewpoint above the physical screen center, expressed from
+    /// the front camera. It is independent of the first detected face.
+    public static func screenCentered(cameraHeightMeters: Double, distance: Double = 0.4) -> Self {
+        Self(x: 0, y: -cameraHeightMeters, distance: distance)
+    }
+
     public var isValid: Bool {
         x.isFinite && y.isFinite && distance.isFinite && (0.05...1.2).contains(distance)
     }
@@ -22,19 +28,29 @@ public struct ViewerPosition: Equatable, Sendable {
 /// not silently erase camera-driven perspective as the gyro rebaser does.
 public struct ViewerParallax: Sendable {
     private var origin: ViewerPosition?
+    private let fixedReference: ViewerPosition?
 
-    public init() {}
+    public init(reference: ViewerPosition? = nil) {
+        fixedReference = reference
+        origin = reference
+    }
 
-    public mutating func reset() { origin = nil }
+    public mutating func reset() { origin = fixedReference }
 
     public mutating func attitude(for position: ViewerPosition) -> DeviceAttitude? {
         guard position.isValid else { return nil }
         if origin == nil { origin = position }
         guard let origin else { return nil }
         let fullScale = tan(15.0 * .pi / 180.0)
+        let x = fixedReference == nil
+            ? position.x / position.distance - origin.x / origin.distance
+            : (position.x - origin.x) / position.distance
+        let y = fixedReference == nil
+            ? position.y / position.distance - origin.y / origin.distance
+            : (position.y - origin.y) / position.distance
         return DeviceAttitude(
-            pitch: -(position.y / position.distance - origin.y / origin.distance) / fullScale,
-            roll: (position.x / position.distance - origin.x / origin.distance) / fullScale
+            pitch: -y / fullScale,
+            roll: x / fullScale
         ).clamped()
     }
 }

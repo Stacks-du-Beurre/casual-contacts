@@ -22,6 +22,7 @@ public struct SettingsSheet: View {
     public let onRemoveDebugRecords: () -> Void
     public let onOpenLetterGallery: () -> Void
     public let onShowInListDeveloperSettings: () -> Void
+    public let onShowSceneSettings: (() -> Void)?
     /// Reads current OS location authorization without prompting. Called on
     /// appear and after a permission request to refresh the toggle's
     /// displayed state.
@@ -43,6 +44,7 @@ public struct SettingsSheet: View {
         onRemoveDebugRecords: @escaping () -> Void = {},
         onOpenLetterGallery: @escaping () -> Void = {},
         onShowInListDeveloperSettings: @escaping () -> Void = {},
+        onShowSceneSettings: (() -> Void)? = nil,
         readLocationAuthorization: @escaping () -> LocationAuthorization = { .notDetermined },
         onLocationToggleTapped: @escaping () async -> Void = {},
         motionService: (any MotionService)? = nil
@@ -54,6 +56,7 @@ public struct SettingsSheet: View {
         self.onRemoveDebugRecords = onRemoveDebugRecords
         self.onOpenLetterGallery = onOpenLetterGallery
         self.onShowInListDeveloperSettings = onShowInListDeveloperSettings
+        self.onShowSceneSettings = onShowSceneSettings
         self.readLocationAuthorization = readLocationAuthorization
         self.onLocationToggleTapped = onLocationToggleTapped
         self.motionService = motionService
@@ -145,6 +148,11 @@ public struct SettingsSheet: View {
             }
 
             SettingsGroup(title: "Developer") {
+                if let onShowSceneSettings {
+                    SettingsRow(label: "3D scene", onTap: onShowSceneSettings) {
+                        Image(systemName: "cube.transparent")
+                    }
+                }
                 SettingsRow(label: "Developer settings", onTap: { path.append(.developer) }) {
                     trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                 }

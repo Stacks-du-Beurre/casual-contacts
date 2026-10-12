@@ -5,16 +5,13 @@ import Services
 import Visuals
 import FeatureDetail
 
-struct FaceTrackedCardModal: View {
-    let record: Record
-    let sourceFrame: CGRect
+struct FaceSceneHost<Content: View>: View {
+    let listVisible: Bool
+    let expandedVisible: Bool
     let attitude: DeviceAttitude
-    let paths: any CardPathProvider
-    let photo: Image?
-    let photoSize: CGSize?
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-    let onDismiss: () -> Void
+    let content: (FaceParallaxController, WindowSceneProjection?, Binding<Bool>) -> Content
+    @AppStorage("FaceScene.listEnabled") private var listEnabled = false
+    @AppStorage("FaceScene.expandedEnabled") private var expandedEnabled = false
     @State private var tracker = FaceParallaxController()
     @State private var showingSceneSettings = false
     @AppStorage("FaceScene.backingDepthMM") private var backingDepthMM = 60.0
@@ -28,23 +25,7 @@ struct FaceTrackedCardModal: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TappedCardModalScene(
-            record: record,
-            sourceFrame: sourceFrame,
-            attitude: reduceMotion ? .zero : (tracker.enabled ? tracker.renderingAttitude : attitude),
-            paths: paths,
-            photo: photo,
-            photoSize: photoSize,
-            onEdit: onEdit,
-            onDelete: onDelete,
-            onDismiss: onDismiss,
-            faceTrackingEnabled: tracker.enabled,
-            faceTrackingStatus: tracker.status,
-            onToggleFaceTracking: { tracker.setEnabled(!tracker.enabled) },
-            onRecenterFaceTracking: { tracker.recenter() },
-            onSceneSettings: { showingSceneSettings = true }
-        )
-        .environment(\.windowSceneProjection, windowProjection)
+        content(tracker, windowProjection, $showingSceneSettings)
         .sheet(isPresented: $showingSceneSettings) { sceneSettings }
         .onAppear {
             updateTracking()
@@ -53,34 +34,46 @@ struct FaceTrackedCardModal: View {
         .onChange(of: attitude) { _, value in tracker.fallback = value }
         .onChange(of: scenePhase) { _, _ in updateTracking() }
         .onChange(of: reduceMotion) { _, _ in updateTracking() }
+        .onChange(of: listVisible) { _, _ in updateTracking() }
+        .onChange(of: expandedVisible) { _, _ in updateTracking() }
+        .onChange(of: listEnabled) { _, _ in updateTracking() }
+        .onChange(of: expandedEnabled) { _, _ in updateTracking() }
+        .onChange(of: cameraHeightMM) { _, value in tracker.setCameraHeight(value / 1000) }
         .onChange(of: smoothingMS) { _, value in tracker.smoothingSeconds = value / 1000 }
         .onDisappear { tracker.setActive(false) }
     }
 
     private var windowProjection: WindowSceneProjection? {
         guard !reduceMotion, tracker.enabled,
-              let eye = tracker.eyePosition, let reference = tracker.referenceEye else { return nil }
+              let eye = tracker.eyePosition else { return nil }
         // ARKit poses use the front camera as origin. Approximate its height
         // above screen center; expose calibration instead of claiming precision.
         let height = cameraHeightMM / 1000
         return WindowSceneProjection(
             eye: ViewerPosition(
-                x: blendTuning.reverseMotionDirection ? 2 * reference.x - eye.x : eye.x,
-                y: (blendTuning.reverseMotionDirection ? 2 * reference.y - eye.y : eye.y) + height,
+                x: blendTuning.reverseMotionDirection ? -eye.x : eye.x,
+                y: blendTuning.reverseMotionDirection ? -(eye.y + height) : eye.y + height,
                 distance: eye.distance
             ),
-            reference: ViewerPosition(x: reference.x, y: reference.y + height, distance: reference.distance),
+            reference: ViewerPosition(x: 0, y: 0, distance: 0.4),
             backingDepthMeters: max(0, backingDepthMM) / 1000,
             spacing: max(0.5, min(2, layerSpacing)),
             screenWidthMeters: max(55, min(90, screenWidthMM)) / 1000,
             viewport: UIScreen.main.bounds.size,
-            reverseGuillocheDepthOrder: blendTuning.reverseDepthOrder
+            reverseGuillocheDepthOrder: blendTuning.reverseDepthOrder,
+            cardCenteredReference: !expandedVisible
         )
     }
 
     private var sceneSettings: some View {
         NavigationStack {
             Form {
+                Section("Enable 3D simulation") {
+                    Toggle("Cards in the list", isOn: $listEnabled)
+                    Toggle("Expanded card", isOn: $expandedEnabled)
+                    Text(tracker.status).font(.caption)
+                    Text("Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded.").font(.caption)
+                }
                 Section("Scene") {
                     parameter("Backing depth", value: $backingDepthMM, range: 0...150, step: 5, unit: "mm")
                     parameter("Layer spacing", value: $layerSpacing, range: 0.5...2, step: 0.1, unit: "")
@@ -94,9 +87,10 @@ struct FaceTrackedCardModal: View {
                     if let eye = tracker.eyePosition {
                         Text("Eye distance: \(Int(eye.distance * 1000)) mm")
                     }
-                    Button("Recenter scene") { tracker.recenter() }
+                    Button("Reset tracking") { tracker.recenter() }
                 }
                 Section("Screen calibration") {
+                    Text("The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it.").font(.caption)
                     parameter("Screen width", value: $screenWidthMM, range: 55...90, step: 0.5, unit: "mm")
                     parameter("Camera above screen center", value: $cameraHeightMM, range: 40...80, step: 1, unit: "mm")
                     Text("Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength.")
@@ -120,7 +114,7 @@ struct FaceTrackedCardModal: View {
                     }
                 }
             }
-            .navigationTitle("Scene settings")
+            .navigationTitle("3D scene")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingSceneSettings = false } } }
         }
     }
@@ -147,7 +141,10 @@ struct FaceTrackedCardModal: View {
     private func updateTracking() {
         tracker.fallback = attitude
         tracker.smoothingSeconds = smoothingMS / 1000
-        tracker.setActive(scenePhase == .active && !reduceMotion)
+        tracker.setCameraHeight(cameraHeightMM / 1000)
+        let enabled = expandedVisible ? expandedEnabled : (listVisible && listEnabled)
+        tracker.setActive(scenePhase == .active && !reduceMotion && (listVisible || expandedVisible))
+        if tracker.enabled != enabled { tracker.setEnabled(enabled) }
     }
 }
 #endif

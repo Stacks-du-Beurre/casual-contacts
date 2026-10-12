@@ -6,6 +6,7 @@ import FeatureList
 import FeatureCreate
 import FeatureDetail
 import FeatureSettings
+import Services
 #if os(iOS)
 import UIKit
 #endif
@@ -144,10 +145,22 @@ public struct RootScene: Scene {
     @MainActor
     @ViewBuilder
     private var rootContent: some View {
+        FaceSceneHost(
+            listVisible: !router.showingCreate && router.editingRecord == nil && router.tappedRecord == nil,
+            expandedVisible: router.tappedRecord != nil,
+            attitude: currentAttitude
+        ) { tracker, projection, showSceneSettings in
+            trackedRootContent(tracker: tracker, projection: projection, showSceneSettings: showSceneSettings)
+        }
+    }
+
+    @MainActor
+    private func trackedRootContent(tracker: FaceParallaxController, projection: WindowSceneProjection?,
+                                    showSceneSettings: Binding<Bool>) -> some View {
         RecordsListScene(
             store: environment.recordStore,
             paths: environment.cardPathProvider,
-            attitude: router.tappedRecord == nil ? currentAttitude : frozenListAttitude,
+            attitude: router.tappedRecord == nil ? (tracker.enabled ? tracker.renderingAttitude : currentAttitude) : frozenListAttitude,
             timeOfDay: currentTimeOfDay,
             onTapRecord: { record, frame in
                 frozenListAttitude = currentAttitude
@@ -182,6 +195,7 @@ public struct RootScene: Scene {
             },
             onDistanceSortRequest: handleDistanceSortRequested
         )
+        .environment(\.windowSceneProjection, router.tappedRecord == nil ? projection : nil)
         .onChange(of: environment.recordStore.records.map(\.id)) { _, ids in
             let kept = Set(ids)
             router.clearSelections(keeping: kept)
@@ -318,10 +332,10 @@ public struct RootScene: Scene {
         }
         .overlay {
             if let tapped = router.tappedRecord {
-                FaceTrackedCardModal(
+                TappedCardModalScene(
                     record: tapped,
                     sourceFrame: router.tappedRecordSourceFrame,
-                    attitude: currentAttitude,
+                    attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
                     paths: environment.cardPathProvider,
                     photo: photoCache.image(for: tapped.photoID),
                     photoSize: photoCache.imageSize(for: tapped.photoID),
@@ -329,6 +343,7 @@ public struct RootScene: Scene {
                     onDelete: { pendingDeleteRecord = tapped },
                     onDismiss: { router.tappedRecord = nil }
                 )
+                .environment(\.windowSceneProjection, projection)
                 .transition(.identity)
             }
         }
@@ -403,6 +418,13 @@ public struct RootScene: Scene {
                 onRemoveDebugRecords: removeDebugRecords,
                 onOpenLetterGallery: openLetterGallery,
                 onShowInListDeveloperSettings: showInListDeveloperSettings,
+                onShowSceneSettings: {
+                    router.showingSettings = false
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        showSceneSettings.wrappedValue = true
+                    }
+                },
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 onLocationToggleTapped: { await handleSettingsLocationToggleTapped() },
                 motionService: environment.motionService

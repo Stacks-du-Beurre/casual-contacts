@@ -18,6 +18,7 @@ public struct CardBackdrop: View {
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
     @Environment(\.windowSceneProjection) private var windowScene
     @State private var reveal: Double = 0
+    @State private var cachedSwirlPaths: [Path] = []
     /// Letter last used to seed the blend paths while the guilloche was
     /// visible. Held across the exit animation so deleting the final letter
     /// of the name fades the user's letter out — not the "A" fallback.
@@ -106,14 +107,13 @@ public struct CardBackdrop: View {
             // animate per-path opacity into and out of view. At `reveal == 0`
             // each layer short-circuits stroking so the cost is negligible.
             GuillocheRotationLayer(
-                paths: GuillocheRotationLayer.swirlPaths(
-                    from: paths.rotationPaths(for: renderLetter).first
-                ),
+                paths: cachedSwirlPaths,
                 tint: .white,
                 attitude: rotationGuillocheAttitude,
                 usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
                 reveal: reveal
             )
+            .equatable()
             .offset(rotationGuillocheOffset)
             // Share the deepest blend plane exactly, including its scale and
             // global translation, rather than adding a separate swirl depth.
@@ -155,17 +155,24 @@ public struct CardBackdrop: View {
             // (list rows, detail) don't replay the ink-in animation every
             // time they appear.
             persistedLetter = accoutrements.letter
+            cachedSwirlPaths = GuillocheRotationLayer.swirlPaths(from: paths.rotationPaths(for: accoutrements.letter).first)
             reveal = showsGuilloche ? 1 : 0
         }
         .onChange(of: accoutrements.letter) { _, newLetter in
             // Only follow the live letter while we're currently showing —
             // during the exit animation the frozen letter keeps drawing.
-            if showsGuilloche { persistedLetter = newLetter }
+            if showsGuilloche {
+                persistedLetter = newLetter
+                cachedSwirlPaths = GuillocheRotationLayer.swirlPaths(from: paths.rotationPaths(for: newLetter).first)
+            }
         }
         .onChange(of: showsGuilloche) { _, shown in
             // Capture the latest letter on the way in so it's available as the
             // "frozen" letter during the next exit.
-            if shown { persistedLetter = accoutrements.letter }
+            if shown {
+                persistedLetter = accoutrements.letter
+                cachedSwirlPaths = GuillocheRotationLayer.swirlPaths(from: paths.rotationPaths(for: accoutrements.letter).first)
+            }
             // The layers own the per-path stagger math; the animation here
             // simply interpolates `reveal` linearly across the full window.
             withAnimation(.linear(duration: Self.revealDuration)) {

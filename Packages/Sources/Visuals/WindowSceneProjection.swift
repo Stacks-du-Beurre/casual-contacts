@@ -9,10 +9,11 @@ public struct WindowSceneProjection: Sendable {
     public let screenWidthMeters: Double
     public let viewport: CGSize
     public let reverseGuillocheDepthOrder: Bool
+    public let cardCenteredReference: Bool
 
     public init(eye: ViewerPosition, reference: ViewerPosition, backingDepthMeters: Double,
                 spacing: Double, screenWidthMeters: Double, viewport: CGSize,
-                reverseGuillocheDepthOrder: Bool = false) {
+                reverseGuillocheDepthOrder: Bool = false, cardCenteredReference: Bool = false) {
         self.eye = eye
         self.reference = reference
         self.backingDepthMeters = backingDepthMeters
@@ -20,7 +21,12 @@ public struct WindowSceneProjection: Sendable {
         self.screenWidthMeters = screenWidthMeters
         self.viewport = viewport
         self.reverseGuillocheDepthOrder = reverseGuillocheDepthOrder
+        self.cardCenteredReference = cardCenteredReference
     }
+}
+
+private struct WindowCardFrameKey: EnvironmentKey {
+    static let defaultValue: CGRect? = nil
 }
 
 private struct WindowSceneProjectionKey: EnvironmentKey {
@@ -28,6 +34,10 @@ private struct WindowSceneProjectionKey: EnvironmentKey {
 }
 
 public extension EnvironmentValues {
+    var windowCardFrame: CGRect? {
+        get { self[WindowCardFrameKey.self] }
+        set { self[WindowCardFrameKey.self] = newValue }
+    }
     var windowSceneProjection: WindowSceneProjection? {
         get { self[WindowSceneProjectionKey.self] }
         set { self[WindowSceneProjectionKey.self] = newValue }
@@ -37,16 +47,22 @@ public extension EnvironmentValues {
 private struct WindowDepthModifier: ViewModifier {
     let fraction: Double
     @Environment(\.windowSceneProjection) private var scene
+    @Environment(\.windowCardFrame) private var cardFrame
 
     func body(content: Content) -> some View {
         if let scene {
             let depth = scene.backingDepthMeters * pow(max(0, min(1, fraction)), scene.spacing)
-            let projection = WindowPlaneProjection(eye: scene.eye, reference: scene.reference, depth: depth)
+
             content.visualEffect { view, geometry in
-                let center = geometry.frame(in: .global)
+                let local = geometry.frame(in: .named("CardScene"))
+                let center = cardFrame.map { CGRect(x: $0.minX + local.minX, y: $0.minY + local.minY,
+                                                   width: local.width, height: local.height) }
+                    ?? geometry.frame(in: .global)
                 let metersPerPoint = scene.screenWidthMeters / max(Double(scene.viewport.width), 1)
                 let x = Double(center.midX - scene.viewport.width / 2) * metersPerPoint
                 let y = -Double(center.midY - scene.viewport.height / 2) * metersPerPoint
+                let reference = scene.reference(for: cardFrame ?? center)
+                let projection = WindowPlaneProjection(eye: scene.eye, reference: reference, depth: depth)
                 let scale = projection?.scale ?? 1
                 let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
                 let dy = -((scale - 1) * y + (projection?.translationY ?? 0)) / metersPerPoint
@@ -63,5 +79,15 @@ extension View {
     /// must match depth: farther planes are drawn before nearer planes.
     func windowDepth(_ fraction: Double) -> some View {
         modifier(WindowDepthModifier(fraction: fraction))
+    }
+}
+
+extension WindowSceneProjection {
+    func reference(for frame: CGRect) -> ViewerPosition {
+        guard cardCenteredReference else { return reference }
+        let metersPerPoint = screenWidthMeters / max(Double(viewport.width), 1)
+        return ViewerPosition(x: Double(frame.midX - viewport.width / 2) * metersPerPoint,
+                              y: -Double(frame.midY - viewport.height / 2) * metersPerPoint,
+                              distance: reference.distance)
     }
 }

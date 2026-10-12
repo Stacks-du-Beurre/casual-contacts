@@ -24,7 +24,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var orientations: [(time: Double, value: Quaternion)] = []
     @ObservationIgnored private var displayLink: CADisplayLink?
     @ObservationIgnored private var linkTarget: DisplayLinkTarget?
-    @ObservationIgnored private var projection = ViewerParallax()
+    @ObservationIgnored private var projection = ViewerParallax(reference: .screenCentered(cameraHeightMeters: 0.065))
+    @ObservationIgnored private var neutralReference = ViewerPosition.screenCentered(cameraHeightMeters: 0.065)
     @ObservationIgnored private var smoother = DisplayAttitudeSmoother()
     @ObservationIgnored private var target: DeviceAttitude?
     @ObservationIgnored private var targetEye: ViewerPosition?
@@ -42,7 +43,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public override init() {
         super.init()
         session.delegate = self
-        session.delegateQueue = .main
+        session.delegateQueue = DispatchQueue(label: "FaceParallax.camera", qos: .userInteractive)
     }
 
     public func setEnabled(_ enabled: Bool) {
@@ -53,6 +54,15 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public func setActive(_ active: Bool) {
         self.active = active
         if active && enabled { start() } else { stop() }
+    }
+
+    public func setCameraHeight(_ meters: Double) {
+        guard meters.isFinite, (0.04...0.08).contains(meters) else { return }
+        let reference = ViewerPosition.screenCentered(cameraHeightMeters: meters)
+        guard reference != neutralReference else { return }
+        neutralReference = reference
+        projection = ViewerParallax(reference: reference)
+        if referenceEye != nil { referenceEye = reference }
     }
 
     public func recenter() {
@@ -148,57 +158,71 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         status = enabled ? "Face parallax paused" : "Face parallax off"
     }
 
-    public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    nonisolated public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let timestamp = frame.timestamp
+        var position: ViewerPosition?
+        if let face = frame.anchors.compactMap({ $0 as? ARFaceAnchor }).first, face.isTracked {
+            let left = face.leftEyeTransform.columns.3
+            let right = face.rightEyeTransform.columns.3
+            let midpoint = SIMD4<Float>((left.x + right.x) / 2, (left.y + right.y) / 2,
+                                        (left.z + right.z) / 2, 1)
+            let eye = frame.camera.viewMatrix(for: .portrait) * face.transform * midpoint
+            position = ViewerPosition(x: Double(eye.x), y: Double(eye.y), distance: Double(-eye.z))
+        }
+        let measured = position
+        Task { @MainActor [weak self] in
+            self?.receive(position: measured, timestamp: timestamp)
+        }
+    }
+
+    private func receive(position: ViewerPosition?, timestamp: Double) {
         #if DEBUG
         cameraFrames += 1
         #endif
         guard active, enabled, displayLink != nil else { return }
-        guard let face = frame.anchors.compactMap({ $0 as? ARFaceAnchor }).first, face.isTracked else {
+        // Do not replay old camera corrections if UI work delayed delivery.
+        guard abs(CACurrentMediaTime() - timestamp) < 0.15 else { return }
+        guard let position else {
             recordTrackingInput("ARKit face anchor unavailable or untracked")
             return
         }
-        let left = face.leftEyeTransform.columns.3
-        let right = face.rightEyeTransform.columns.3
-        let midpoint = SIMD4<Float>((left.x + right.x) / 2, (left.y + right.y) / 2,
-                                    (left.z + right.z) / 2, 1)
-        // The app is portrait-only on iPhone. viewMatrix rotates ARKit's native
-        // camera axes into the screen's right/up convention, without mirroring.
-        let eye = frame.camera.viewMatrix(for: .portrait) * face.transform * midpoint
-        let position = ViewerPosition(x: Double(eye.x), y: Double(eye.y), distance: Double(-eye.z))
         guard let value = projection.attitude(for: position) else {
             recordTrackingInput("pose rejected by distance/finite-value guard")
             return
         }
         recordTrackingInput("valid face pose")
-        if referenceEye == nil { referenceEye = position }
+        if referenceEye == nil { referenceEye = neutralReference }
         targetEye = position
         // ARFrame and Core Motion use seconds since boot. Pair the camera pose
         // with its nearest orientation, rather than a delayed delivery time.
-        if let sample = orientations.min(by: { abs($0.time - frame.timestamp) < abs($1.time - frame.timestamp) }),
-           abs(sample.time - frame.timestamp) < 0.05 {
+        if let sample = orientations.min(by: { abs($0.time - timestamp) < abs($1.time - timestamp) }),
+           abs(sample.time - timestamp) < 0.05 {
             inertialViewer.calibrate(eye: position, orientation: sample.value)
         }
         target = value
         lastFaceTime = CACurrentMediaTime()
     }
 
-    public func session(_ session: ARSession, didFailWithError error: Error) {
-        stop()
-        status = "Face tracking stopped; using gyro"
-        #if DEBUG
-        print("[FaceParallax] AR session failed; using gyro fallback.")
-        #endif
+    nonisolated public func session(_ session: ARSession, didFailWithError error: Error) {
+        Task { @MainActor [weak self] in
+            self?.stop()
+            self?.status = "Face tracking stopped; using gyro"
+        }
     }
 
-    public func sessionWasInterrupted(_ session: ARSession) {
-        target = nil
-        lastFaceTime = 0
-        status = "Face tracking interrupted; holding scene"
+    nonisolated public func sessionWasInterrupted(_ session: ARSession) {
+        Task { @MainActor [weak self] in
+            self?.target = nil
+            self?.lastFaceTime = 0
+            self?.status = "Face tracking interrupted; holding scene"
+        }
     }
 
-    public func sessionInterruptionEnded(_ session: ARSession) {
-        stop()
-        start()
+    nonisolated public func sessionInterruptionEnded(_ session: ARSession) {
+        Task { @MainActor [weak self] in
+            self?.stop()
+            self?.start()
+        }
     }
 
     fileprivate func tick(_ link: CADisplayLink) {

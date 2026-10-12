@@ -44,4 +44,18 @@ import CoreModels
         for _ in 0..<60 { _ = sixty.step(toward: target, elapsed: 1.0 / 60) }
         #expect(abs(thirty.value.pitch - sixty.value.pitch) < 0.000001)
     }
+    @Test func fixedScreenReferenceDoesNotAdoptAnOffCenterFirstFace() {
+        let neutral = ViewerPosition.screenCentered(cameraHeightMeters: 0.065)
+        var model = ViewerParallax(reference: neutral)
+        let offCenter = ViewerPosition(x: 0.04, y: -0.035, distance: 0.4)
+        let first = model.attitude(for: offCenter)!
+        #expect(first.roll > 0)
+        #expect(first.pitch < 0)
+        #expect(model.attitude(for: neutral) == .zero)
+        model.reset()
+        #expect(model.attitude(for: offCenter) == first)
+        #expect(model.attitude(for: ViewerPosition(x: 0, y: -0.065, distance: 0.7)) == .zero)
+        #expect(model.attitude(for: ViewerPosition(x: 0, y: -0.065, distance: 0.2)) == .zero)
+    }
+
 }
