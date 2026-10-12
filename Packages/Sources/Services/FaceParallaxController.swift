@@ -205,10 +205,12 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
         let estimate: ViewerPosition?
-        if !tracked, let sample = orientations.last, abs(now - sample.time) < 0.15 {
+        // Carry the last measured pose forward on every display tick, including
+        // between valid camera frames. Tracking status no longer gates motion.
+        if let sample = orientations.last, abs(now - sample.time) < 0.15 {
             estimate = inertialViewer.estimate(orientation: sample.value)
         } else { estimate = nil }
-        let nextEye = tracked ? targetEye : estimate
+        let nextEye = estimate ?? (tracked ? targetEye : nil)
         let predictedAttitude = estimate.flatMap { projection.attitude(for: $0) }
         let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude))
         let nextStatus = tracked ? "Face parallax on" :

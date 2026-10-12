@@ -92,13 +92,15 @@ public struct CardBackdrop: View {
         )
 
         ZStack {
-            GradientLayer(
-                timeOfDay: record.metadata.timeOfDay,
-                attitude: windowScene == nil ? attitude : .zero,
-                mode: .balancedAtRest
-            )
-            .scaleEffect(windowScene == nil ? 1 : 1.8)
-            .windowDepth(1)
+            if let windowScene {
+                WindowGradientBackdrop(timeOfDay: record.metadata.timeOfDay, scene: windowScene)
+            } else {
+                GradientLayer(
+                    timeOfDay: record.metadata.timeOfDay,
+                    attitude: attitude,
+                    mode: .balancedAtRest
+                )
+            }
 
             // Always mount both guilloche layers so the `reveal` driver can
             // animate per-path opacity into and out of view. At `reveal == 0`
