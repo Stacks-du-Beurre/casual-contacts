@@ -2,6 +2,7 @@
 import ARKit
 import AVFoundation
 import CoreModels
+import CoreMotion
 import Observation
 import UIKit
 
@@ -18,6 +19,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public var renderingAttitude: DeviceAttitude { displayLink == nil ? fallback : attitude }
 
     @ObservationIgnored private let session = ARSession()
+    @ObservationIgnored private let motion = CMMotionManager()
+    @ObservationIgnored private var inertialViewer = InertialViewer()
+    @ObservationIgnored private var orientations: [(time: Double, value: Quaternion)] = []
     @ObservationIgnored private var displayLink: CADisplayLink?
     @ObservationIgnored private var linkTarget: DisplayLinkTarget?
     @ObservationIgnored private var projection = ViewerParallax()
@@ -53,6 +57,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     public func recenter() {
         projection.reset()
+        inertialViewer = InertialViewer()
         target = nil
         referenceEye = nil
         status = "Finding your face"
@@ -88,6 +93,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         print("[FaceParallax] Starting front-camera tracking; frames are not stored.")
         #endif
         projection.reset()
+        inertialViewer = InertialViewer()
         target = nil
         targetEye = nil
         eyePosition = nil
@@ -100,6 +106,18 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         configuration.maximumNumberOfTrackedFaces = 1
         configuration.isLightEstimationEnabled = false
         session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        orientations.removeAll()
+        if motion.isDeviceMotionAvailable {
+            motion.deviceMotionUpdateInterval = 1.0 / 60
+            motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] sample, _ in
+                MainActor.assumeIsolated {
+                    guard let self, let sample, self.active, self.enabled else { return }
+                    let q = sample.attitude.quaternion
+                    self.orientations.append((sample.timestamp, Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)))
+                    if self.orientations.count > 120 { self.orientations.removeFirst() }
+                }
+            }
+        }
         let receiver = DisplayLinkTarget(owner: self)
         linkTarget = receiver
         let link = CADisplayLink(target: receiver, selector: #selector(DisplayLinkTarget.tick(_:)))
@@ -115,6 +133,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         #endif
         requestID += 1
         session.pause()
+        motion.stopDeviceMotionUpdates()
+        orientations.removeAll()
+        inertialViewer = InertialViewer()
         displayLink?.invalidate()
         displayLink = nil
         linkTarget = nil
@@ -151,6 +172,12 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         recordTrackingInput("valid face pose")
         if referenceEye == nil { referenceEye = position }
         targetEye = position
+        // ARFrame and Core Motion use seconds since boot. Pair the camera pose
+        // with its nearest orientation, rather than a delayed delivery time.
+        if let sample = orientations.min(by: { abs($0.time - frame.timestamp) < abs($1.time - frame.timestamp) }),
+           abs(sample.time - frame.timestamp) < 0.05 {
+            inertialViewer.calibrate(eye: position, orientation: sample.value)
+        }
         target = value
         lastFaceTime = CACurrentMediaTime()
     }
@@ -177,14 +204,21 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     fileprivate func tick(_ link: CADisplayLink) {
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
-        let next = tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude)
+        let estimate: ViewerPosition?
+        if !tracked, let sample = orientations.last, abs(now - sample.time) < 0.15 {
+            estimate = inertialViewer.estimate(orientation: sample.value)
+        } else { estimate = nil }
+        let nextEye = tracked ? targetEye : estimate
+        let predictedAttitude = estimate.flatMap { projection.attitude(for: $0) }
+        let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude))
         let nextStatus = tracked ? "Face parallax on" :
-            (eyePosition == nil ? "Finding your face; using gyro" : "Tracking lost; holding scene")
+            (estimate != nil ? "Gyro estimate; face out of view" :
+             (eyePosition == nil ? "Finding your face; using gyro" : "Tracking lost; holding scene"))
         if status != nextStatus { status = nextStatus }
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
         attitude = smoother.step(toward: next, elapsed: elapsed)
-        if tracked, let targetEye {
+        if let targetEye = nextEye {
             let previous = eyePosition ?? referenceEye ?? targetEye
             let alpha = 1 - exp(-max(0, min(elapsed, 0.1)) / max(0.01, smoothingSeconds))
             eyePosition = ViewerPosition(
