@@ -11,13 +11,13 @@ workflow matches branches that start with `dev/`, prepares internal-only iOS
 archives, and distributes only to `Development`. It reuses the existing shared
 upload variables and cancels superseded builds from the same branch.
 The file rules skip a build when all changed files are Markdown or are under
-`docs/`, `marketing-site/`, or `remote/`. Mixed commits with app inputs still build.
-Keep `CasualContacts/`, `Packages/`, `Tools/`, and `design-assets/` eligible.
+`docs/`, `marketing-site/`, `remote/`, or `design-assets/`. Mixed commits with app inputs still build.
+Keep `CasualContacts/`, `Packages/`, and `Tools/` eligible.
 The app uses resources under `Packages/Sources/*/Resources`, not only its Xcode
 project folder. Design originals are copied or converted into those resources
 by tools such as `regenerate-svg.sh`; the cloud archive does not run that tool.
-Commit regenerated outputs with design-source changes. Keeping design sources
-eligible is conservative, but a build alone does not regenerate them.
+Commit regenerated outputs with design-source changes. Design-source-only edits
+do not build; updates to the generated outputs under `Packages/` do build.
 
 - [Development group](https://appstoreconnect.apple.com/teams/ad0c9c03-1309-4406-9135-d5300bcc111b/apps/6763807407/testflight/groups/9dac1278-c21e-4297-8e78-fde1a76720e6)
 - [Development workflow](https://appstoreconnect.apple.com/teams/ad0c9c03-1309-4406-9135-d5300bcc111b/xcode-cloud/products/603F5035-E1D3-4525-A3C0-8276542E30CA/workflows/61e35a15-0306-48d6-8559-730002601b0f)
@@ -33,7 +33,7 @@ Configure these in App Store Connect before you use the push command.
 2. Leave automatic distribution off when you create `Development`. Use explicit workflow post-actions for cloud builds. App Store Connect states that automatic distribution applies to Xcode uploads, not Xcode Cloud builds, and that this group setting cannot be changed later.
 3. Create an Xcode Cloud workflow named exactly `Development TestFlight` for the existing Casual Contacts product and shared `CasualContacts` scheme.
 4. Set its start condition to branch changes with a branch name that starts with `dev/`. Do not add a tag or pull request condition.
-   Under Files and Folders, select Custom Rules → Do not start a build if only the following files and folders have changed. Add File Extension `md` from Any Folder, plus Any File from each of `/docs`, `/marketing-site`, and `/remote`.
+   Under Files and Folders, select Custom Rules → Do not start a build if only the following files and folders have changed. Add File Extension `md` from Any Folder, plus Any File from each of `/docs`, `/marketing-site`, `/remote`, and `/design-assets`.
 5. Add an iOS Archive action. Select **TestFlight (Internal Testing Only)**. Do not select App Store distribution.
 6. Add a TestFlight post-action that distributes only to the `Development` group.
 7. Set the two existing secret environment variables: `CC_DEVELOPER_SETTINGS_UPLOAD_URL` and `CC_DEVELOPER_SETTINGS_UPLOAD_TOKEN`. Do not put their values in Git.
