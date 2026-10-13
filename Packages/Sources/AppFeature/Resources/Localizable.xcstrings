@@ -1,58 +1,1502 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Close" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Закрыть" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Закрити" } } } },
-    "Continue" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Продолжить" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Продовжити" } } } },
-    "Couldn't delete %@. Try again." : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't delete %@. Try again." } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось удалить %@. Попробуйте еще раз." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Не вдалося видалити %@. Спробуйте ще раз." } } } },
-    "Couldn't delete contact" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't delete contact" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось удалить контакт" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Не вдалося видалити контакт" } } } },
-    "Couldn't determine your current location. Try again with a clearer GPS signal." : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't determine your current location. Try again with a clearer GPS signal." } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Не удалось определить ваше текущее местоположение. Попробуйте снова при более уверенном сигнале GPS." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Не вдалося визначити ваше поточне місцезнаходження. Спробуйте ще раз із чіткішим сигналом GPS." } } } },
-    "Done" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Готово" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Готово" } } } },
-    "Enable location access for Casual Contacts in iOS Settings to seed nearby records." : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable location access for Casual Contacts in iOS Settings to seed nearby records." } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Разрешите доступ к геолокации для Casual Contacts в настройках iOS, чтобы добавить ближайшие тестовые записи." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Увімкніть доступ до геолокації для Casual Contacts у налаштуваннях iOS, щоб додати найближчі тестові записи." } } } },
-    "LETTER GALLERY" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "LETTER GALLERY" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "ГАЛЕРЕЯ БУКВ" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "ГАЛЕРЕЯ ЛІТЕР" } } } },
-    "LOCATION ACCESS" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "LOCATION ACCESS" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "ДОСТУП К ГЕОЛОКАЦИИ" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "ДОСТУП ДО ГЕОЛОКАЦІЇ" } } } },
-    "Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app." : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app." } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Геолокация помогает Casual Contacts сортировать карточки по местам встреч, чтобы ближайшие имена появлялись при открытии приложения." } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Геолокація допомагає Casual Contacts сортувати картки за місцями зустрічей, щоб найближчі імена з'являлися під час відкриття застосунку." } } } },
-    "Location Required" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Location Required" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "Требуется геолокация" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "Потрібна геолокація" } } } },
-    "OK" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "ОК" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "ОК" } } } },
-    "RootScene is iOS-only" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "RootScene is iOS-only" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "RootScene доступен только на iOS" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "RootScene доступний лише на iOS" } } } },
-    "this contact" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "this contact" } }, "ru" : { "stringUnit" : { "state" : "translated", "value" : "этот контакт" } }, "uk" : { "stringUnit" : { "state" : "translated", "value" : "цей контакт" } } } },
-    "Enable 3D simulation" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Enable 3D simulation"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Включить 3D-эффект"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Увімкнути 3D-ефект"}}}},
-    "Cards in the list" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Cards in the list"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Карточки в списке"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Картки в списку"}}}},
-    "Expanded card" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Expanded card"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Развёрнутая карточка"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Розгорнута картка"}}}},
-    "Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded." : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded."}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Использует фронтальную камеру, пока видны карточки с включённым эффектом. Кадры не сохраняются и не отправляются на сервер."}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Використовує фронтальну камеру, поки видно картки з увімкненим ефектом. Кадри не зберігаються й не надсилаються на сервер."}}}},
-    "Privacy policy" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Privacy policy"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Политика конфиденциальности"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Політика конфіденційності"}}}},
-    "Scene" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Scene"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Сцена"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Сцена"}}}},
-    "Backing depth" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Backing depth"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Глубина фона"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Глибина тла"}}}},
-    "Layer spacing" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Layer spacing"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Расстояние между слоями"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстань між шарами"}}}},
-    "The rotation guilloche stays on the deepest blend layer." : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "The rotation guilloche stays on the deepest blend layer."}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Вращающийся гильоше остаётся на самом глубоком слое смешанного узора."}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Обертальний гільйош залишається на найглибшому шарі змішаного візерунка."}}}},
-    "The backing sits behind the phone screen. Text stays on the front surface." : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "The backing sits behind the phone screen. Text stays on the front surface."}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Фон расположен за экраном телефона. Текст остаётся на передней поверхности."}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Тло розташоване за екраном телефона. Текст залишається на передній поверхні."}}}},
-    "Tracking" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Tracking"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Отслеживание"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстеження"}}}},
-    "Smoothing" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Smoothing"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Сглаживание"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Згладжування"}}}},
-    "Eye distance: %d mm" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Eye distance: %d mm"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Расстояние до глаз: %d мм"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстань до очей: %d мм"}}}},
-    "Reset tracking" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Reset tracking"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Сбросить отслеживание"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Скинути відстеження"}}}},
-    "Screen calibration" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Screen calibration"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Калибровка экрана"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Калібрування екрана"}}}},
-    "The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it." : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it."}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Нейтральная точка обзора находится напротив центра экрана на расстоянии 400 мм. Положение лица при запуске её не меняет."}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Нейтральна точка огляду розташована навпроти центра екрана на відстані 400 мм. Положення обличчя під час запуску її не змінює."}}}},
-    "Screen width" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Screen width"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Ширина экрана"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Ширина екрана"}}}},
-    "Camera above screen center" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Camera above screen center"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Высота камеры над центром экрана"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Висота камери над центром екрана"}}}},
-    "Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength." : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength."}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Значения по умолчанию приблизительно соответствуют iPhone 17 Pro. Это физические размеры, а не сила эффекта."}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Типові значення приблизно відповідають iPhone 17 Pro. Це фізичні розміри, а не сила ефекту."}}}},
-    "Presets" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Presets"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Наборы настроек"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Набори налаштувань"}}}},
-    "Shallow · 20 mm" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Shallow · 20 mm"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Неглубоко · 20 мм"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Неглибоко · 20 мм"}}}},
-    "Balanced · 60 mm" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Balanced · 60 mm"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Сбалансированно · 60 мм"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Збалансовано · 60 мм"}}}},
-    "Deep · 120 mm" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Deep · 120 mm"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Глубоко · 120 мм"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Глибоко · 120 мм"}}}},
-    "Save my preset" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Save my preset"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Сохранить мой набор"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Зберегти мій набір"}}}},
-    "Load my preset" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Load my preset"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Загрузить мой набор"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Завантажити мій набір"}}}},
-    "3D scene" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "3D scene"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "3D-сцена"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "3D-сцена"}}}},
-    "Face parallax off" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face parallax off"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Параллакс по лицу выключен"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Паралакс за обличчям вимкнено"}}}},
-    "Finding your face" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Finding your face"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Поиск лица"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Пошук обличчя"}}}},
-    "Face tracking unavailable; using gyro" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face tracking unavailable; using gyro"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Отслеживание лица недоступно; используется гироскоп"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстеження обличчя недоступне; використовується гіроскоп"}}}},
-    "Waiting for camera permission" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Waiting for camera permission"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Ожидание разрешения на камеру"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Очікування дозволу на камеру"}}}},
-    "Camera access denied; using gyro" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Camera access denied; using gyro"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Доступ к камере запрещён; используется гироскоп"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Доступ до камери заборонено; використовується гіроскоп"}}}},
-    "Face parallax paused" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face parallax paused"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Параллакс по лицу приостановлен"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Паралакс за обличчям призупинено"}}}},
-    "Face tracking stopped; using gyro" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face tracking stopped; using gyro"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Отслеживание лица остановлено; используется гироскоп"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстеження обличчя зупинено; використовується гіроскоп"}}}},
-    "Face tracking interrupted; holding scene" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face tracking interrupted; holding scene"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Отслеживание лица прервано; сцена сохранена"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстеження обличчя перерване; сцену збережено"}}}},
-    "Face parallax on" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Face parallax on"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Параллакс по лицу включён"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Паралакс за обличчям увімкнено"}}}},
-    "Gyro estimate; face out of view" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Gyro estimate; face out of view"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Оценка по гироскопу; лицо вне кадра"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Оцінка за гіроскопом; обличчя поза кадром"}}}},
-    "Tracking lost; holding scene" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Tracking lost; holding scene"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Отслеживание потеряно; сцена сохранена"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Відстеження втрачено; сцену збережено"}}}},
-    "Scene settings" : {"localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Scene settings"}}, "ru" : {"stringUnit" : {"state" : "translated", "value" : "Настройки сцены"}}, "uk" : {"stringUnit" : {"state" : "translated", "value" : "Налаштування сцени"}}}}
+  "sourceLanguage": "en",
+  "strings": {
+    "CAMERA PERSPECTIVE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CAMERA PERSPECTIVE"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ПЕРСПЕКТИВА С КАМЕРЫ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ПЕРСПЕКТИВА З КАМЕРИ"
+          }
+        }
+      }
+    },
+    "Privacy policy — Face data and TrueDepth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy policy — Face data and TrueDepth"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Политика конфиденциальности — данные лица и TrueDepth"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Політика конфіденційності — дані обличчя й TrueDepth"
+          }
+        }
+      }
+    },
+    "Enable face perspective": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable face perspective"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить перспективу по лицу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увімкнути перспективу за обличчям"
+          }
+        }
+      }
+    },
+    "Continue to camera permission": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue to camera permission"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить к запросу доступа к камере"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продовжити до запиту доступу до камери"
+          }
+        }
+      }
+    },
+    "Camera for face perspective": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera for face perspective"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Камера для перспективы по лицу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Камера для перспективи за обличчям"
+          }
+        }
+      }
+    },
+    "Use camera for face perspective": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use camera for face perspective"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Использовать камеру для перспективы по лицу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Використовувати камеру для перспективи за обличчям"
+          }
+        }
+      }
+    },
+    "Gyro motion works without camera access. Camera mode adds perspective from your face and eye position; it does not identify you.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gyro motion works without camera access. Camera mode adds perspective from your face and eye position; it does not identify you."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Движение от гироскопа работает без доступа к камере. Режим камеры добавляет перспективу по положению лица и глаз, без идентификации."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рух від гіроскопа працює без доступу до камери. Режим камери додає перспективу за положенням обличчя й очей, без ідентифікації."
+          }
+        }
+      }
+    },
+    "Enable camera in Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable camera in Settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить камеру в настройках"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дозволити камеру в параметрах"
+          }
+        }
+      }
+    },
+    "In Settings, turn on Camera, then return here and enable face perspective.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Settings, turn on Camera, then return here and enable face perspective."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В настройках разрешите доступ к камере, затем вернитесь сюда и включите перспективу по лицу."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У параметрах дозвольте доступ до камери, потім поверніться сюди й увімкніть перспективу за обличчям."
+          }
+        }
+      }
+    },
+    "Camera access is restricted by your device settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access is restricted by your device settings."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере ограничен настройками устройства."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ до камери обмежено параметрами пристрою."
+          }
+        }
+      }
+    },
+    "Face perspective is unavailable on this device. Gyro motion is still available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face perspective is unavailable on this device. Gyro motion is still available."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перспектива по лицу недоступна на этом устройстве. Движение от гироскопа доступно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перспектива за обличчям недоступна на цьому пристрої. Рух від гіроскопа доступний."
+          }
+        }
+      }
+    },
+    "Uses gyro motion by default. Optional camera mode runs only while an enabled card view is visible.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses gyro motion by default. Optional camera mode runs only while an enabled card view is visible."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По умолчанию используется гироскоп. Необязательный режим камеры работает только пока видно представление карточек с включённой 3D-сценой."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За замовчуванням використовується гіроскоп. Необов’язковий режим камери працює лише поки видно подання карток з увімкненою 3D-сценою."
+          }
+        }
+      }
+    },
+    "Gyro only; camera off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gyro only; camera off"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только гироскоп; камера выключена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лише гіроскоп; камеру вимкнено"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продовжити"
+          }
+        }
+      }
+    },
+    "Couldn't delete %@. Try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete %@. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось удалить %@. Попробуйте еще раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося видалити %@. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "Couldn't delete contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't delete contact"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось удалить контакт"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося видалити контакт"
+          }
+        }
+      }
+    },
+    "Couldn't determine your current location. Try again with a clearer GPS signal.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't determine your current location. Try again with a clearer GPS signal."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось определить ваше текущее местоположение. Попробуйте снова при более уверенном сигнале GPS."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося визначити ваше поточне місцезнаходження. Спробуйте ще раз із чіткішим сигналом GPS."
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
+          }
+        }
+      }
+    },
+    "Enable location access for Casual Contacts in iOS Settings to seed nearby records.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable location access for Casual Contacts in iOS Settings to seed nearby records."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешите доступ к геолокации для Casual Contacts в настройках iOS, чтобы добавить ближайшие тестовые записи."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увімкніть доступ до геолокації для Casual Contacts у налаштуваннях iOS, щоб додати найближчі тестові записи."
+          }
+        }
+      }
+    },
+    "LETTER GALLERY": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LETTER GALLERY"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ГАЛЕРЕЯ БУКВ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ГАЛЕРЕЯ ЛІТЕР"
+          }
+        }
+      }
+    },
+    "LOCATION ACCESS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOCATION ACCESS"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ДОСТУП К ГЕОЛОКАЦИИ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ДОСТУП ДО ГЕОЛОКАЦІЇ"
+          }
+        }
+      }
+    },
+    "Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location helps Casual Contacts sort cards by where you met people, so nearby names can surface when you open the app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Геолокация помогает Casual Contacts сортировать карточки по местам встреч, чтобы ближайшие имена появлялись при открытии приложения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Геолокація допомагає Casual Contacts сортувати картки за місцями зустрічей, щоб найближчі імена з'являлися під час відкриття застосунку."
+          }
+        }
+      }
+    },
+    "Location Required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location Required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Требуется геолокация"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібна геолокація"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ОК"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ОК"
+          }
+        }
+      }
+    },
+    "RootScene is iOS-only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RootScene is iOS-only"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RootScene доступен только на iOS"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RootScene доступний лише на iOS"
+          }
+        }
+      }
+    },
+    "this contact": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this contact"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "этот контакт"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "цей контакт"
+          }
+        }
+      }
+    },
+    "Enable 3D simulation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable 3D simulation"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить 3D-эффект"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увімкнути 3D-ефект"
+          }
+        }
+      }
+    },
+    "Cards in the list": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cards in the list"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карточки в списке"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картки в списку"
+          }
+        }
+      }
+    },
+    "Expanded card": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanded card"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Развёрнутая карточка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розгорнута картка"
+          }
+        }
+      }
+    },
+    "Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses the front camera while an enabled card view is visible. Frames are not saved or uploaded."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Использует фронтальную камеру, пока видны карточки с включённым эффектом. Кадры не сохраняются и не отправляются на сервер."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Використовує фронтальну камеру, поки видно картки з увімкненим ефектом. Кадри не зберігаються й не надсилаються на сервер."
+          }
+        }
+      }
+    },
+    "Privacy policy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy policy"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Политика конфиденциальности"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Політика конфіденційності"
+          }
+        }
+      }
+    },
+    "Scene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scene"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сцена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сцена"
+          }
+        }
+      }
+    },
+    "Backing depth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backing depth"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глубина фона"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глибина тла"
+          }
+        }
+      }
+    },
+    "Layer spacing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layer spacing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расстояние между слоями"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстань між шарами"
+          }
+        }
+      }
+    },
+    "The rotation guilloche stays on the deepest blend layer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rotation guilloche stays on the deepest blend layer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вращающийся гильоше остаётся на самом глубоком слое смешанного узора."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обертальний гільйош залишається на найглибшому шарі змішаного візерунка."
+          }
+        }
+      }
+    },
+    "The backing sits behind the phone screen. Text stays on the front surface.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The backing sits behind the phone screen. Text stays on the front surface."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фон расположен за экраном телефона. Текст остаётся на передней поверхности."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тло розташоване за екраном телефона. Текст залишається на передній поверхні."
+          }
+        }
+      }
+    },
+    "Tracking": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживание"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстеження"
+          }
+        }
+      }
+    },
+    "Smoothing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smoothing"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сглаживание"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Згладжування"
+          }
+        }
+      }
+    },
+    "Eye distance: %d mm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eye distance: %d mm"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расстояние до глаз: %d мм"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстань до очей: %d мм"
+          }
+        }
+      }
+    },
+    "Reset tracking": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset tracking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сбросить отслеживание"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скинути відстеження"
+          }
+        }
+      }
+    },
+    "Screen calibration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen calibration"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Калибровка экрана"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Калібрування екрана"
+          }
+        }
+      }
+    },
+    "The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The neutral viewpoint is fixed at screen center, 400 mm away. Your face position at startup does not change it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нейтральная точка обзора находится напротив центра экрана на расстоянии 400 мм. Положение лица при запуске её не меняет."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нейтральна точка огляду розташована навпроти центра екрана на відстані 400 мм. Положення обличчя під час запуску її не змінює."
+          }
+        }
+      }
+    },
+    "Screen width": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen width"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ширина экрана"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ширина екрана"
+          }
+        }
+      }
+    },
+    "Camera above screen center": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera above screen center"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Высота камеры над центром экрана"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Висота камери над центром екрана"
+          }
+        }
+      }
+    },
+    "Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defaults approximate iPhone 17 Pro. These are physical measurements, not effect strength."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Значения по умолчанию приблизительно соответствуют iPhone 17 Pro. Это физические размеры, а не сила эффекта."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Типові значення приблизно відповідають iPhone 17 Pro. Це фізичні розміри, а не сила ефекту."
+          }
+        }
+      }
+    },
+    "Presets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presets"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наборы настроек"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Набори налаштувань"
+          }
+        }
+      }
+    },
+    "Shallow · 20 mm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shallow · 20 mm"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неглубоко · 20 мм"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неглибоко · 20 мм"
+          }
+        }
+      }
+    },
+    "Balanced · 60 mm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balanced · 60 mm"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сбалансированно · 60 мм"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збалансовано · 60 мм"
+          }
+        }
+      }
+    },
+    "Deep · 120 mm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deep · 120 mm"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глубоко · 120 мм"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Глибоко · 120 мм"
+          }
+        }
+      }
+    },
+    "Save my preset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save my preset"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить мой набор"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти мій набір"
+          }
+        }
+      }
+    },
+    "Load my preset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load my preset"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузить мой набор"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажити мій набір"
+          }
+        }
+      }
+    },
+    "3D scene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D scene"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-сцена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3D-сцена"
+          }
+        }
+      }
+    },
+    "Face parallax off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face parallax off"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Параллакс по лицу выключен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Паралакс за обличчям вимкнено"
+          }
+        }
+      }
+    },
+    "Finding your face": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding your face"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поиск лица"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пошук обличчя"
+          }
+        }
+      }
+    },
+    "Face tracking unavailable; using gyro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face tracking unavailable; using gyro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживание лица недоступно; используется гироскоп"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстеження обличчя недоступне; використовується гіроскоп"
+          }
+        }
+      }
+    },
+    "Waiting for camera permission": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for camera permission"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание разрешения на камеру"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очікування дозволу на камеру"
+          }
+        }
+      }
+    },
+    "Camera access denied; using gyro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera access denied; using gyro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ к камере запрещён; используется гироскоп"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступ до камери заборонено; використовується гіроскоп"
+          }
+        }
+      }
+    },
+    "Face parallax paused": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face parallax paused"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Параллакс по лицу приостановлен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Паралакс за обличчям призупинено"
+          }
+        }
+      }
+    },
+    "Face tracking stopped; using gyro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face tracking stopped; using gyro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживание лица остановлено; используется гироскоп"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстеження обличчя зупинено; використовується гіроскоп"
+          }
+        }
+      }
+    },
+    "Face tracking interrupted; holding scene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face tracking interrupted; holding scene"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживание лица прервано; сцена сохранена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстеження обличчя перерване; сцену збережено"
+          }
+        }
+      }
+    },
+    "Face parallax on": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face parallax on"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Параллакс по лицу включён"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Паралакс за обличчям увімкнено"
+          }
+        }
+      }
+    },
+    "Gyro estimate; face out of view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gyro estimate; face out of view"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оценка по гироскопу; лицо вне кадра"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оцінка за гіроскопом; обличчя поза кадром"
+          }
+        }
+      }
+    },
+    "Tracking lost; holding scene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking lost; holding scene"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отслеживание потеряно; сцена сохранена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відстеження втрачено; сцену збережено"
+          }
+        }
+      }
+    },
+    "Scene settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scene settings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки сцены"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Налаштування сцени"
+          }
+        }
+      }
+    },
+    "Camera is optional. Decline for gyro motion; change access in 3D scene.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera is optional. Decline for gyro motion; change access in 3D scene."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Камера необязательна. При отказе работает гироскоп. Доступ можно изменить в «3D-сцене»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Камера необов’язкова. У разі відмови працює гіроскоп. Доступ можна змінити в «3D-сцені»."
+          }
+        }
+      }
+    },
+    "Face data stays in device memory, never saved, shared, or used to identify you.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face data stays in device memory, never saved, shared, or used to identify you."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Данные лица остаются в оперативной памяти устройства: не сохраняются, не передаются и не используются для идентификации."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дані обличчя залишаються в оперативній пам’яті пристрою: не зберігаються, не передаються й не використовуються для ідентифікації."
+          }
+        }
+      }
+    },
+    "Bring your cards to life with 3D depth that responds as you move. The front camera uses your eye position and distance to create the effect.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring your cards to life with 3D depth that responds as you move. The front camera uses your eye position and distance to create the effect."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оживите карточки: почувствуйте 3D-глубину, которая меняется при вашем движении. Фронтальная камера создаёт этот эффект по положению глаз и расстоянию до них."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оживіть картки: відчуйте 3D-глибину, що змінюється з вашим рухом. Фронтальна камера створює цей ефект за положенням очей і відстанню до них."
+          }
+        }
+      }
+    }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

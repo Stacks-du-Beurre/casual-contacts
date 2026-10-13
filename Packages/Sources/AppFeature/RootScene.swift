@@ -23,6 +23,8 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var tappedCardDismissing = false
+    @State private var pendingFirstCardCameraOffer = false
+    @State private var firstCardCameraOffer = false
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
@@ -145,7 +147,8 @@ public struct RootScene: Scene {
         FaceSceneHost(
             listVisible: !router.showingCreate && router.editingRecord == nil,
             expandedVisible: router.tappedRecord != nil,
-            attitude: currentAttitude
+            attitude: currentAttitude,
+            firstCardCameraOffer: $firstCardCameraOffer
         ) { tracker, listProjection, projection, showSceneSettings in
             trackedRootContent(tracker: tracker, listProjection: listProjection, projection: projection, showSceneSettings: showSceneSettings)
         }
@@ -278,7 +281,12 @@ public struct RootScene: Scene {
                 break
             }
         }
-        .sheet(isPresented: $router.showingCreate) {
+        .sheet(isPresented: $router.showingCreate, onDismiss: {
+            if pendingFirstCardCameraOffer {
+                pendingFirstCardCameraOffer = false
+                firstCardCameraOffer = true
+            }
+        }) {
             let createdAt = Date()
             let metadata = environment.metadataGenerator.metadata(at: createdAt, location: nil)
             CreateRecordScene(
@@ -315,7 +323,8 @@ public struct RootScene: Scene {
                             at: Date(),
                             location: draft.location
                         )
-                        _ = try? await environment.recordStore.create(
+                        let wasFirstCard = environment.recordStore.records.isEmpty
+                        let savedRecord = try? await environment.recordStore.create(
                             draft,
                             metadata: saveMetadata,
                             photoID: photoID
@@ -324,6 +333,7 @@ public struct RootScene: Scene {
                             listCurrentLocation = location
                             environment.lastLocationStore.location = location
                         }
+                        if savedRecord != nil && wasFirstCard { pendingFirstCardCameraOffer = true }
                         router.showingCreate = false
                     }
                 }

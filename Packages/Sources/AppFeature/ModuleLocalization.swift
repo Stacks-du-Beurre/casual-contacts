@@ -4,6 +4,12 @@ import SwiftUI
 enum ModuleLocalization {
     private static let catalog = StringCatalog.load()
 
+    static func privacyPolicyURL(locale: Locale) -> URL {
+        let language = languageIdentifier(for: locale)
+        let prefix = ["ru", "uk"].contains(language) ? "/\(language)" : ""
+        return URL(string: "https://casualcontacts.app\(prefix)/privacy.html#face-data")!
+    }
+
     static func text(_ key: String, locale: Locale) -> Text {
         Text(string(key, locale: locale))
     }
