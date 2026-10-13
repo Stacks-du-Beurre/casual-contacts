@@ -1,8 +1,20 @@
 import CoreModels
 import SwiftUI
 
+private struct BlurredPhotoImagesKey: EnvironmentKey {
+    static let defaultValue: [String: Image] = [:]
+}
+
+public extension EnvironmentValues {
+    var blurredPhotoImages: [String: Image] {
+        get { self[BlurredPhotoImagesKey.self] }
+        set { self[BlurredPhotoImagesKey.self] = newValue }
+    }
+}
+
 public struct PhotoLayer: View {
 
+    public let photoID: PhotoID?
     public let image: Image
     public let imageSize: CGSize?
     public let focus: NormalizedPoint?
@@ -15,18 +27,21 @@ public struct PhotoLayer: View {
         case recommended  // Phase 3 — designed-in, still renders correctly
     }
 
+    @Environment(\.blurredPhotoImages) private var blurredPhotos
     @Environment(\.windowSceneProjection) private var windowScene
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Bindable private var focusTuning = PhotoFocusTuning.shared
 
     public init(
         image: Image,
+        photoID: PhotoID? = nil,
         imageSize: CGSize? = nil,
         focus: NormalizedPoint? = nil,
         parallaxOffset: CGSize = .zero,
         parallaxOverscan: CGSize? = nil,
         style: Style = .card
     ) {
+        self.photoID = photoID
         self.image = image
         self.imageSize = imageSize
         self.focus = focus
@@ -66,33 +81,38 @@ public struct PhotoLayer: View {
         }
     }
 
-    /// Keep the backing on the screen plane so coverage does not depend on
-    /// viewer angle. Only the foreground uses the existing photo depth and scale.
+    /// Project both copies together. Reserve a wide backing before projection
+    /// so the sharp photograph keeps its existing scale and movement.
     private var cardImage: some View {
         ZStack {
             if windowScene != nil {
                 GeometryReader { geometry in
-                    // Reserve two blur radii even when face centering clamps
-                    // against a source edge, so blur cannot expose empty margins.
-                    let coverage = CGSize(width: geometry.size.width + 120,
-                                          height: geometry.size.height + 120)
+                    // Ten card widths/heights exceed the default 80-degree
+                    // coverage budget. Scale up further for deeper scene settings.
+                    let depth = (windowScene?.backingDepthMeters ?? 0.06)
+                        * pow(0.75, windowScene?.spacing ?? 1)
+                    let coverageScale = max(10, 10 * depth / 0.045)
+                    let coverage = CGSize(width: geometry.size.width * coverageScale,
+                                          height: geometry.size.height * coverageScale)
                     let layout = Self.focusLayout(
                         container: coverage,
                         imageSize: imageSize ?? geometry.size,
                         focus: focus ?? .center,
-                        zoomMultiplier: max(2.5, CGFloat(focusTuning.zoomMultiplier))
+                        zoomMultiplier: 1
                     )
-                    image.resizable()
+                    (photoID.flatMap { blurredPhotos[$0.filename] } ?? image).resizable()
                         .frame(width: layout.scaled.width, height: layout.scaled.height)
                         .offset(x: layout.offset.width, y: layout.offset.height)
-                        .blur(radius: 30, opaque: true)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
             framedImage
-                .scaleEffect(windowScene == nil ? 1 : 1.3)
-                .windowDepth(0.75)
         }
+        .scaleEffect(windowScene == nil ? 1 : 1.3)
+        .windowDepth(0.75)
+        // Clip after projection so compositing stays at card size, rather than
+        // allocating an offscreen surface for the enlarged backing's bounds.
+        .clipped()
     }
 
     /// A separable smooth fade on the source image's four edges. Its central

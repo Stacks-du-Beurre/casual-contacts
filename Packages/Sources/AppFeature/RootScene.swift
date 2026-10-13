@@ -138,7 +138,9 @@ public struct RootScene: Scene {
     @MainActor
     @ViewBuilder
     private var localizedRootContent: some View {
-        rootContent.environment(\.locale, activeLocalizationLocale)
+        rootContent
+            .environment(\.locale, activeLocalizationLocale)
+            .environment(\.blurredPhotoImages, photoCache.blurredImages)
     }
 
     @MainActor

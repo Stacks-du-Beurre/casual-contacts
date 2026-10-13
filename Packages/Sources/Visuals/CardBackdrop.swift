@@ -122,6 +122,7 @@ public struct CardBackdrop: View {
             if let photo {
                 PhotoLayer(
                     image: photo,
+                    photoID: record.photoID,
                     imageSize: photoSize,
                     focus: record.photoFocus,
                     parallaxOffset: windowScene == nil ? photoParallaxOffset : .zero,

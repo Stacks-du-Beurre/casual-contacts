@@ -4,6 +4,8 @@ import Observation
 import CoreModels
 #if canImport(UIKit)
 import UIKit
+import CoreImage
+import ImageIO
 #endif
 
 @MainActor
@@ -15,9 +17,11 @@ public final class PhotoCache {
         /// Pixel dimensions of the source image, used by `PhotoLayer` to compute
         /// the offset that places a normalized focus point at container center.
         public let size: CGSize
+        public let blurredImage: Image?
     }
 
     private var cache: [String: Entry] = [:]
+    public private(set) var blurredImages: [String: Image] = [:]
     private var inFlight: Set<String> = []
 
     public init() {}
@@ -39,8 +43,11 @@ public final class PhotoCache {
         guard let id, cache[id.filename] == nil, !inFlight.contains(id.filename) else { return }
         inFlight.insert(id.filename)
         defer { inFlight.remove(id.filename) }
-        guard let data = try? await store.load(id), let entry = Self.decode(data) else { return }
+        guard let data = try? await store.load(id) else { return }
+        let entry = await Task.detached(priority: .utility) { Self.decode(data) }.value
+        guard let entry else { return }
         cache[id.filename] = entry
+        blurredImages[id.filename] = entry.blurredImage
     }
 
     public func preload(_ records: [Record], using store: any PhotoStore) async {
@@ -52,14 +59,49 @@ public final class PhotoCache {
     public func invalidate(_ id: PhotoID?) {
         guard let id else { return }
         cache.removeValue(forKey: id.filename)
+        blurredImages.removeValue(forKey: id.filename)
     }
 
-    private static func decode(_ data: Data) -> Entry? {
+    nonisolated private static func decode(_ data: Data) -> Entry? {
         #if canImport(UIKit)
-        guard let ui = UIImage(data: data) else { return nil }
-        return Entry(image: Image(uiImage: ui), size: ui.size)
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let bitmap = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 3072,
+                kCGImageSourceShouldCacheImmediately: true
+              ] as CFDictionary) else { return nil }
+        // Decode on this utility task, rather than letting UIImage defer full-size
+        // camera-image decoding until the first animated frame. Aspect ratio and
+        // normalized face coordinates are preserved; the stored photo is untouched.
+        return Entry(image: Image(decorative: bitmap, scale: 1, orientation: .up),
+                     size: CGSize(width: bitmap.width, height: bitmap.height),
+                     blurredImage: blurredImage(data))
         #else
         return nil
         #endif
     }
+    #if canImport(UIKit)
+    // CIContext is thread-safe and retains rendering resources across photos.
+    nonisolated private static let blurContext = CIContext(options: [.cacheIntermediates: false])
+
+    nonisolated private static func blurredImage(_ data: Data) -> Image? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 512
+              ] as CFDictionary) else { return nil }
+        let image = CIImage(cgImage: thumbnail)
+        // Approximately 15 points when enlarged to a 10× phone-width backing.
+        // Work at thumbnail resolution; no blur filter runs during card motion.
+        let radius = 15 * Double(thumbnail.width) / (393 * 10)
+        let blurred = image.clampedToExtent()
+            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: radius])
+            .cropped(to: image.extent)
+        guard let bitmap = blurContext.createCGImage(blurred, from: image.extent) else { return nil }
+        return Image(decorative: bitmap, scale: 1, orientation: .up)
+    }
+    #endif
+
 }
