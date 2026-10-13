@@ -62,6 +62,8 @@ public struct TappedCardModalScene: View {
     @State private var chromeVisible = false
     @State private var dragTranslation: CGFloat = 0
     @State private var dismissalCommitting = false
+    @State private var motionPaused = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable private var sizeTuning = MediumCardSizeTuning.shared
     @Environment(\.locale) private var locale
 
@@ -108,16 +110,23 @@ public struct TappedCardModalScene: View {
                     .accessibilityLabel(ModuleLocalization.text("Dismiss", locale: locale))
                     .accessibilityAddTraits(.isButton)
 
-                CardView(
-                    record: record,
-                    size: .medium,
-                    attitude: attitude,
-                    paths: paths,
-                    photo: photo,
-                    photoSize: photoSize
-                )
-                .frame(width: cardSize.width, height: cardSize.height)
-                .drawingGroup(opaque: false)
+                CardMotionGate(attitude: attitude, paused: motionPaused) { renderedAttitude in
+                    CardView(
+                        record: record,
+                        size: .medium,
+                        attitude: renderedAttitude,
+                        paths: paths,
+                        photo: photo,
+                        photoSize: photoSize
+                    )
+                    .frame(width: cardSize.width, height: cardSize.height)
+                    .environment(\.windowCardFrame, CGRect(
+                        x: proxy.frame(in: .global).midX - cardSize.width / 2,
+                        y: proxy.frame(in: .global).midY - cardSize.height / 2,
+                        width: cardSize.width, height: cardSize.height
+                    ))
+                    .drawingGroup(opaque: false)
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .position(centeredLocal)
                 .offset(y: cardOffset)
@@ -191,8 +200,12 @@ public struct TappedCardModalScene: View {
     private func beginPresent() {
         dismissalCommitting = false
         dragTranslation = 0
-        withAnimation(.interactiveSpring(response: Self.slideDuration, dampingFraction: 0.88)) {
+        motionPaused = true
+        withAnimation(reduceMotion ? nil : .interactiveSpring(response: Self.slideDuration, dampingFraction: 0.88),
+                      completionCriteria: .removed) {
             cardVisible = true
+        } completion: {
+            if !dismissalCommitting { motionPaused = false }
         }
         withAnimation(.easeOut(duration: Self.chromeDuration).delay(Self.chromeStagger)) {
             chromeVisible = true
@@ -202,15 +215,15 @@ public struct TappedCardModalScene: View {
     private func beginDismiss(then completion: (() -> Void)? = nil) {
         guard !dismissalCommitting else { return }
         dismissalCommitting = true
+        motionPaused = true
         withAnimation(.easeIn(duration: Self.chromeDuration)) {
             chromeVisible = false
         }
-        withAnimation(.interactiveSpring(response: Self.slideDuration, dampingFraction: 0.9)) {
+        withAnimation(reduceMotion ? nil : .interactiveSpring(response: Self.slideDuration, dampingFraction: 0.9),
+                      completionCriteria: .removed) {
             dragTranslation = 0
             cardVisible = false
-        }
-        let total = Self.slideDuration
-        DispatchQueue.main.asyncAfter(deadline: .now() + total) {
+        } completion: {
             onDismiss()
             completion?()
         }
@@ -221,6 +234,7 @@ public struct TappedCardModalScene: View {
     ) -> some Gesture {
         DragGesture(minimumDistance: 2)
             .onChanged { value in
+                motionPaused = true
                 dragTranslation = TappedCardModalInteraction.visibleOffset(
                     dragTranslation: value.translation.height
                 )
@@ -234,8 +248,11 @@ public struct TappedCardModalScene: View {
                 if shouldDismiss {
                     beginDismiss()
                 } else {
-                    withAnimation(.interactiveSpring(response: 0.32, dampingFraction: 0.82)) {
+                    withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.32, dampingFraction: 0.82),
+                                  completionCriteria: .removed) {
                         dragTranslation = 0
+                    } completion: {
+                        if !dismissalCommitting { motionPaused = false }
                     }
                 }
             }

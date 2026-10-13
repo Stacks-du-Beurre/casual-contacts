@@ -45,7 +45,7 @@ struct FaceSceneHost<Content: View>: View {
     }
 
     private var windowProjection: WindowSceneProjection? {
-        guard !reduceMotion, tracker.enabled,
+        guard !reduceMotion, tracker.enabled, (!expandedVisible || expandedEnabled),
               let eye = tracker.eyePosition else { return nil }
         // ARKit poses use the front camera as origin. Approximate its height
         // above screen center; expose calibration instead of claiming precision.

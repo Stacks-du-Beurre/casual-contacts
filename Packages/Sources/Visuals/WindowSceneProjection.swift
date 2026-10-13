@@ -1,7 +1,7 @@
 import CoreModels
 import SwiftUI
 
-public struct WindowSceneProjection: Sendable {
+public struct WindowSceneProjection: Equatable, Sendable {
     public let eye: ViewerPosition
     public let reference: ViewerPosition
     public let backingDepthMeters: Double
