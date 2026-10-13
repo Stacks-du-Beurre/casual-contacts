@@ -1,0 +1,52 @@
+name: Release App Store assets
+on:
+  push:
+    tags: ['v-*']
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: Submit matching release build for review (release tag only)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: app-store-assets
+  cancel-in-progress: false
+jobs:
+  assets:
+    runs-on: [self-hosted, macOS, ARM64, casual-contacts-release]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check release source
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.submit }}" = "true" ]; then
+            case "$GITHUB_REF" in refs/tags/v-*) ;; *) echo 'Submission requires a release tag'; exit 1;; esac
+          fi
+      - name: Install pinned release tools
+        run: |
+          mise exec ruby@3.3.12 -- bundle config set --local path vendor/bundle
+          mise exec ruby@3.3.12 -- bundle install --jobs 4
+      - name: Generate and upload localized store assets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+          CC_SUBMIT_RELEASE: ${{ github.event_name == 'push' || inputs.submit }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+          FASTLANE_HIDE_CHANGELOG: '1'
+          FASTLANE_OPT_OUT_USAGE: '1'
+        run: caffeinate -is mise exec ruby@3.3.12 -- bash Tools/release-store-assets.sh
+      - name: Save screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: build/store-screenshots
+          if-no-files-found: ignore
+          retention-days: 14
