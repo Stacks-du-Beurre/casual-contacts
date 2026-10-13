@@ -15,6 +15,7 @@ public struct CardView: View {
     public let photo: Image?
     public let photoSize: CGSize?
     public let contentInsets: EdgeInsets
+    public let expansionProgress: CGFloat
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var depthTuning = CardElementDepthTuning.shared
@@ -28,7 +29,8 @@ public struct CardView: View {
         paths: any CardPathProvider,
         photo: Image? = nil,
         photoSize: CGSize? = nil,
-        contentInsets: EdgeInsets = EdgeInsets()
+        contentInsets: EdgeInsets = EdgeInsets(),
+        expansionProgress: CGFloat = 1
     ) {
         self.record = record
         self.size = size
@@ -37,6 +39,7 @@ public struct CardView: View {
         self.photo = photo
         self.photoSize = photoSize
         self.contentInsets = contentInsets
+        self.expansionProgress = expansionProgress
     }
 
     public var body: some View {
@@ -62,12 +65,13 @@ public struct CardView: View {
                     ornaments().padding(contentInsets)
                 } else {
                     fullScreenIdentity(layout: layout, backdrop: sharedBackdrop)
+                        .opacity(expansionProgress)
                 }
 
-                if size != .large {
+                if size != .large || expansionProgress < 1 {
                 CardTextLayer(
                     record: record,
-                    size: size,
+                    size: .medium,
                     attitude: attitude,
                     layout: layout,
                     coordinateSpaceName: Self.cardCoordinateSpace,
@@ -80,6 +84,7 @@ public struct CardView: View {
                     }
                 )
                 .padding(contentInsets)
+                .opacity(size == .large ? 1 - expansionProgress : 1)
                 }
             }
             // Pin to the geometry reader's bounds so ideal-size propagation from

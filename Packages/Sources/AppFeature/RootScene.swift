@@ -23,7 +23,6 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var tappedCardDismissing = false
-    @State private var afterTappedCardDismiss: (() -> Void)?
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
@@ -130,7 +129,7 @@ public struct RootScene: Scene {
     }
 
     static func hiddenRecordIDForList(tappedRecord: Record?) -> Record.ID? {
-        nil
+        tappedRecord?.id
     }
 
     #if os(iOS)
@@ -332,31 +331,26 @@ public struct RootScene: Scene {
             .presentationCornerRadius(12)
             .zoomDestination(.createButton)
         }
-        .fullScreenCover(item: $router.tappedRecord, onDismiss: {
-            tappedCardDismissing = false
-            let action = afterTappedCardDismiss
-            afterTappedCardDismiss = nil
-            action?()
-        }) { tapped in
-            LargeDetailScene(
-                record: tapped,
-                attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
-                paths: environment.cardPathProvider,
-                photo: photoCache.image(for: tapped.photoID),
-                photoSize: photoCache.imageSize(for: tapped.photoID),
-                onEdit: {
-                    afterTappedCardDismiss = { router.editingRecord = tapped }
-                    router.tappedRecord = nil
-                },
-                onDelete: {
-                    afterTappedCardDismiss = { pendingDeleteRecord = tapped }
-                    router.tappedRecord = nil
-                },
-                onDismiss: { router.tappedRecord = nil }
-            )
-            .environment(\.windowSceneProjection, projection)
-            .environment(\.zoomNamespace, zoomNamespace)
-            .zoomDestination(.card(tapped.id))
+        .overlay {
+            if let tapped = router.tappedRecord {
+                FullScreenCardPresentation(
+                    record: tapped,
+                    sourceFrame: router.tappedRecordSourceFrame,
+                    attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
+                    paths: environment.cardPathProvider,
+                    photo: photoCache.image(for: tapped.photoID),
+                    photoSize: photoCache.imageSize(for: tapped.photoID),
+                    onEdit: { router.editingRecord = tapped },
+                    onDelete: { pendingDeleteRecord = tapped },
+                    onDismissStarted: { tappedCardDismissing = true },
+                    onDismiss: {
+                        router.tappedRecord = nil
+                        tappedCardDismissing = false
+                    }
+                )
+                .environment(\.windowSceneProjection, projection)
+                .transition(.identity)
+            }
         }
         .sheet(item: $router.selectedRecordForMediumDetail) { record in
             MediumDetailSheet(
