@@ -10,8 +10,7 @@ public struct CardMotionGate<Content: View>: View {
     @Environment(\.windowSceneProjection) private var projection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rendered: CardMotionPose?
-    @State private var latest: CardMotionPose?
-    @State private var resuming = false
+    @State private var livePose = LiveCardMotionPose()
 
     public init(attitude: DeviceAttitude, paused: Bool,
                 @ViewBuilder content: @escaping (DeviceAttitude) -> Content) {
@@ -25,18 +24,21 @@ public struct CardMotionGate<Content: View>: View {
     }
 
     public var body: some View {
-        let pose = rendered ?? incoming
+        // Live motion goes straight to the card. Do not copy every camera
+        // update through SwiftUI state and trigger another list render.
+        let pose = rendered ?? (paused ? livePose.value ?? incoming : incoming)
         content(pose.attitude)
             .environment(\.windowSceneProjection, pose.projection)
             .onChange(of: incoming, initial: true) { _, value in
-                latest = value
-                if rendered == nil || (!paused && !resuming) { rendered = value }
+                livePose.value = value
+                if paused && rendered == nil { rendered = value }
+            }
+            .onChange(of: paused) { _, value in
+                if value { rendered = rendered ?? livePose.value ?? incoming }
             }
             .task(id: paused) {
                 guard !paused, let start = rendered else { return }
-                guard !reduceMotion else { rendered = latest; return }
-                resuming = true
-                defer { resuming = false }
+                guard !reduceMotion else { rendered = nil; return }
                 let clock = ContinuousClock()
                 let began = clock.now
                 while !Task.isCancelled {
@@ -44,15 +46,24 @@ public struct CardMotionGate<Content: View>: View {
                     let seconds = Double(elapsed.components.seconds)
                         + Double(elapsed.components.attoseconds) / 1e18
                     let t = min(1, seconds / 0.35)
-                    if let latest {
+                    if let latest = livePose.value {
                         rendered = start.interpolated(to: latest, progress: t * t * (3 - 2 * t))
                     }
-                    if t >= 1 { break }
+                    if t >= 1 {
+                        rendered = nil
+                        break
+                    }
                     do { try await Task.sleep(for: .milliseconds(16)) }
                     catch { break }
                 }
             }
     }
+}
+
+/// Input mailbox; updates do not invalidate SwiftUI while motion is held.
+@MainActor
+private final class LiveCardMotionPose {
+    var value: CardMotionPose?
 }
 
 struct CardMotionPose: Equatable {
