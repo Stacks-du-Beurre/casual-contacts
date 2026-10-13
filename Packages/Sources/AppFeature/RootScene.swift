@@ -129,7 +129,7 @@ public struct RootScene: Scene {
     }
 
     static func hiddenRecordIDForList(tappedRecord: Record?) -> Record.ID? {
-        nil
+        tappedRecord?.id
     }
 
     #if os(iOS)
@@ -333,7 +333,7 @@ public struct RootScene: Scene {
         }
         .overlay {
             if let tapped = router.tappedRecord {
-                TappedCardModalScene(
+                FullScreenCardPresentation(
                     record: tapped,
                     sourceFrame: router.tappedRecordSourceFrame,
                     attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
@@ -342,11 +342,11 @@ public struct RootScene: Scene {
                     photoSize: photoCache.imageSize(for: tapped.photoID),
                     onEdit: { router.editingRecord = tapped },
                     onDelete: { pendingDeleteRecord = tapped },
+                    onDismissStarted: { tappedCardDismissing = true },
                     onDismiss: {
                         router.tappedRecord = nil
                         tappedCardDismissing = false
-                    },
-                    onDismissStarted: { tappedCardDismissing = true }
+                    }
                 )
                 .environment(\.windowSceneProjection, projection)
                 .transition(.identity)

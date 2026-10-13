@@ -4,6 +4,8 @@ public struct ZoomSourceID: Hashable, Sendable {
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
 
+    public static func card(_ id: UUID) -> Self { Self(rawValue: "card-" + id.uuidString) }
+
     public static let createButton = ZoomSourceID(rawValue: "createButton")
 }
 
@@ -48,10 +50,11 @@ private struct ZoomSourceModifier: ViewModifier {
 private struct ZoomDestinationModifier: ViewModifier {
     let matchKey: String
     @Environment(\.zoomNamespace) private var namespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         #if os(iOS)
-        if let namespace {
+        if let namespace, !reduceMotion {
             content.navigationTransition(.zoom(sourceID: matchKey, in: namespace))
         } else {
             content

@@ -93,7 +93,7 @@ import StorageTestSupport
         #expect(router.selectedRecordForMediumDetail?.id == record.id)
     }
 
-    @Test func tappedRecordDoesNotHideSourceListRow() {
+    @Test func tappedRecordHidesSourceRowDuringInPlaceExpansion() {
         let record = Record(
             id: UUID(),
             name: "Jane",
@@ -106,7 +106,7 @@ import StorageTestSupport
             metadata: RecordMetadata(timeOfDay: .midday, moonPhase: .newMoon)
         )
 
-        #expect(RootScene.hiddenRecordIDForList(tappedRecord: record) == nil)
+        #expect(RootScene.hiddenRecordIDForList(tappedRecord: record) == record.id)
     }
 
     @Test func navigationRouterClearsSelectionsForDeletedRecords() {

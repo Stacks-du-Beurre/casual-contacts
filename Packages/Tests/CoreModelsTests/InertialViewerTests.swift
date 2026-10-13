@@ -3,6 +3,24 @@ import Testing
 import CoreModels
 
 @Suite struct InertialViewerTests {
+    @Test func neutralSeedMovesWithoutAFaceAndFaceAcquisitionReplacesIt() {
+        var model = InertialViewer()
+        let neutral = ViewerPosition.screenCentered(cameraHeightMeters: 0.065)
+        model.seedIfNeeded(eye: neutral, orientation: .identity)
+        let angle = Double.pi / 12
+        let turned = Quaternion(x: 0, y: sin(angle / 2), z: 0, w: cos(angle / 2))
+        model.seedIfNeeded(eye: neutral, orientation: turned)
+        let estimate = model.estimate(orientation: turned)!
+        #expect(abs(estimate.x + neutral.distance * sin(angle)) < 1e-9)
+        #expect(abs(estimate.y - neutral.y) < 1e-9)
+        let measured = ViewerPosition(x: 0.03, y: -0.07, distance: 0.35)
+        model.calibrate(eye: measured, orientation: turned)
+        model.seedIfNeeded(eye: neutral, orientation: .identity)
+        let acquired = model.estimate(orientation: turned)!
+        #expect(abs(acquired.x - measured.x) < 1e-9)
+        #expect(abs(acquired.distance - measured.distance) < 1e-9)
+    }
+
     @Test func calibrationAndStationaryPhonePreserveEye() {
         var model = InertialViewer()
         #expect(model.estimate(orientation: .identity) == nil)

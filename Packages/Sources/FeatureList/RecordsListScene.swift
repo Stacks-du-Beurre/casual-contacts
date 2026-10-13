@@ -574,25 +574,17 @@ private struct RecordCardRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
+        .zoomSource(.card(record.id))
         .opacity(isHidden ? 0 : 1)
-        .background(
-            GeometryReader { geo in
-                Color.clear
-                    .preference(
-                        key: CardFramePreferenceKey.self,
-                        value: CardFrameSnapshot(
-                            global: geo.frame(in: .global),
-                            scroll: geo.frame(in: .named(scrollCoordinateSpace))
-                        )
-                    )
-            }
-        )
+        .onGeometryChange(for: CardFrameSnapshot.self) { geo in
+            CardFrameSnapshot(global: geo.frame(in: .global),
+                              scroll: geo.frame(in: .named(scrollCoordinateSpace)))
+        } action: { snapshot in
+            updateFrames(globalFrame: snapshot.global, scrollFrame: snapshot.scroll)
+        }
         .onAppear {
             isActiveForAnimation = true
             diagnostics.registerMountedCard(id: record.id)
-        }
-        .onPreferenceChange(CardFramePreferenceKey.self) { snapshot in
-            updateFrames(globalFrame: snapshot.global, scrollFrame: snapshot.scroll)
         }
         .onChange(of: viewportHeight) { _, _ in
             updateFrames(globalFrame: frame, scrollFrame: scrollFrame)

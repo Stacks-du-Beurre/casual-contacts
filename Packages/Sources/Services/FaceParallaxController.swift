@@ -127,7 +127,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
                 MainActor.assumeIsolated {
                     guard let self, let sample, self.active, self.enabled else { return }
                     let q = sample.attitude.quaternion
-                    self.orientations.append((sample.timestamp, Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)))
+                    let orientation = Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)
+                    self.inertialViewer.seedIfNeeded(eye: self.neutralReference, orientation: orientation)
+                    self.orientations.append((sample.timestamp, orientation))
                     if self.orientations.count > 120 { self.orientations.removeFirst() }
                 }
             }
@@ -242,14 +244,14 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         } else { estimate = nil }
         let nextEye = estimate ?? (tracked ? targetEye : nil)
         let predictedAttitude = estimate.flatMap { projection.attitude(for: $0) }
-        let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (eyePosition == nil ? fallback : attitude))
+        let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (targetEye == nil ? fallback : attitude))
         let nextStatus = tracked ? "Face parallax on" :
             (estimate != nil ? "Gyro estimate; face out of view" :
              (targetEye == nil ? "Finding your face" : "Tracking lost; holding scene"))
         if status != nextStatus { status = nextStatus }
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
-        sceneActivation = acquisition.step(hasPose: targetEye != nil, elapsed: elapsed)
+        sceneActivation = acquisition.step(hasPose: nextEye != nil || targetEye != nil, elapsed: elapsed)
         attitude = smoother.step(toward: next, elapsed: elapsed)
         if let targetEye = nextEye {
             let previous = eyePosition ?? referenceEye ?? targetEye
