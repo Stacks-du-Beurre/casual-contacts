@@ -9,7 +9,7 @@ struct FaceSceneHost<Content: View>: View {
     let listVisible: Bool
     let expandedVisible: Bool
     let attitude: DeviceAttitude
-    let content: (FaceParallaxController, WindowSceneProjection?, Binding<Bool>) -> Content
+    let content: (FaceParallaxController, WindowSceneProjection?, WindowSceneProjection?, Binding<Bool>) -> Content
     @AppStorage("FaceScene.listEnabled") private var listEnabled = false
     @AppStorage("FaceScene.expandedEnabled") private var expandedEnabled = false
     @State private var tracker = FaceParallaxController()
@@ -26,7 +26,8 @@ struct FaceSceneHost<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        content(tracker, windowProjection, $showingSceneSettings)
+        content(tracker, listEnabled ? windowProjection(cardCentered: true) : nil,
+                expandedEnabled ? windowProjection(cardCentered: false) : nil, $showingSceneSettings)
         .sheet(isPresented: $showingSceneSettings) { sceneSettings }
         .onAppear {
             updateTracking()
@@ -44,7 +45,7 @@ struct FaceSceneHost<Content: View>: View {
         .onDisappear { tracker.setActive(false) }
     }
 
-    private var windowProjection: WindowSceneProjection? {
+    private func windowProjection(cardCentered: Bool) -> WindowSceneProjection? {
         guard !reduceMotion, tracker.enabled,
               let eye = tracker.eyePosition else { return nil }
         // ARKit poses use the front camera as origin. Approximate its height
@@ -62,7 +63,7 @@ struct FaceSceneHost<Content: View>: View {
             screenWidthMeters: max(55, min(90, screenWidthMM)) / 1000,
             viewport: UIScreen.main.bounds.size,
             reverseGuillocheDepthOrder: blendTuning.reverseDepthOrder,
-            cardCenteredReference: !expandedVisible
+            cardCenteredReference: cardCentered
         )
     }
 

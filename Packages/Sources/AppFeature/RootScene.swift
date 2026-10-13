@@ -22,10 +22,7 @@ public struct RootScene: Scene {
     @State private var environment: AppEnvironment
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
-    /// Snapshot of `currentAttitude` captured the moment a card modal opens,
-    /// fed to the list behind the backdrop so its rows freeze in place while
-    /// the modal's own card continues reading the live stream.
-    @State private var frozenListAttitude = DeviceAttitude.zero
+    @State private var tappedCardDismissing = false
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
@@ -146,56 +143,60 @@ public struct RootScene: Scene {
     @ViewBuilder
     private var rootContent: some View {
         FaceSceneHost(
-            listVisible: !router.showingCreate && router.editingRecord == nil && router.tappedRecord == nil,
+            listVisible: !router.showingCreate && router.editingRecord == nil,
             expandedVisible: router.tappedRecord != nil,
             attitude: currentAttitude
-        ) { tracker, projection, showSceneSettings in
-            trackedRootContent(tracker: tracker, projection: projection, showSceneSettings: showSceneSettings)
+        ) { tracker, listProjection, projection, showSceneSettings in
+            trackedRootContent(tracker: tracker, listProjection: listProjection, projection: projection, showSceneSettings: showSceneSettings)
         }
     }
 
     @MainActor
-    private func trackedRootContent(tracker: FaceParallaxController, projection: WindowSceneProjection?,
+    private func trackedRootContent(tracker: FaceParallaxController, listProjection: WindowSceneProjection?,
+                                    projection: WindowSceneProjection?,
                                     showSceneSettings: Binding<Bool>) -> some View {
-        RecordsListScene(
-            store: environment.recordStore,
-            paths: environment.cardPathProvider,
-            attitude: router.tappedRecord == nil ? (tracker.enabled ? tracker.renderingAttitude : currentAttitude) : frozenListAttitude,
-            timeOfDay: currentTimeOfDay,
-            onTapRecord: { record, frame in
-                frozenListAttitude = currentAttitude
-                router.tappedRecordSourceFrame = frame
-                router.tappedRecord = record
-            },
-            onTapCreate: {
-                handleCreateTapped()
-            },
-            onTapSettings: {
-                router.showingSettings = true
-            },
-            onScrollInteractionChange: { _ in
-                // Keep the global motion stream alive while scrolling. SwiftUI
-                // can miss an idle transition during lazy-list churn; stopping
-                // CoreMotion here leaves visible cards stuck on the last sample.
-            },
-            onEditRecord: { record in
-                router.editingRecord = record
-            },
-            photoFor: { photoCache.image(for: $0.photoID) },
-            photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
-            onDeleteRecord: { record in
-                try await environment.recordStore.delete(id: record.id)
-            },
-            sortOption: $listSortOption,
-            currentLocation: $listCurrentLocation,
-            pendingDeleteRecord: $pendingDeleteRecord,
-            hiddenRecordID: Self.hiddenRecordIDForList(tappedRecord: router.tappedRecord),
-            onSortOptionSelected: { option in
-                environment.listSortPreferenceStore.sortOption = option
-            },
-            onDistanceSortRequest: handleDistanceSortRequested
-        )
-        .environment(\.windowSceneProjection, router.tappedRecord == nil ? projection : nil)
+        CardMotionGate(attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
+                       paused: router.tappedRecord != nil && !tappedCardDismissing) { renderedAttitude in
+            RecordsListScene(
+                store: environment.recordStore,
+                paths: environment.cardPathProvider,
+                attitude: renderedAttitude,
+                timeOfDay: currentTimeOfDay,
+                onTapRecord: { record, frame in
+                    tappedCardDismissing = false
+                    router.tappedRecordSourceFrame = frame
+                    router.tappedRecord = record
+                },
+                onTapCreate: {
+                    handleCreateTapped()
+                },
+                onTapSettings: {
+                    router.showingSettings = true
+                },
+                onScrollInteractionChange: { _ in
+                    // Keep the global motion stream alive while scrolling. SwiftUI
+                    // can miss an idle transition during lazy-list churn; stopping
+                    // CoreMotion here leaves visible cards stuck on the last sample.
+                },
+                onEditRecord: { record in
+                    router.editingRecord = record
+                },
+                photoFor: { photoCache.image(for: $0.photoID) },
+                photoSizeFor: { photoCache.imageSize(for: $0.photoID) },
+                onDeleteRecord: { record in
+                    try await environment.recordStore.delete(id: record.id)
+                },
+                sortOption: $listSortOption,
+                currentLocation: $listCurrentLocation,
+                pendingDeleteRecord: $pendingDeleteRecord,
+                hiddenRecordID: Self.hiddenRecordIDForList(tappedRecord: router.tappedRecord),
+                onSortOptionSelected: { option in
+                    environment.listSortPreferenceStore.sortOption = option
+                },
+                onDistanceSortRequest: handleDistanceSortRequested
+            )
+        }
+        .environment(\.windowSceneProjection, listProjection)
         .onChange(of: environment.recordStore.records.map(\.id)) { _, ids in
             let kept = Set(ids)
             router.clearSelections(keeping: kept)
@@ -341,7 +342,11 @@ public struct RootScene: Scene {
                     photoSize: photoCache.imageSize(for: tapped.photoID),
                     onEdit: { router.editingRecord = tapped },
                     onDelete: { pendingDeleteRecord = tapped },
-                    onDismiss: { router.tappedRecord = nil }
+                    onDismiss: {
+                        router.tappedRecord = nil
+                        tappedCardDismissing = false
+                    },
+                    onDismissStarted: { tappedCardDismissing = true }
                 )
                 .environment(\.windowSceneProjection, projection)
                 .transition(.identity)
