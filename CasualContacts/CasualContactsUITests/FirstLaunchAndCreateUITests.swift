@@ -20,7 +20,7 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Continue to camera permission"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Use gyro only"].exists)
-        XCTAssertTrue(app.staticTexts["Camera access is optional. Decline to use gyro motion, or turn the camera off later in 3D scene."].exists)
+        XCTAssertTrue(app.staticTexts["Camera is optional. Decline for gyro motion; change access in 3D scene."].exists)
     }
 
     func testCameraExplanationAndRecoveryAreLocalized() {
