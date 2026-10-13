@@ -148,6 +148,8 @@ public struct CardView: View {
                 if let sign = record.zodiacSign {
                     ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation, parallax: false)
                         .frame(width: 200, height: 180)
+                        .offset(depthOffset(layer: depthTuning.zodiacConstellationLayer))
+                        .windowDepth(0.25)
                         .accessibilityHidden(true)
                 } else {
                     Color.clear.frame(width: 200, height: 180)
