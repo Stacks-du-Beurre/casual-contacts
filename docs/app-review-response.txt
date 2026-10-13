@@ -1,8 +1,8 @@
-DRAFT — Send after the revised policy is published and the replacement build is uploaded. Replace [BUILD] with its App Store build number.
+DRAFT — Send after the revised policy is published and the replacement build is uploaded. Release build 55 has been requested; confirm it is selected before sending.
 
 Hello App Review,
 
-Thank you for your questions about TrueDepth usage in Casual Contacts. We have clarified the privacy policy and prepared a camera-mode explanation and permission controls in version 1.0.10 ([BUILD]).
+Thank you for your questions about TrueDepth usage in Casual Contacts. We have clarified the privacy policy and prepared a camera-mode explanation and permission controls in version 1.0.10 (55).
 
 1. Information processed
 The app uses ARKit face tracking. It reads the tracked face transform, left and right eye transforms, camera transform, tracking status, and frame timestamps. From these it calculates the midpoint of the eyes and its position/distance relative to the screen. ARKit processes camera frames and face anchors locally. Our code does not read face mesh vertices, facial-expression blend shapes, gaze targets, or Face ID identity data.
@@ -34,5 +34,9 @@ Review steps
 On a new installation, saving the first contact presents the optional camera-mode explanation once on supported hardware. Tap Continue to camera permission, then choose Allow or Don’t Allow in the system alert. Declining keeps gyro motion available. Camera-mode controls remain available in 3D scene settings.
 
 Create a contact, open the three-dot Settings menu → Developer → 3D scene, and enable Cards in the list or Expanded card. Motion works with gyro alone. On a supported device, choose Use camera for face perspective, review the explanation, and continue to the iOS camera permission prompt. Denying permission leaves gyro motion available. The Enable camera in Settings button opens the app's iOS Settings page to restore access. Face tracking is unavailable on unsupported hardware, including devices without supported ARKit face tracking; those devices use gyro motion. No account or sign-in is required.
+
+Attachments
+app-review-new-user.mp4 shows saving the first card, the explanation, the iOS camera permission prompt, and declining access.
+app-review-existing-user.mp4 shows an existing-user home without a prompt, opening 3D scene settings, the camera opt-in explanation, declining permission, and the Settings recovery option. These are simulator recordings with sample contacts; they demonstrate the permission flow, not live face sensing.
 
 Thank you.
