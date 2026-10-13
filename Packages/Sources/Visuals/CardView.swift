@@ -145,6 +145,13 @@ public struct CardView: View {
                 CardTextLayer(record: record, size: .large, attitude: attitude,
                               layout: layout, coordinateSpaceName: Self.cardCoordinateSpace,
                               backdrop: { backdrop })
+                if let sign = record.zodiacSign {
+                    ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation, parallax: false)
+                        .frame(width: 200, height: 180)
+                        .accessibilityHidden(true)
+                } else {
+                    Color.clear.frame(width: 200, height: 180)
+                }
             }
             .frame(width: layout.size.width, height: layout.size.height)
     }
@@ -175,7 +182,7 @@ public struct CardView: View {
             // top inset 37pt. Part of the backdrop so hologram text / frosted
             // pills sample it through the blur. `parallax: false` cedes motion
             // control to the depth-layer offset applied below.
-            if let sign = record.zodiacSign {
+            if size != .large, let sign = record.zodiacSign {
                 ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation, parallax: false)
                     .frame(width: 100, height: 90)
                     .padding(.top, 37)
@@ -644,7 +651,7 @@ private struct FullScreenIdentityLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        guard subviews.count == 3 else { return }
+        guard subviews.count == 4 else { return }
         let width = max(0, bounds.width - contentInsets.leading - contentInsets.trailing)
         let labelProposal = ProposedViewSize(width: width, height: nil)
         let x = bounds.minX + contentInsets.leading
@@ -655,7 +662,10 @@ private struct FullScreenIdentityLayout: Layout {
         let footerTop = footerBottom - footerHeight
         subviews[2].place(at: CGPoint(x: x, y: footerBottom), anchor: .bottomLeading,
                           proposal: labelProposal)
-        subviews[0].place(at: CGPoint(x: x, y: (bounds.minY + contentInsets.top + top) / 2),
+        let nameCenterY = (bounds.minY + contentInsets.top + top) / 2
+        subviews[3].place(at: CGPoint(x: bounds.maxX, y: nameCenterY),
+                          anchor: .trailing, proposal: ProposedViewSize(width: 200, height: 180))
+        subviews[0].place(at: CGPoint(x: x, y: nameCenterY),
                           anchor: .leading, proposal: labelProposal)
         subviews[1].place(at: CGPoint(x: x, y: (bottom + footerTop) / 2),
                           anchor: .leading, proposal: labelProposal)
