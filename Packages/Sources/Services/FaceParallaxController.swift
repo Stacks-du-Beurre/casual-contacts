@@ -6,12 +6,19 @@ import CoreMotion
 import Observation
 import UIKit
 
-/// Owns the camera only while the full-screen card opts in and is active.
+/// Runs gyro motion for enabled card views; camera use requires a separate opt-in.
 @MainActor @Observable
 public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDelegate {
     public private(set) var attitude: DeviceAttitude = .zero
     public private(set) var status = "Face parallax off"
     public private(set) var enabled = false
+    public var usesCamera = false {
+        didSet {
+            guard usesCamera != oldValue else { return }
+            stop()
+            if active && enabled { start() }
+        }
+    }
     public var fallback: DeviceAttitude = .zero
     public var smoothingSeconds: Double = 0.035
     public private(set) var eyePosition: ViewerPosition?
@@ -19,7 +26,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public private(set) var sceneActivation = 0.0
     public var renderingAttitude: DeviceAttitude { displayLink == nil ? fallback : attitude }
 
-    @ObservationIgnored private let session = ARSession()
+    @ObservationIgnored private var session = ARSession()
     @ObservationIgnored private let motion = CMMotionManager()
     @ObservationIgnored private var inertialViewer = InertialViewer()
     @ObservationIgnored private var orientations: [(time: Double, value: Quaternion)] = []
@@ -33,7 +40,6 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var lastFaceTime: TimeInterval = 0
     @ObservationIgnored private var lastDisplayTime: TimeInterval = 0
     @ObservationIgnored private var active = false
-    @ObservationIgnored private var requestID = 0
     @ObservationIgnored private var acquisition = SceneAcquisitionEasing()
     @ObservationIgnored private var trackingInputState = "waiting"
     #if DEBUG
@@ -77,24 +83,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     private func start() {
         guard active, enabled, displayLink == nil else { return }
-        guard ARFaceTrackingConfiguration.isSupported else {
-            status = "Face tracking unavailable; using gyro"
-            return
-        }
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: runSession()
-        case .notDetermined:
-            requestID += 1
-            let id = requestID
-            status = "Waiting for camera permission"
-            Task { [weak self] in
-                let allowed = await AVCaptureDevice.requestAccess(for: .video)
-                guard let self, self.requestID == id, self.active, self.enabled else { return }
-                if allowed { self.runSession() }
-                else { self.status = "Camera access denied; using gyro" }
-            }
-        default: status = "Camera access denied; using gyro"
-        }
+        runSession()
     }
 
     private func runSession() {
@@ -102,7 +91,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         diagnosticStart = CACurrentMediaTime()
         cameraFrames = 0
         displayTicks = 0
-        print("[FaceParallax] Starting front-camera tracking; frames are not stored.")
+        print("[FaceParallax] Starting scene motion; camera enabled=\(usesCamera).")
         #endif
         projection.reset()
         inertialViewer = InertialViewer()
@@ -119,7 +108,10 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let configuration = ARFaceTrackingConfiguration()
         configuration.maximumNumberOfTrackedFaces = 1
         configuration.isLightEstimationEnabled = false
-        session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        if usesCamera && ARFaceTrackingConfiguration.isSupported &&
+            AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        }
         orientations.removeAll()
         if motion.isDeviceMotionAvailable {
             motion.deviceMotionUpdateInterval = 1.0 / 60
@@ -147,8 +139,12 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         #if DEBUG
         if displayLink != nil { print("[FaceParallax] Tracking stopped; camera session paused.") }
         #endif
-        requestID += 1
         session.pause()
+        session.delegate = nil
+        // Release ARKit's retained frame/anchors when the feature stops.
+        session = ARSession()
+        session.delegate = self
+        session.delegateQueue = DispatchQueue(label: "FaceParallax.camera", qos: .userInteractive)
         motion.stopDeviceMotionUpdates()
         orientations.removeAll()
         inertialViewer = InertialViewer()
@@ -187,7 +183,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         #if DEBUG
         cameraFrames += 1
         #endif
-        guard active, enabled, displayLink != nil else { return }
+        guard active, enabled, usesCamera, displayLink != nil else { return }
         // Do not replay old camera corrections if UI work delayed delivery.
         guard abs(CACurrentMediaTime() - timestamp) < 0.15 else { return }
         guard let position else {
@@ -245,7 +241,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let nextEye = estimate ?? (tracked ? targetEye : nil)
         let predictedAttitude = estimate.flatMap { projection.attitude(for: $0) }
         let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (targetEye == nil ? fallback : attitude))
-        let nextStatus = tracked ? "Face parallax on" :
+        let nextStatus = !usesCamera ? "Gyro only; camera off" : tracked ? "Face parallax on" :
             (estimate != nil ? "Gyro estimate; face out of view" :
              (targetEye == nil ? "Finding your face" : "Tracking lost; holding scene"))
         if status != nextStatus { status = nextStatus }

@@ -74,3 +74,16 @@ test("pre-commit generation stages every generated marketing page", () => {
     ],
   );
 });
+
+// Keep the review disclosure available after every generated-site rebuild.
+test("privacy pages retain the face-data disclosure and its direct anchor", () => {
+  const files = buildSite();
+  for (const path of ["privacy.html", "ru/privacy.html", "uk/privacy.html"]) {
+    assert.match(files[path], /id="face-data"/);
+    assert.match(files[path], /TrueDepth/);
+    assert.match(files[path], /Face ID/);
+  }
+  assert.match(files["privacy.html"], /Storage, retention, and deletion/);
+  assert.match(files["privacy.html"], /No face data is retained between sessions/);
+  assert.doesNotMatch(files["privacy.html"], /Used only when you choose to attach a photo/);
+});
