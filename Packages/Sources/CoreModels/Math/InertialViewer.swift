@@ -8,6 +8,13 @@ public struct InertialViewer: Sendable {
 
     public init() {}
 
+    /// Starts motion before the camera has observed a face. Later motion
+    /// samples must not reset the origin; a real face can replace it.
+    public mutating func seedIfNeeded(eye: ViewerPosition, orientation: Quaternion) {
+        guard self.orientation == nil else { return }
+        calibrate(eye: eye, orientation: orientation)
+    }
+
     public mutating func calibrate(eye: ViewerPosition, orientation: Quaternion) {
         guard eye.isValid, Self.valid(orientation) else { return }
         self.eye = eye
