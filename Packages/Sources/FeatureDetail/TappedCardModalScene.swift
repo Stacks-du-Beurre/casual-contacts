@@ -65,7 +65,7 @@ public struct TappedCardModalScene: View {
     @State private var chromeVisible = false
     @State private var dragTranslation: CGFloat = 0
     @State private var dismissalCommitting = false
-    @State private var motionPaused = true
+    @State private var motionPaused = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Bindable private var sizeTuning = MediumCardSizeTuning.shared
     @Environment(\.locale) private var locale
@@ -203,12 +203,9 @@ public struct TappedCardModalScene: View {
     private func beginPresent() {
         dismissalCommitting = false
         dragTranslation = 0
-        motionPaused = true
-        withAnimation(reduceMotion ? nil : .interactiveSpring(response: Self.slideDuration, dampingFraction: 0.88),
-                      completionCriteria: .removed) {
+        motionPaused = false
+        withAnimation(reduceMotion ? nil : .interactiveSpring(response: Self.slideDuration, dampingFraction: 0.88)) {
             cardVisible = true
-        } completion: {
-            if !dismissalCommitting { motionPaused = false }
         }
         withAnimation(.easeOut(duration: Self.chromeDuration).delay(Self.chromeStagger)) {
             chromeVisible = true
