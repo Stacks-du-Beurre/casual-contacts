@@ -128,8 +128,6 @@ public struct CardBackdrop: View {
                     parallaxOverscan: windowScene == nil ? photoParallaxOverscan : .zero,
                     style: .card
                 )
-                .scaleEffect(windowScene == nil ? 1 : 1.3)
-                .windowDepth(0.75)
             }
 
             GuillocheBlendLayer(

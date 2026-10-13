@@ -24,6 +24,7 @@ public struct CreateRecordScene: View {
     @State private var model: CreateRecordModel
     @FocusState private var formFocus: CreateFormField?
     @State private var suspendedFocus: CreateFormField?
+    @State private var didSetInitialFocus = false
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
 
@@ -114,7 +115,11 @@ public struct CreateRecordScene: View {
                 GradientLayer(timeOfDay: model.metadata.timeOfDay, attitude: attitude)
                     .ignoresSafeArea(edges: .bottom)
             )
-            .onAppear { formFocus = .name }
+            .onAppear {
+                guard !didSetInitialFocus else { return }
+                didSetInitialFocus = true
+                formFocus = .name
+            }
             .task {
                 // Async location capture — fires once after the sheet has
                 // already presented so the user isn't blocked on a GPS fix.
@@ -127,7 +132,7 @@ public struct CreateRecordScene: View {
             }
             #if os(iOS)
             .photosPicker(isPresented: $showingPhotosPicker, selection: $photoItem, matching: .images, photoLibrary: .shared())
-            .fullScreenCover(isPresented: $showingCamera) {
+            .fullScreenCover(isPresented: $showingCamera, onDismiss: restoreSuspendedFocus) {
                 CameraPicker(
                     onCapture: { data in
                         model.setPhoto(data, using: faceDetectionService)
@@ -138,9 +143,6 @@ public struct CreateRecordScene: View {
                 .ignoresSafeArea()
             }
             .onChange(of: showingPhotosPicker) { _, shown in
-                if !shown { restoreSuspendedFocus() }
-            }
-            .onChange(of: showingCamera) { _, shown in
                 if !shown { restoreSuspendedFocus() }
             }
             .onChange(of: photoItem) { _, newItem in
@@ -157,8 +159,14 @@ public struct CreateRecordScene: View {
     /// Capture whichever form field currently owns focus, then release it so
     /// the keyboard retracts cleanly before a picker presents.
     private func suspendFocus() {
-        suspendedFocus = formFocus
+        if let formFocus { suspendedFocus = formFocus }
         formFocus = nil
+        #if os(iOS)
+        // UIKit pickers can otherwise retain the editor's first responder
+        // while the popover and full-screen presentation overlap.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                        to: nil, from: nil, for: nil)
+        #endif
     }
 
     /// Restore focus to the field that was active before the last picker was
@@ -197,7 +205,13 @@ public struct CreateRecordScene: View {
                         attitude: attitude,
                         backdropSize: geo.size,
                         coordinateSpaceName: Self.coordSpace,
-                        isPhotoChooserPresented: $showingPhotoChooser,
+                        isPhotoChooserPresented: Binding(
+                            get: { showingPhotoChooser },
+                            set: { presented in
+                                if presented { suspendFocus() }
+                                showingPhotoChooser = presented
+                            }
+                        ),
                         onPickCamera: {
                             #if os(iOS)
                             suspendFocus()

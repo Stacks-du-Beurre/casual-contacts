@@ -15,6 +15,7 @@ public struct PhotoLayer: View {
         case recommended  // Phase 3 — designed-in, still renders correctly
     }
 
+    @Environment(\.windowSceneProjection) private var windowScene
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Bindable private var focusTuning = PhotoFocusTuning.shared
 
@@ -44,9 +45,10 @@ public struct PhotoLayer: View {
         switch style {
         case .card:
             if reduceTransparency {
-                framedImage
+                cardImage
             } else {
-                framedImage
+                cardImage
+                    .compositingGroup()
                     .blendMode(.luminosity)
                     .opacity(focusTuning.opacity)
             }
@@ -62,6 +64,59 @@ public struct PhotoLayer: View {
                 .clipShape(Circle())
             }
         }
+    }
+
+    /// Keep the backing on the screen plane so coverage does not depend on
+    /// viewer angle. Only the foreground uses the existing photo depth and scale.
+    private var cardImage: some View {
+        ZStack {
+            if windowScene != nil {
+                GeometryReader { geometry in
+                    // Reserve two blur radii even when face centering clamps
+                    // against a source edge, so blur cannot expose empty margins.
+                    let coverage = CGSize(width: geometry.size.width + 120,
+                                          height: geometry.size.height + 120)
+                    let layout = Self.focusLayout(
+                        container: coverage,
+                        imageSize: imageSize ?? geometry.size,
+                        focus: focus ?? .center,
+                        zoomMultiplier: max(2.5, CGFloat(focusTuning.zoomMultiplier))
+                    )
+                    image.resizable()
+                        .frame(width: layout.scaled.width, height: layout.scaled.height)
+                        .offset(x: layout.offset.width, y: layout.offset.height)
+                        .blur(radius: 30, opaque: true)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                }
+            }
+            framedImage
+                .scaleEffect(windowScene == nil ? 1 : 1.3)
+                .windowDepth(0.75)
+        }
+    }
+
+    /// A separable smooth fade on the source image's four edges. Its central
+    /// area remains fully opaque; the enlarged backing fills beyond the edges.
+    private func edgeMask(size: CGSize) -> some View {
+        let fade = min(80, min(size.width, size.height) * 0.15)
+        let x = fade / max(size.width, 1)
+        let y = fade / max(size.height, 1)
+        return LinearGradient(stops: [
+            .init(color: .clear, location: 0),
+            .init(color: .white.opacity(0.5), location: x / 2),
+            .init(color: .white, location: x),
+            .init(color: .white, location: 1 - x),
+            .init(color: .white.opacity(0.5), location: 1 - x / 2),
+            .init(color: .clear, location: 1)
+        ], startPoint: .leading, endPoint: .trailing)
+        .mask(LinearGradient(stops: [
+            .init(color: .clear, location: 0),
+            .init(color: .white.opacity(0.5), location: y / 2),
+            .init(color: .white, location: y),
+            .init(color: .white, location: 1 - y),
+            .init(color: .white.opacity(0.5), location: 1 - y / 2),
+            .init(color: .clear, location: 1)
+        ], startPoint: .top, endPoint: .bottom))
     }
 
     /// Renders the image at `zoomMultiplier × scaledToFill`, with enough
@@ -83,9 +138,14 @@ public struct PhotoLayer: View {
                 image
                     .resizable()
                     .frame(width: result.scaled.width, height: result.scaled.height)
+                    .mask {
+                        if windowScene != nil { edgeMask(size: result.scaled) }
+                        else { Rectangle() }
+                    }
                     .offset(x: result.offset.width, y: result.offset.height)
+                    // Keep the complete scaled image available to depth projection.
+                    // CardView clips after motion, rather than trimming the photo here.
                     .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
-                    .clipped()
             }
         } else {
             image

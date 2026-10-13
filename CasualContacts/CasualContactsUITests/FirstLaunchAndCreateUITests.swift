@@ -92,6 +92,26 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Continue to camera permission"].waitForExistence(timeout: 2))
     }
 
+    func testFullscreenEditPhotoChooserDismissesKeyboard() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITestReset", "YES", "-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en"]
+        app.launch()
+        let card = app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.tap()
+        let actions = app.buttons["fullScreenCardActions"]
+        XCTAssertTrue(actions.waitForExistence(timeout: 8))
+        actions.tap()
+        app.buttons["Edit"].tap()
+        let name = app.textFields["nameField"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["addPhotoButton"].tap()
+        XCTAssertTrue(app.buttons["Photo Library"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
     func testFirstLaunchShowsEmptyState() {
         let app = launch()
         let emptyTitle = app.buttons["emptyStateTitle"]
