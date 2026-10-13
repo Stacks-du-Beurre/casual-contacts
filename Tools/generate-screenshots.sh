@@ -23,6 +23,7 @@
 #   Tools/generate-screenshots.sh --appearance dark      # only dark mode
 #   Tools/generate-screenshots.sh --language ru          # only Russian
 #   Tools/generate-screenshots.sh --language uk --appearance light
+#   Tools/generate-screenshots.sh --device-id <UDID> --output-dir build/captures
 
 set -euo pipefail
 
@@ -30,6 +31,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="$REPO_ROOT/CasualContacts"
 OUTPUT_DIR="$REPO_ROOT/Screenshots"
 SIM_NAME="iPhone 17 Pro Max"
+DEVICE_ID=""
 LANGUAGES=("en" "ru" "uk")
 APPEARANCES=("light" "dark")
 
@@ -40,6 +42,14 @@ appearance_filter=""
 language_filter=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        --device-id)
+            shift
+            DEVICE_ID="${1:?--device-id requires a simulator UDID}"
+            ;;
+        --output-dir)
+            shift
+            OUTPUT_DIR="${1:?--output-dir requires a path}"
+            ;;
         --appearance)
             shift
             case "$1" in
@@ -66,10 +76,16 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if ! xcrun simctl list devices available | grep -q "$SIM_NAME"; then
+if [ -z "$DEVICE_ID" ] && ! xcrun simctl list devices available | grep -q "$SIM_NAME"; then
     echo "ERROR: simulator '$SIM_NAME' not available."
     echo "Install via Xcode → Settings → Platforms."
     exit 1
+fi
+
+DESTINATION="platform=iOS Simulator,name=$SIM_NAME"
+if [ -n "$DEVICE_ID" ]; then
+    DESTINATION="platform=iOS Simulator,id=$DEVICE_ID"
+    SIM_NAME="$DEVICE_ID"
 fi
 
 mkdir -p "$OUTPUT_DIR"
@@ -160,18 +176,23 @@ for language in "${LANGUAGES[@]}"; do
         # and SCREENSHOT_APPEARANCE from ProcessInfo and pushes launch
         # arguments onto the app under test.
         #
-        # Don't bail on individual test failures — a flaky wait in one test
-        # shouldn't lose the screenshots from the other five. Extract whatever
-        # attachments did make it into the xcresult, warn after.
+        # Fail the capture set if any test fails. Never upload a partial release set.
         (cd "$APP_DIR" && \
             TEST_RUNNER_SCREENSHOT_LANGUAGE="$language" \
             TEST_RUNNER_SCREENSHOT_APPEARANCE="$appearance" \
             xcodebuild test \
+                -project "$APP_DIR/CasualContacts.xcodeproj" \
                 -scheme CasualContacts \
-                -destination "platform=iOS Simulator,name=$SIM_NAME" \
+                -destination "$DESTINATION" \
                 -only-testing:CasualContactsUITests/ScreenshotTests \
                 -resultBundlePath "$result_bundle" \
-                -quiet) || echo "Note: at least one test failed for $language/$appearance — extracting whatever PNGs we did capture." >&2
+                -derivedDataPath "$TMP_RESULTS_DIR/DerivedData" \
+                -parallel-testing-enabled NO \
+                CODE_SIGNING_ALLOWED=NO \
+                -quiet) || {
+                  echo "ERROR: screenshot tests failed for $language/$appearance; no upload is safe." >&2
+                  exit 1
+                }
 
         if [ ! -d "$result_bundle" ]; then
             echo "ERROR: no result bundle at $result_bundle. Build likely failed." >&2
@@ -180,8 +201,9 @@ for language in "${LANGUAGES[@]}"; do
 
         count="$(extract_attachments "$result_bundle" "$out")"
         echo "Extracted $count PNGs."
-        if [ "$count" -lt 6 ]; then
-            echo "Warning: expected 6 PNGs, got $count for $language/$appearance." >&2
+        if [ "$count" -ne 6 ]; then
+            echo "ERROR: expected 6 PNGs, got $count for $language/$appearance." >&2
+            exit 1
         fi
     done
 done

@@ -1,0 +1,41 @@
+require_relative "release_build"
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload repo store assets and submit the matching Xcode Cloud release build"
+  lane :store_assets do
+    key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_PRIVATE_KEY_BASE64"),
+      is_key_content_base64: true,
+      in_house: false
+    )
+    root = File.expand_path("..", __dir__)
+    build = nil
+    if ENV["CC_SUBMIT_RELEASE"] == "true"
+      UI.user_error!("Submission requires a v-* release tag") unless ENV.fetch("GITHUB_REF_NAME").start_with?("v-")
+      client = Spaceship::ConnectAPI::APIClient.new(token: Spaceship::ConnectAPI.token)
+      build = ReleaseBuild.wait(client,
+        sha: ENV.fetch("CC_RELEASE_SHA"), tag: ENV.fetch("GITHUB_REF_NAME"),
+        version: ENV.fetch("CC_RELEASE_VERSION"))
+    end
+    upload_to_app_store(
+      api_key: key,
+      app_identifier: "com.stacksdubeurre.CasualContacts",
+      app_version: ENV.fetch("CC_RELEASE_VERSION"),
+      metadata_path: File.join(root, "AppStore", "metadata"),
+      screenshots_path: ENV.fetch("CC_STORE_SCREENSHOTS"),
+      skip_binary_upload: true,
+      build_number: build,
+      submit_for_review: ENV["CC_SUBMIT_RELEASE"] == "true",
+      automatic_release: true,
+      submission_information: { export_compliance_uses_encryption: false },
+      skip_app_version_update: false,
+      overwrite_screenshots: true,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
+end

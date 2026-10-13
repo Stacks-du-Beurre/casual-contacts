@@ -61,3 +61,9 @@ design_handoff_marketing_site*/
 .gitsecret/keys/random_seed
 !*.secret
 remote/developer-settings-worker/.wrangler/
+
+# Local release tooling state
+.bundle/
+vendor/bundle/
+fastlane/report.xml
+fastlane/Preview.html

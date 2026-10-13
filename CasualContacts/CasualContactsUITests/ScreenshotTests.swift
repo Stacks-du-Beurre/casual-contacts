@@ -53,20 +53,16 @@ final class ScreenshotTests: XCTestCase {
         capture(app, name: "03-list-sort-open")
     }
 
-    func test_04_detailMediumIris() {
+    func test_04_detailFullscreenIris() {
         let app = launch(seeded: true)
         waitForList(app)
         // Iris's stable UUID from ScreenshotSeeder.
         let iris = app.buttons["recordCard_\(Self.irisRecordID)"]
         XCTAssertTrue(iris.waitForExistence(timeout: 5))
         iris.tap()
-        // The tapped-card modal element may register as either an AXOther
-        // (Group/Container) or an AXButton, depending on how SwiftUI resolves
-        // the accessibility traits — check both.
-        let modalCard = app.descendants(matching: .any).matching(identifier: "tappedCardModalCard").firstMatch
         XCTAssertTrue(
-            modalCard.waitForExistence(timeout: 5),
-            "Medium detail card never appeared"
+            app.buttons["fullScreenCardDone"].waitForExistence(timeout: 8),
+            "Full-screen detail never appeared"
         )
         sleep(1)
         capture(app, name: "04-detail-iris")

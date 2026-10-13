@@ -1,0 +1,6 @@
+• Edge-to-edge card details with a continuous zoom when opening and closing.
+• Optional camera perspective, with a clear explanation before requesting access.
+• Smooth camera and gyro motion, including when no face is visible.
+• Improved card centering and list performance.
+
+Enable and adjust the effect in Settings → Developer → 3D scene. Camera data stays in memory on your device and is never saved or shared.

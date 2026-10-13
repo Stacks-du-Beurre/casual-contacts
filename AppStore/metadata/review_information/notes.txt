@@ -1,0 +1,9 @@
+No account or sign-in is required. Camera perspective is optional and off by default; gyro motion works without camera permission.
+
+New users: save the first contact. On supported hardware, the camera explanation appears once. Continue opens the iOS camera permission prompt. Declining keeps gyro motion available.
+
+Existing users: open Settings → Developer → 3D scene → Use camera for face perspective. If camera access was denied, Enable camera in Settings opens the app’s iOS Settings page. Camera mode can be disabled in 3D scene.
+
+ARKit processes face and eye transforms locally only to calculate eye position and distance for card perspective. Data exists in volatile device memory, is cleared when the session stops, and is never saved, shared, uploaded, or used for identification, advertising, or analytics. Unsupported devices use gyro.
+
+Policy: https://casualcontacts.app/privacy.html#face-data

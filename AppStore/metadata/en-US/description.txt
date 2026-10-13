@@ -1,0 +1,23 @@
+Casual Contacts is a private, on-device record of the people you've just met — the barista who knew the order, the stranger on the next bench, the friend of a friend at the party. Names and faces you'd otherwise forget by tomorrow.
+
+It works the way memory does. You jot a first name, an association, maybe a photo, and the app captures the rest — the time of day, the moon phase, the place. Each entry becomes a small, distinctive card you'll recognize again, even months later.
+
+Why it's different
+———————————
+• Local-first. There's no account, no server, no cloud. Your records live on your device, where they belong.
+• No analytics, no tracking, no advertising SDKs. The app doesn't watch you, and it doesn't sell what it doesn't have.
+• Designed for memory, not contacts management. Casual Contacts isn't a CRM — it's a sketchbook.
+
+How it works
+———————————
+• Tap +. Type a first name. Add an association ("met at Polly's birthday", "shared a cab from JFK"), and optionally a photo or a place.
+• The app records the moment around it: time of day, moon phase, where you stood. Each card paints itself from those details, so no two records look alike.
+• Browse later by name, by date, or by distance from where you are now. Tap a card to see the full memory.
+
+Built for moments, not appointments
+———————————
+You don't write down the friend-of-a-friend in your phone's Contacts app. You don't text them. But weeks later you wish you remembered who they were. Casual Contacts is for that — the in-between.
+
+Privacy
+———————————
+Everything you enter stays on your device. No account, no cloud sync, no third parties. Read the full policy at casualcontacts.app/privacy.
