@@ -43,9 +43,8 @@ struct FaceSceneHost<Content: View>: View {
         .sheet(isPresented: $showingSceneSettings) { sceneSettings }
         .background {
             CameraModalPresenter(isPresented: showingCameraExplanation && !showingSceneSettings,
-                                 onPresented: {},
                                  setDismissAction: { dismissCameraModal = $0 },
-                                 onDismissed: cameraModalDidDismiss) { cameraModal }
+                                 onDismissed: cameraModalDidDismiss) { cameraExplanation }
         }
         .onChange(of: firstCardCameraOffer) { _, requested in
             guard requested else { return }
@@ -58,11 +57,17 @@ struct FaceSceneHost<Content: View>: View {
         .onAppear {
             updateTracking()
             if savedPreset.isEmpty { saveScenePreset() }
+        }
+        .task(id: scenePhase) {
             #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-ScreenshotMode") &&
-                ProcessInfo.processInfo.arguments.contains("-ScreenshotCameraExplanation") && !showingSceneSettings {
-                setCameraExplanationPresented(true)
-            }
+            guard scenePhase == .active,
+                  ProcessInfo.processInfo.arguments.contains("-ScreenshotMode"),
+                  ProcessInfo.processInfo.arguments.contains("-ScreenshotCameraExplanation"),
+                  !showingSceneSettings else { return }
+            // Let the app launch transition finish before demonstrating the home dialog.
+            do { try await Task.sleep(for: .seconds(1.5)) }
+            catch { return }
+            setCameraExplanationPresented(true)
             #endif
         }
         .onChange(of: attitude) { _, value in tracker.fallback = value }
@@ -205,10 +210,10 @@ struct FaceSceneHost<Content: View>: View {
         }
         .background {
             CameraModalPresenter(isPresented: showingCameraExplanation,
-                                 onPresented: {},
                                  setDismissAction: { dismissCameraModal = $0 },
-                                 onDismissed: cameraModalDidDismiss) { cameraModal }
+                                 onDismissed: cameraModalDidDismiss) { cameraExplanation }
         }
+        .presentationCornerRadius(12)
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .presentationBackground(SettingsPalette.sheetBackground(scheme))
@@ -251,61 +256,50 @@ struct FaceSceneHost<Content: View>: View {
         showingCameraExplanation = presented
     }
 
-    private var cameraModal: some View {
-        CameraModalEntrance { visible in
-            cameraExplanation(isPresented: visible)
-        }
-    }
-
-    private var cameraModalAnimation: Animation? {
-        reduceMotion ? nil : .smooth(duration: 0.35)
-    }
-
-    private func cameraExplanation(isPresented: Bool) -> some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black.opacity(isPresented ? 0.45 : 0)
-                    .ignoresSafeArea()
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: isPresented)
+    private var cameraExplanation: some View {
+        ZStack {
+            Color.black.opacity(0.45).ignoresSafeArea()
+            GeometryReader { geometry in
                 ScrollView {
-            VStack {
-            VStack(alignment: .leading, spacing: 18) {
-                ModuleLocalization.text("CAMERA PERSPECTIVE", locale: locale).font(CCDesign.Typography.headline).tracking(CCDesign.Typography.Tracking.headline)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                ModuleLocalization.text("Bring your cards to life with 3D depth that responds as you move. The front camera uses your eye position and distance to create the effect.", locale: locale)
-                ModuleLocalization.text("Face data stays in device memory, never saved, shared, or used to identify you.", locale: locale)
-                ModuleLocalization.text("Camera is optional. Decline for gyro motion; change access in 3D scene.", locale: locale)
-                privacyPolicyLink("Privacy policy — Face data and TrueDepth")
-                Button(ModuleLocalization.string(cameraAuthorization == .authorized ? "Enable face perspective" : "Continue to camera permission", locale: locale)) {
-                    cameraOfferSeen = true
-                    cameraPermissionPending = true
-                    dismissCameraModal?()
-                }.buttonStyle(.plain).frame(maxWidth: .infinity).frame(minHeight: 46)
-                 .foregroundStyle(SettingsPalette.sheetBackground(scheme))
-                 .background(SettingsPalette.label(scheme)).clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .font(CCDesign.Typography.description)
-            .tracking(CCDesign.Typography.Tracking.description)
-            .foregroundStyle(SettingsPalette.label(scheme))
-            .multilineTextAlignment(.leading)
-            .accessibilityAddTraits(.isModal)
-            .padding(22)
-            .frame(maxWidth: 360)
-            .background(SettingsPalette.rowBackground(scheme))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(SettingsPalette.border(scheme), lineWidth: 1))
-            .padding(.horizontal, 24).padding(.vertical, 28)
-            }
-            .frame(maxWidth: .infinity, minHeight: geometry.size.height)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .offset(y: reduceMotion || isPresented ? 0 : geometry.size.height)
-            .opacity(reduceMotion && !isPresented ? 0 : 1)
-            .animation(cameraModalAnimation, value: isPresented)
+                    VStack {
+                        VStack(alignment: .leading, spacing: 18) {
+                            ModuleLocalization.text("CAMERA PERSPECTIVE", locale: locale)
+                                .font(CCDesign.Typography.headline)
+                                .tracking(CCDesign.Typography.Tracking.headline)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                            ModuleLocalization.text("Bring your cards to life with 3D depth that responds as you move. The front camera uses your eye position and distance to create the effect.", locale: locale)
+                            ModuleLocalization.text("Face data stays in device memory, never saved, shared, or used to identify you.", locale: locale)
+                            ModuleLocalization.text("Camera is optional. Decline for gyro motion; change access in 3D scene.", locale: locale)
+                            privacyPolicyLink("Privacy policy — Face data and TrueDepth")
+                            Button(ModuleLocalization.string(cameraAuthorization == .authorized ? "Enable face perspective" : "Continue to camera permission", locale: locale)) {
+                                cameraOfferSeen = true
+                                cameraPermissionPending = true
+                                dismissCameraModal?()
+                            }
+                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                            .foregroundStyle(SettingsPalette.sheetBackground(scheme))
+                            .background(SettingsPalette.label(scheme))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .font(CCDesign.Typography.description)
+                        .tracking(CCDesign.Typography.Tracking.description)
+                        .foregroundStyle(SettingsPalette.label(scheme))
+                        .multilineTextAlignment(.leading)
+                        .accessibilityAddTraits(.isModal)
+                        .padding(22)
+                        .frame(maxWidth: 360)
+                        .background(SettingsPalette.rowBackground(scheme))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(SettingsPalette.border(scheme), lineWidth: 1))
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 28)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
             }
         }
-        .allowsHitTesting(isPresented)
     }
 
     private func privacyPolicyLink(_ title: String) -> some View {

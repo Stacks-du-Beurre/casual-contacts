@@ -21,6 +21,10 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Continue to camera permission"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Use gyro only"].exists)
         XCTAssertTrue(app.staticTexts["Camera is optional. Decline for gyro motion; change access in 3D scene."].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "UIKit camera perspective modal"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 
     func testCameraExplanationAndRecoveryAreLocalized() {

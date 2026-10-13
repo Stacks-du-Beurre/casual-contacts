@@ -150,8 +150,9 @@ public struct SettingsSheet: View {
             SettingsGroup(title: "Developer") {
                 if let onShowSceneSettings {
                     SettingsRow(label: "3D scene", onTap: onShowSceneSettings) {
-                        Image(systemName: "cube.transparent")
+                        trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
                     }
+                    SettingsDivider()
                 }
                 SettingsRow(label: "Developer settings", onTap: { path.append(.developer) }) {
                     trailingIcon(systemName: "chevron.right", size: 14, weight: .semibold)
