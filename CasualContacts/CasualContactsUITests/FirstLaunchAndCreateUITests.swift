@@ -53,4 +53,20 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
 
         XCTAssertFalse(app.buttons["emptyStateTitle"].exists)
     }
+    func testCardZoomsToFullScreenAndReturns() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES"]
+        app.launch()
+        let card = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "recordCard_")
+        ).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10))
+        card.tap()
+        let done = app.buttons["fullScreenCardDone"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        done.tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertFalse(done.waitForExistence(timeout: 1))
+    }
+
 }

@@ -574,6 +574,7 @@ private struct RecordCardRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
+        .zoomSource(.card(record.id))
         .opacity(isHidden ? 0 : 1)
         .background(
             GeometryReader { geo in

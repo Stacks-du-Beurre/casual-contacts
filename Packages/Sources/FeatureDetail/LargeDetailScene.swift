@@ -37,24 +37,33 @@ public struct LargeDetailScene: View {
 
     public var body: some View {
         NavigationStack {
-            CardView(
-                record: record,
-                size: .large,
-                attitude: attitude,
-                paths: paths,
-                photo: photo,
-                photoSize: photoSize
-            )
+            GeometryReader { geometry in
+                CardView(
+                    record: record,
+                    size: .large,
+                    attitude: attitude,
+                    paths: paths,
+                    photo: photo,
+                    photoSize: photoSize,
+                    contentInsets: EdgeInsets(top: geometry.safeAreaInsets.top + 24,
+                                              leading: 24,
+                                              bottom: geometry.safeAreaInsets.bottom + 24,
+                                              trailing: 24)
+                )
+                .drawingGroup(opaque: false)
                 .ignoresSafeArea()
+            }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Self.accessibilityLabel(for: record))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(.hidden, for: .navigationBar)
                 #endif
                 .toolbar {
                     #if os(iOS)
                     ToolbarItem(placement: .topBarLeading) {
                         Button(ModuleLocalization.string("Done", locale: locale), action: onDismiss)
+                            .accessibilityIdentifier("fullScreenCardDone")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
@@ -65,10 +74,12 @@ public struct LargeDetailScene: View {
                         } label: {
                             Image(systemName: "ellipsis")
                         }
+                        .accessibilityIdentifier("fullScreenCardActions")
                     }
                     #else
                     ToolbarItem(placement: .cancellationAction) {
                         Button(ModuleLocalization.string("Done", locale: locale), action: onDismiss)
+                            .accessibilityIdentifier("fullScreenCardDone")
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
@@ -79,6 +90,7 @@ public struct LargeDetailScene: View {
                         } label: {
                             Image(systemName: "ellipsis")
                         }
+                        .accessibilityIdentifier("fullScreenCardActions")
                     }
                     #endif
                 }

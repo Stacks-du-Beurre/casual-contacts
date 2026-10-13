@@ -42,7 +42,10 @@ struct FaceSceneHost<Content: View>: View {
         .onChange(of: expandedEnabled) { _, _ in updateTracking() }
         .onChange(of: cameraHeightMM) { _, value in tracker.setCameraHeight(value / 1000) }
         .onChange(of: smoothingMS) { _, value in tracker.smoothingSeconds = value / 1000 }
-        .onDisappear { tracker.setActive(false) }
+        .onDisappear {
+            // A full-screen cover hides the list without ending its shared session.
+            if !expandedVisible { tracker.setActive(false) }
+        }
     }
 
     private func windowProjection(cardCentered: Bool) -> WindowSceneProjection? {

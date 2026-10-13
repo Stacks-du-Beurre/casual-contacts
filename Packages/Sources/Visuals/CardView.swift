@@ -14,6 +14,7 @@ public struct CardView: View {
     public let paths: any CardPathProvider
     public let photo: Image?
     public let photoSize: CGSize?
+    public let contentInsets: EdgeInsets
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var depthTuning = CardElementDepthTuning.shared
@@ -26,7 +27,8 @@ public struct CardView: View {
         attitude: DeviceAttitude,
         paths: any CardPathProvider,
         photo: Image? = nil,
-        photoSize: CGSize? = nil
+        photoSize: CGSize? = nil,
+        contentInsets: EdgeInsets = EdgeInsets()
     ) {
         self.record = record
         self.size = size
@@ -34,6 +36,7 @@ public struct CardView: View {
         self.paths = paths
         self.photo = photo
         self.photoSize = photoSize
+        self.contentInsets = contentInsets
     }
 
     public var body: some View {
@@ -55,10 +58,16 @@ public struct CardView: View {
                 // Figural ornaments — rendered above the sampled backdrop so the
                 // hologram text and frosted location pill don't blur the moon,
                 // constellation, or zodiac figure into their chrome.
-                ornaments()
+                if size != .large {
+                    ornaments().padding(contentInsets)
+                } else {
+                    fullScreenIdentity(layout: layout, backdrop: sharedBackdrop)
+                }
 
+                if size != .large {
                 CardTextLayer(
                     record: record,
+                    size: size,
                     attitude: attitude,
                     layout: layout,
                     coordinateSpaceName: Self.cardCoordinateSpace,
@@ -70,6 +79,8 @@ public struct CardView: View {
                         }
                     }
                 )
+                .padding(contentInsets)
+                }
             }
             // Pin to the geometry reader's bounds so ideal-size propagation from
             // `.fixedSize()` children (name/location pills) can't push the card
@@ -85,6 +96,50 @@ public struct CardView: View {
     }
 
     private static let cardCoordinateSpace = "CardScene"
+
+    private func fullScreenIdentity<Backdrop: View>(layout: CardLayout, backdrop: Backdrop) -> some View {
+        let accoutrements = record.accoutrements
+        let blendPaths = paths.blendPaths(for: accoutrements.letter,
+                                         shape: accoutrements.guillocheShape,
+                                         density: .cards)
+        let reverseOrder = windowScene?.reverseGuillocheDepthOrder ?? blendTuning.reverseDepthOrder
+        let deepestPath = reverseOrder ? blendPaths.first : blendPaths.last
+        let bounds = deepestPath?.boundingRect ?? CGRect(x: 0, y: 0, width: 184, height: 160)
+
+        // Anchor to the deepest path's unprojected (zero-point) edges. Text
+        // stays on the screen surface while the artwork moves behind it.
+        return FullScreenIdentityLayout(pathBounds: bounds, contentInsets: contentInsets) {
+                HologramText(
+                    record.name,
+                    font: .custom("CormorantSC-SemiBold", size: 48, relativeTo: .largeTitle),
+                    attitude: attitude,
+                    backdropSize: layout.size,
+                    coordinateSpaceName: Self.cardCoordinateSpace,
+                    backdrop: { backdrop }
+                )
+                .fixedSize(horizontal: false, vertical: true)
+
+                if !record.description.isEmpty {
+                    Text(record.description)
+                        .font(CCDesign.Typography.description)
+                        .tracking(CCDesign.Typography.Tracking.description)
+                        .foregroundStyle(CCDesign.Colors.L0)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .background(.white.opacity(0.15))
+                        .overlay(Rectangle().stroke(.white.opacity(0.45), lineWidth: 1))
+
+                } else {
+                    Color.clear.frame(height: 0)
+                }
+                CardTextLayer(record: record, size: .large, attitude: attitude,
+                              layout: layout, coordinateSpaceName: Self.cardCoordinateSpace,
+                              backdrop: { backdrop })
+            }
+            .frame(width: layout.size.width, height: layout.size.height)
+    }
 
     @ViewBuilder
     private func backdrop() -> some View {
@@ -184,12 +239,59 @@ struct CardTextLayer<Backdrop: View>: View {
     @Environment(\.locale) private var locale
 
     let record: Record
+    var size: CardSize = .medium
     let attitude: DeviceAttitude
     let layout: CardLayout
     let coordinateSpaceName: String
     @ViewBuilder let backdrop: () -> Backdrop
 
     var body: some View {
+        if size == .large {
+            fullScreenContent
+        } else {
+            compactContent
+        }
+    }
+
+    private var fullScreenContent: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(alignment: .center, spacing: 20) {
+                if let sign = record.zodiacSign {
+                    HStack(spacing: 10) {
+                        HolographicZodiac(sign: sign, attitude: attitude, sizeScale: 1.5)
+                            .windowDepth(0.12)
+                        ZodiacLabel(sign: sign, locale: locale).equatable()
+                    }
+                }
+                Spacer(minLength: 8)
+                HStack(spacing: 10) {
+                    MoonPhaseLayer(phase: record.metadata.moonPhase, sizeScale: 1.5)
+                        .windowDepth(0.12)
+                    MoonLabel(phase: record.metadata.moonPhase, locale: locale).equatable()
+                }
+            }
+
+            VStack(spacing: 16) {
+                Rectangle().fill(.white.opacity(0.3)).frame(height: 1)
+                HStack(alignment: .top, spacing: 16) {
+                    if let label = record.location?.label, !label.isEmpty {
+                        LocationPill(
+                            label: label,
+                            maxWidth: max(0, (layout.size.width - 64) / 2),
+                            backdropSize: layout.size,
+                            coordinateSpaceName: coordinateSpaceName,
+                            attitude: attitude,
+                            backdrop: backdrop
+                        )
+                    }
+                    Spacer(minLength: 0)
+                    DateTimeBlock(record: record, locale: locale).equatable()
+                }
+            }
+        }
+    }
+
+    private var compactContent: some View {
         // `Color.clear` fills the parent ZStack; overlays anchor to its known
         // bounds so padding reliably pushes content away from each edge.
         Color.clear
@@ -522,3 +624,32 @@ private struct RightEdgeHairlines: View, Equatable {
     }
 
 #endif
+
+/// Centers the labels in the gaps between neighboring zero-point edges.
+/// The footer is measured in this layout pass, without per-frame state updates.
+private struct FullScreenIdentityLayout: Layout {
+    let pathBounds: CGRect
+    let contentInsets: EdgeInsets
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        let width = max(0, bounds.width - contentInsets.leading - contentInsets.trailing)
+        let labelProposal = ProposedViewSize(width: width, height: nil)
+        let x = bounds.minX + contentInsets.leading
+        let top = bounds.midY - 80 + pathBounds.minY
+        let bottom = bounds.midY - 80 + pathBounds.maxY
+        let footerHeight = subviews[2].sizeThatFits(labelProposal).height
+        let footerBottom = bounds.maxY - contentInsets.bottom
+        let footerTop = footerBottom - footerHeight
+        subviews[2].place(at: CGPoint(x: x, y: footerBottom), anchor: .bottomLeading,
+                          proposal: labelProposal)
+        subviews[0].place(at: CGPoint(x: x, y: (bounds.minY + contentInsets.top + top) / 2),
+                          anchor: .leading, proposal: labelProposal)
+        subviews[1].place(at: CGPoint(x: x, y: (bottom + footerTop) / 2),
+                          anchor: .leading, proposal: labelProposal)
+    }
+}

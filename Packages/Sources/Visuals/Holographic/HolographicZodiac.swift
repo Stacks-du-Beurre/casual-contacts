@@ -6,6 +6,7 @@ public struct HolographicZodiac: View {
     public let sign: ZodiacSign
     public let attitude: DeviceAttitude
     public let hologram: HologramTexture
+    public let sizeScale: CGFloat
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private let tuning = ZodiacHologramTuning.shared
@@ -15,11 +16,13 @@ public struct HolographicZodiac: View {
     public init(
         sign: ZodiacSign,
         attitude: DeviceAttitude,
-        hologram: HologramTexture = .neon3
+        hologram: HologramTexture = .neon3,
+        sizeScale: CGFloat = 1
     ) {
         self.sign = sign
         self.attitude = attitude
         self.hologram = hologram
+        self.sizeScale = sizeScale
     }
 
     // The 35×32 figure frame reuses `Moon_Background` rendered at the moon
@@ -37,16 +40,15 @@ public struct HolographicZodiac: View {
                         attitude: reduceTransparency ? .zero : attitude,
                         variant: .figure
                     )
-                    .frame(width: 22, height: 25)
+                    .frame(width: 22 * sizeScale, height: 25 * sizeScale)
                 }
 
             Image("Moon_Background", bundle: .module)
-                .resizable()
-                .frame(width: 34, height: 56)
-                .frame(width: 35, height: 32)
+                .resizable(resizingMode: .tile)
+                .frame(width: 35 * sizeScale, height: 32 * sizeScale)
                 .clipped()
         }
-        .frame(width: 35, height: 32)
+        .frame(width: 35 * sizeScale, height: 32 * sizeScale)
         .accessibilityHidden(true)
     }
 
