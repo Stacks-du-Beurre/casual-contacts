@@ -20,6 +20,7 @@ public struct TappedCardModalScene: View {
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismiss: () -> Void
+    public let onDismissStarted: () -> Void
     public let faceTrackingEnabled: Bool
     public let faceTrackingStatus: String
     public let onToggleFaceTracking: (() -> Void)?
@@ -36,6 +37,7 @@ public struct TappedCardModalScene: View {
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void,
         onDismiss: @escaping () -> Void,
+        onDismissStarted: @escaping () -> Void = {},
         faceTrackingEnabled: Bool = false,
         faceTrackingStatus: String = "Face parallax off",
         onToggleFaceTracking: (() -> Void)? = nil,
@@ -51,6 +53,7 @@ public struct TappedCardModalScene: View {
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismiss = onDismiss
+        self.onDismissStarted = onDismissStarted
         self.faceTrackingEnabled = faceTrackingEnabled
         self.faceTrackingStatus = faceTrackingStatus
         self.onToggleFaceTracking = onToggleFaceTracking
@@ -215,6 +218,7 @@ public struct TappedCardModalScene: View {
     private func beginDismiss(then completion: (() -> Void)? = nil) {
         guard !dismissalCommitting else { return }
         dismissalCommitting = true
+        onDismissStarted()
         motionPaused = true
         withAnimation(.easeIn(duration: Self.chromeDuration)) {
             chromeVisible = false

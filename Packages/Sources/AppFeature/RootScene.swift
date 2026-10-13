@@ -22,6 +22,7 @@ public struct RootScene: Scene {
     @State private var environment: AppEnvironment
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
+    @State private var tappedCardDismissing = false
     @State private var reduceMotionEnabled = false
     @State private var currentTimeOfDay: TimeOfDay
     @State private var photoCache = PhotoCache()
@@ -145,22 +146,24 @@ public struct RootScene: Scene {
             listVisible: !router.showingCreate && router.editingRecord == nil,
             expandedVisible: router.tappedRecord != nil,
             attitude: currentAttitude
-        ) { tracker, projection, showSceneSettings in
-            trackedRootContent(tracker: tracker, projection: projection, showSceneSettings: showSceneSettings)
+        ) { tracker, listProjection, projection, showSceneSettings in
+            trackedRootContent(tracker: tracker, listProjection: listProjection, projection: projection, showSceneSettings: showSceneSettings)
         }
     }
 
     @MainActor
-    private func trackedRootContent(tracker: FaceParallaxController, projection: WindowSceneProjection?,
+    private func trackedRootContent(tracker: FaceParallaxController, listProjection: WindowSceneProjection?,
+                                    projection: WindowSceneProjection?,
                                     showSceneSettings: Binding<Bool>) -> some View {
         CardMotionGate(attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
-                       paused: router.tappedRecord != nil) { renderedAttitude in
+                       paused: router.tappedRecord != nil && !tappedCardDismissing) { renderedAttitude in
             RecordsListScene(
                 store: environment.recordStore,
                 paths: environment.cardPathProvider,
                 attitude: renderedAttitude,
                 timeOfDay: currentTimeOfDay,
                 onTapRecord: { record, frame in
+                    tappedCardDismissing = false
                     router.tappedRecordSourceFrame = frame
                     router.tappedRecord = record
                 },
@@ -193,7 +196,7 @@ public struct RootScene: Scene {
                 onDistanceSortRequest: handleDistanceSortRequested
             )
         }
-        .environment(\.windowSceneProjection, projection)
+        .environment(\.windowSceneProjection, listProjection)
         .onChange(of: environment.recordStore.records.map(\.id)) { _, ids in
             let kept = Set(ids)
             router.clearSelections(keeping: kept)
@@ -339,7 +342,11 @@ public struct RootScene: Scene {
                     photoSize: photoCache.imageSize(for: tapped.photoID),
                     onEdit: { router.editingRecord = tapped },
                     onDelete: { pendingDeleteRecord = tapped },
-                    onDismiss: { router.tappedRecord = nil }
+                    onDismiss: {
+                        router.tappedRecord = nil
+                        tappedCardDismissing = false
+                    },
+                    onDismissStarted: { tappedCardDismissing = true }
                 )
                 .environment(\.windowSceneProjection, projection)
                 .transition(.identity)
