@@ -14,8 +14,11 @@ public struct CardView: View {
     public let paths: any CardPathProvider
     public let photo: Image?
     public let photoSize: CGSize?
-    public let contentInsets: EdgeInsets
-    public let expansionProgress: CGFloat
+    private let configuredContentInsets: EdgeInsets
+    private let configuredExpansionProgress: CGFloat
+    @Environment(\.cardExpansionLayout) private var expansionLayout
+    public var contentInsets: EdgeInsets { expansionLayout?.insets ?? configuredContentInsets }
+    public var expansionProgress: CGFloat { expansionLayout?.progress ?? configuredExpansionProgress }
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var depthTuning = CardElementDepthTuning.shared
@@ -38,8 +41,8 @@ public struct CardView: View {
         self.paths = paths
         self.photo = photo
         self.photoSize = photoSize
-        self.contentInsets = contentInsets
-        self.expansionProgress = expansionProgress
+        self.configuredContentInsets = contentInsets
+        self.configuredExpansionProgress = expansionProgress
     }
 
     public var body: some View {
@@ -656,5 +659,27 @@ private struct FullScreenIdentityLayout: Layout {
                           anchor: .leading, proposal: labelProposal)
         subviews[1].place(at: CGPoint(x: x, y: (bottom + footerTop) / 2),
                           anchor: .leading, proposal: labelProposal)
+    }
+}
+
+private struct CardExpansionLayout {
+    let progress: CGFloat
+    let insets: EdgeInsets
+}
+
+private struct CardExpansionLayoutKey: EnvironmentKey {
+    static let defaultValue: CardExpansionLayout? = nil
+}
+
+private extension EnvironmentValues {
+    var cardExpansionLayout: CardExpansionLayout? {
+        get { self[CardExpansionLayoutKey.self] }
+        set { self[CardExpansionLayoutKey.self] = newValue }
+    }
+}
+
+public extension View {
+    func cardExpansionLayout(progress: CGFloat, insets: EdgeInsets) -> some View {
+        environment(\.cardExpansionLayout, CardExpansionLayout(progress: progress, insets: insets))
     }
 }

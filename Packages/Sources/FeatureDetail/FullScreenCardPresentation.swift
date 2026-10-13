@@ -102,7 +102,7 @@ public struct FullScreenCardPresentation: View {
 
 /// Interpolates the card's layout itself, rather than stretching a snapshot
 /// of the destination. Its background stays mounted for both directions.
-private struct ExpandingCardSurface: View, Animatable {
+private struct ExpandingCardSurface: View {
     let record: Record
     let attitude: DeviceAttitude
     let paths: any CardPathProvider
@@ -113,25 +113,42 @@ private struct ExpandingCardSurface: View, Animatable {
     let safeArea: EdgeInsets
     var progress: CGFloat
 
+    var body: some View {
+        CardView(record: record, size: .large, attitude: attitude, paths: paths,
+                 photo: photo, photoSize: photoSize)
+            .modifier(CardExpansionGeometry(source: source, destination: destination,
+                                            safeArea: safeArea, progress: progress))
+    }
+}
+
+/// Only geometry belongs to the animation. Camera/gyro inputs remain in the
+/// ordinary CardView above, outside the interpolator's stored values.
+private struct CardExpansionGeometry: AnimatableModifier {
+    let source: CGRect
+    let destination: CGRect
+    let safeArea: EdgeInsets
+    var progress: CGFloat
+
     nonisolated var animatableData: CGFloat {
         get { progress }
         set { progress = newValue }
     }
 
-    var body: some View {
+    func body(content: Content) -> some View {
         let frame = CGRect(
             x: source.minX + (destination.minX - source.minX) * progress,
             y: source.minY + (destination.minY - source.minY) * progress,
             width: source.width + (destination.width - source.width) * progress,
             height: source.height + (destination.height - source.height) * progress
         )
-        CardView(record: record, size: .large, attitude: attitude, paths: paths,
-                 photo: photo, photoSize: photoSize,
-                 contentInsets: EdgeInsets(top: (safeArea.top + 68) * progress,
-                                           leading: 24 * progress,
-                                           bottom: (safeArea.bottom + 24) * progress,
-                                           trailing: 24 * progress),
-                 expansionProgress: progress)
+        content
+            .cardExpansionLayout(
+                progress: progress,
+                insets: EdgeInsets(top: (safeArea.top + 68) * progress,
+                                   leading: 24 * progress,
+                                   bottom: (safeArea.bottom + 24) * progress,
+                                   trailing: 24 * progress)
+            )
             .frame(width: frame.width, height: frame.height)
             .environment(\.windowCardFrame, frame)
             .drawingGroup(opaque: false)
