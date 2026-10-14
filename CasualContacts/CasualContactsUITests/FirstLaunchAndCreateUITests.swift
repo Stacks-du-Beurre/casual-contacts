@@ -112,6 +112,58 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    func testFullscreenTransitionsWithContinuousMotion() {
+        runMotionTransitions(withPhoto: false)
+    }
+
+    func testFullscreenTransitionsWithContinuousMotionAndPhoto() {
+        runMotionTransitions(withPhoto: true)
+    }
+
+    func testDevicePerformanceLogRecordsMovingTransitions() {
+        runMotionTransitions(withPhoto: true, diagnostics: true)
+    }
+
+    func testPerformanceLogCanBePreparedFromSettings() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en", "-ScreenshotSceneSettings"]
+        app.launch()
+        let toggle = app.switches["recordPerformance"]
+        for _ in 0..<8 {
+            if toggle.exists && toggle.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        toggle.tap()
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        let prepare = app.buttons["preparePerformanceLog"]
+        if !prepare.isHittable { app.swipeUp() }
+        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
+        prepare.tap()
+        let share = app.buttons["sharePerformanceLog"]
+        if !share.isHittable { app.swipeUp() }
+        XCTAssertTrue(share.waitForExistence(timeout: 5))
+    }
+
+    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false) {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES",
+                               "-ScreenshotLanguage", "en", "-MotionPerformanceHarness",
+                               "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES",
+                               "-FaceScene.cameraEnabled", "NO"]
+        if withPhoto { app.launchArguments.append("-MotionHarnessPhoto") }
+        if diagnostics { app.launchArguments.append("-PerformanceDiagnosticsRecord") }
+        app.launch()
+        let card = app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"]
+        XCTAssertTrue(card.waitForExistence(timeout: 8))
+        card.tap()
+        // The app drives five actual zoom-in/out cycles itself. Do not perform
+        // accessibility snapshots while animation frame timings are recorded.
+        Thread.sleep(forTimeInterval: 25)
+        XCTAssertTrue(app.buttons["fullScreenCardDone"].waitForNonExistence(timeout: 8))
+    }
+
     func testFirstLaunchShowsEmptyState() {
         let app = launch()
         let emptyTitle = app.buttons["emptyStateTitle"]

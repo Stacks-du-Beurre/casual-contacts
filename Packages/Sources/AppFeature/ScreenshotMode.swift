@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 import CoreModels
+#if os(iOS)
+import UIKit
+#endif
 
 /// Launch-argument switches that put the app into a deterministic state for
 /// App Store screenshot generation. The UI test target enables these via
@@ -71,7 +74,24 @@ public enum ScreenshotMode {
     public static func seedIfNeeded(into environment: AppEnvironment) async {
         guard isEnabled, shouldSeed else { return }
         let store = environment.recordStore
-        for record in ScreenshotSeeder.records {
+        var photoID: PhotoID?
+        #if DEBUG && os(iOS)
+        if ProcessInfo.processInfo.arguments.contains("-MotionHarnessPhoto") {
+            // Synthetic local fixture exercises the real photo cache/render path.
+            let renderer = UIGraphicsImageRenderer(size: CGSize(width: 900, height: 1200))
+            let bytes = renderer.jpegData(withCompressionQuality: 0.9) { context in
+                UIColor.systemTeal.setFill()
+                context.fill(CGRect(x: 0, y: 0, width: 900, height: 1200))
+                UIColor.systemOrange.setFill()
+                context.cgContext.fillEllipse(in: CGRect(x: 100, y: 150, width: 700, height: 900))
+                UIColor.systemIndigo.setFill()
+                context.cgContext.fillEllipse(in: CGRect(x: 200, y: 300, width: 450, height: 600))
+            }
+            photoID = try? await environment.photoStore.save(bytes)
+        }
+        #endif
+        for var record in ScreenshotSeeder.records {
+            if let photoID { record.photoID = photoID; record.photoFocus = .center }
             try? await store.insert(record)
         }
     }

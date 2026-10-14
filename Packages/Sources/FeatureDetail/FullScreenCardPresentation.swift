@@ -76,9 +76,33 @@ public struct FullScreenCardPresentation: View {
                 }
                 .accessibilityAddTraits(.isModal)
                 .accessibilityAction(.escape) { dismiss() }
+                .task {
+                    #if DEBUG && os(iOS)
+                    guard TransitionMotionMetrics.isEnabled else { return }
+                    do { try await Task.sleep(for: .seconds(2)) }
+                    catch { return }
+                    dismiss()
+                    #endif
+                }
                 .onAppear {
-                    withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45)) {
+                    #if os(iOS)
+                    PerformanceDiagnostics.shared.setContext("fullscreen_enter")
+                    PerformanceDiagnostics.shared.beginTransition("enter", hasPhoto: photo != nil)
+                    #endif
+                    #if DEBUG && os(iOS)
+                    TransitionMotionMetrics.shared.begin("enter")
+                    #endif
+                    withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45),
+                                  completionCriteria: .removed) {
                         expanded = true
+                    } completion: {
+                        #if os(iOS)
+                        PerformanceDiagnostics.shared.endTransition("enter")
+                        PerformanceDiagnostics.shared.setContext("fullscreen")
+                        #endif
+                        #if DEBUG && os(iOS)
+                        TransitionMotionMetrics.shared.end()
+                        #endif
                     }
                 }
             }
@@ -90,10 +114,24 @@ public struct FullScreenCardPresentation: View {
         guard !dismissing else { return }
         dismissing = true
         onDismissStarted()
+        #if os(iOS)
+        PerformanceDiagnostics.shared.setContext("fullscreen_exit")
+        PerformanceDiagnostics.shared.beginTransition("exit", hasPhoto: photo != nil)
+        #endif
+        #if DEBUG && os(iOS)
+        TransitionMotionMetrics.shared.begin("exit")
+        #endif
         withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45),
                       completionCriteria: .removed) {
             expanded = false
         } completion: {
+            #if os(iOS)
+            PerformanceDiagnostics.shared.endTransition("exit")
+            PerformanceDiagnostics.shared.setContext("list")
+            #endif
+            #if DEBUG && os(iOS)
+            TransitionMotionMetrics.shared.end()
+            #endif
             onDismiss()
             action?()
         }
@@ -151,7 +189,6 @@ private struct CardExpansionGeometry: AnimatableModifier {
             )
             .frame(width: frame.width, height: frame.height)
             .environment(\.windowCardFrame, frame)
-            .drawingGroup(opaque: false)
             .clipShape(RoundedRectangle(cornerRadius: 4 * (1 - progress)))
             .position(x: frame.midX - destination.minX, y: frame.midY - destination.minY)
     }

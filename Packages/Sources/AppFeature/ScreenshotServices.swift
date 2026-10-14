@@ -1,12 +1,12 @@
 import Foundation
 import CoreModels
 
-/// Always-zero `MotionService` for screenshot generation. Yields exactly one
-/// `.zero` attitude when started, then ignores subsequent `start()` /
-/// `stop()` calls. Cards painted with this service show no tilt or
-/// parallax — the captured frame is identical across runs.
+/// Zero motion for normal screenshot captures. The debug performance harness
+/// can instead emit a repeatable 60 Hz waveform to exercise live card redraws.
 final class ScreenshotMotionService: MotionService, @unchecked Sendable {
 
+    private let lock = NSLock()
+    private var motionTask: Task<Void, Never>?
     private var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation?
     let attitude: AsyncStream<DeviceAttitude>
 
@@ -17,7 +17,9 @@ final class ScreenshotMotionService: MotionService, @unchecked Sendable {
 
     init() {
         var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation!
-        self.attitude = AsyncStream { attitudeContinuation = $0 }
+        // A renderer needs the newest pose, not a backlog of stale poses
+        // accumulated while a transition is busy.
+        self.attitude = AsyncStream(bufferingPolicy: .bufferingNewest(1)) { attitudeContinuation = $0 }
         self.attitudeContinuation = attitudeContinuation
 
         var debugContinuation: AsyncStream<MotionDebugSample>.Continuation!
@@ -26,6 +28,26 @@ final class ScreenshotMotionService: MotionService, @unchecked Sendable {
     }
 
     func start() {
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ProcessInfo.processInfo.arguments.contains("-MotionPerformanceHarness") {
+            lock.withLock {
+                guard motionTask == nil else { return }
+                let continuation = attitudeContinuation
+                motionTask = Task.detached {
+                    let began = ContinuousClock.now
+                    while !Task.isCancelled {
+                        let elapsed = began.duration(to: .now)
+                        let t = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+                        continuation?.yield(DeviceAttitude(pitch: sin(t * 1.7) * 0.65,
+                                                           roll: cos(t * 1.3) * 0.75))
+                        do { try await Task.sleep(for: .milliseconds(16)) }
+                        catch { break }
+                    }
+                }
+            }
+            return
+        }
+        #endif
         attitudeContinuation?.yield(.zero)
     }
 
@@ -34,6 +56,12 @@ final class ScreenshotMotionService: MotionService, @unchecked Sendable {
     }
 
     func stop() {
+        #if DEBUG
+        if ScreenshotMode.isEnabled && ProcessInfo.processInfo.arguments.contains("-MotionPerformanceHarness") {
+            lock.withLock { motionTask?.cancel(); motionTask = nil }
+            return
+        }
+        #endif
         attitudeContinuation?.finish()
         attitudeContinuation = nil
         debugContinuation?.finish()

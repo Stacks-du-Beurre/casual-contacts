@@ -24,6 +24,9 @@ struct FaceSceneHost<Content: View>: View {
     @State private var cameraPermissionPending = false
     @State private var dismissCameraModal: (() -> Void)?
     @State private var tracker = FaceParallaxController()
+    @State private var diagnostics = PerformanceDiagnostics.shared
+    @State private var diagnosticExportURL: URL?
+    @State private var diagnosticExportFailed = false
     @State private var showingSceneSettings = ProcessInfo.processInfo.arguments.contains("-ScreenshotSceneSettings")
     @AppStorage("FaceScene.backingDepthMM") private var backingDepthMM = 60.0
     @AppStorage("FaceScene.layerSpacing") private var layerSpacing = 1.0
@@ -55,6 +58,12 @@ struct FaceSceneHost<Content: View>: View {
             setCameraExplanationPresented(true)
         }
         .onAppear {
+            #if DEBUG
+            if TransitionMotionMetrics.isEnabled && ProcessInfo.processInfo.arguments.contains("-PerformanceDiagnosticsRecord") {
+                diagnostics.start()
+                recordDiagnosticSettings()
+            }
+            #endif
             updateTracking()
             if savedPreset.isEmpty { saveScenePreset() }
         }
@@ -70,8 +79,15 @@ struct FaceSceneHost<Content: View>: View {
             setCameraExplanationPresented(true)
             #endif
         }
-        .onChange(of: attitude) { _, value in tracker.fallback = value }
+        .onChange(of: attitude) { _, value in
+            tracker.fallback = value
+            diagnostics.receivedGyro()
+            #if DEBUG
+            TransitionMotionMetrics.shared.receivedMotion(depthMeters: max(0, backingDepthMM) / 1000)
+            #endif
+        }
         .onChange(of: scenePhase) { _, _ in
+            diagnostics.setForeground(scenePhase == .active)
             cameraAuthorization = Self.currentCameraAuthorization
             updateTracking()
         }
@@ -91,7 +107,20 @@ struct FaceSceneHost<Content: View>: View {
 
     private func windowProjection(cardCentered: Bool) -> WindowSceneProjection? {
         guard !reduceMotion, tracker.enabled,
-              let eye = tracker.eyePosition else { return nil }
+              let measuredEye = tracker.eyePosition else { return nil }
+        let eye: ViewerPosition
+        let activation: Double
+        #if DEBUG
+        if TransitionMotionMetrics.isEnabled {
+            activation = 1
+            eye = ViewerPosition(x: attitude.roll * 0.14,
+                                 y: attitude.pitch * 0.10 - cameraHeightMM / 1000,
+                                 distance: 0.4 + attitude.pitch * 0.08)
+        } else { eye = measuredEye; activation = tracker.sceneActivation }
+        #else
+        eye = measuredEye
+        activation = tracker.sceneActivation
+        #endif
         // ARKit poses use the front camera as origin. Approximate its height
         // above screen center; expose calibration instead of claiming precision.
         let height = cameraHeightMM / 1000
@@ -102,7 +131,7 @@ struct FaceSceneHost<Content: View>: View {
                 distance: eye.distance
             ),
             reference: ViewerPosition(x: 0, y: 0, distance: 0.4),
-            backingDepthMeters: max(0, backingDepthMM) / 1000 * tracker.sceneActivation,
+            backingDepthMeters: max(0, backingDepthMM) / 1000 * activation,
             spacing: max(0.5, min(2, layerSpacing)),
             screenWidthMeters: max(55, min(90, screenWidthMM)) / 1000,
             viewport: UIScreen.main.bounds.size,
@@ -185,6 +214,38 @@ struct FaceSceneHost<Content: View>: View {
                         }
                     }
                 }
+                SettingsGroup(title: ModuleLocalization.string("Performance diagnostics", locale: locale)) {
+                    SettingsToggleRow(label: ModuleLocalization.string("Record performance", locale: locale), isOn: Binding(
+                        get: { diagnostics.isRecording },
+                        set: { enabled in
+                            diagnosticExportURL = nil
+                            if enabled {
+                                diagnostics.start()
+                                diagnostics.setContext("settings")
+                                diagnostics.setTrackingState(tracker.status)
+                                recordDiagnosticSettings()
+                            } else { diagnostics.stop() }
+                        }
+                    ))
+                    .accessibilityIdentifier("recordPerformance")
+                    ModuleLocalization.text("Records timing and device state for up to 10 minutes. No photos, eye positions, or contact data. Export stops recording.", locale: locale)
+                        .font(CCDesign.Typography.caption2).padding(16)
+                    if diagnostics.hasRecording {
+                        Button(ModuleLocalization.string("Prepare performance log", locale: locale)) {
+                            Task {
+                                do { diagnosticExportURL = try await diagnostics.export() }
+                                catch { diagnosticExportFailed = true }
+                            }
+                        }.accessibilityIdentifier("preparePerformanceLog")
+                            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    if let url = diagnosticExportURL {
+                        ShareLink(item: url) {
+                            ModuleLocalization.text("Share performance log", locale: locale)
+                        }.accessibilityIdentifier("sharePerformanceLog")
+                            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
                 }
                 .padding(.vertical, 20)
             }
@@ -193,6 +254,7 @@ struct FaceSceneHost<Content: View>: View {
             .foregroundStyle(SettingsPalette.label(scheme))
             .background(SettingsPalette.sheetBackground(scheme))
             .onAppear {
+                diagnostics.setContext("settings")
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-ScreenshotCameraExplanation") { setCameraExplanationPresented(true) }
                 #endif
@@ -217,6 +279,21 @@ struct FaceSceneHost<Content: View>: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .presentationBackground(SettingsPalette.sheetBackground(scheme))
+        .onDisappear { diagnostics.setContext(expandedVisible ? "fullscreen" : "list") }
+        .alert(ModuleLocalization.string("Could not export log. Try again.", locale: locale), isPresented: $diagnosticExportFailed) {
+            Button(ModuleLocalization.string("Done", locale: locale), role: .cancel) {}
+        }
+    }
+
+    private func recordDiagnosticSettings() {
+        diagnostics.event("scene_settings", values: [
+            "listEnabled": listEnabled ? 1 : 0, "expandedEnabled": expandedEnabled ? 1 : 0,
+            "cameraEnabled": cameraEnabled ? 1 : 0, "reduceMotion": reduceMotion ? 1 : 0,
+            "cameraAuthorization": Double(cameraAuthorization.rawValue),
+            "backingDepthMM": backingDepthMM, "layerSpacing": layerSpacing,
+            "smoothingMS": smoothingMS, "screenWidthMM": screenWidthMM,
+            "cameraHeightMM": cameraHeightMM
+        ])
     }
 
     private static var currentCameraAuthorization: AVAuthorizationStatus {
@@ -332,6 +409,7 @@ struct FaceSceneHost<Content: View>: View {
     }
 
     private func updateTracking() {
+        recordDiagnosticSettings()
         tracker.usesCamera = cameraEnabled && cameraAuthorization == .authorized
         tracker.fallback = attitude
         tracker.smoothingSeconds = smoothingMS / 1000

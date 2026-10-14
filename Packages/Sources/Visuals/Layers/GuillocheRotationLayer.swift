@@ -75,14 +75,17 @@ public struct GuillocheRotationLayer: View, Animatable, Equatable {
         let renderSide = Self.rotatingRenderSide(forNativeSide: Self.nativeViewBoxSide)
         Color.clear
             .overlay {
-                // Rasterize the 72-path stroke pass into a single Metal-backed
-                // texture once the stagger has finished. While revealing, skip
-                // `drawingGroup` so per-path opacity can animate smoothly.
+                // Cache the stable 72-path artwork once the stagger has finished.
+                // While revealing, keep the per-path Canvas opacity animation.
                 Group {
-                    if reveal >= 1.0 {
-                        canvasContent
+                    if reveal >= 1.0,
+                       let image = GuillocheStrokeTexture.image(
+                        paths: paths, size: CGSize(width: renderSide, height: renderSide),
+                        offset: Self.nativeViewBoxOffset(inRenderSide: renderSide, nativeSide: Self.nativeViewBoxSide),
+                        opacity: opacity
+                       ) {
+                        image.renderingMode(.template).foregroundStyle(tint)
                             .frame(width: renderSide, height: renderSide)
-                            .drawingGroup(opaque: false)
                     } else {
                         canvasContent
                             .frame(width: renderSide, height: renderSide)
@@ -100,9 +103,8 @@ public struct GuillocheRotationLayer: View, Animatable, Equatable {
             .accessibilityHidden(true)
     }
 
-    /// Re-strokes every frame while `reveal < 1` so the per-path opacity
-    /// ramp is honored. Once fully revealed, a sibling `.drawingGroup` wraps
-    /// this view into a cached texture so the rotation animation is cheap.
+    /// Re-strokes while revealing so the per-path opacity ramp is honored.
+    /// Fully revealed artwork uses the reusable stroke texture above.
     private var canvasContent: some View {
         Canvas { context, size in
             guard reveal > 0 else { return }

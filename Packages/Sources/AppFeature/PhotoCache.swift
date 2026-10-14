@@ -43,11 +43,20 @@ public final class PhotoCache {
         guard let id, cache[id.filename] == nil, !inFlight.contains(id.filename) else { return }
         inFlight.insert(id.filename)
         defer { inFlight.remove(id.filename) }
+        #if os(iOS)
+        let loadStarted = ProcessInfo.processInfo.systemUptime
+        PerformanceDiagnostics.shared.event("photo_load_started")
+        #endif
         guard let data = try? await store.load(id) else { return }
         let entry = await Task.detached(priority: .utility) { Self.decode(data) }.value
         guard let entry else { return }
         cache[id.filename] = entry
         blurredImages[id.filename] = entry.blurredImage
+        #if os(iOS)
+        PerformanceDiagnostics.shared.event("photo_load_completed", values: [
+            "durationMS": (ProcessInfo.processInfo.systemUptime - loadStarted) * 1000
+        ])
+        #endif
     }
 
     public func preload(_ records: [Record], using store: any PhotoStore) async {

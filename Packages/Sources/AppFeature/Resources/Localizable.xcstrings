@@ -1496,6 +1496,138 @@
           }
         }
       }
+    },
+    "Performance diagnostics": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Performance diagnostics"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Диагностика производительности"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Діагностика продуктивності"
+          }
+        }
+      }
+    },
+    "Record performance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record performance"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записывать производительность"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записувати продуктивність"
+          }
+        }
+      }
+    },
+    "Records timing and device state for up to 10 minutes. No photos, eye positions, or contact data. Export stops recording.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records timing and device state for up to 10 minutes. No photos, eye positions, or contact data. Export stops recording."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записывает время обновлений и состояние устройства до 10 минут. Без фото, положения глаз и данных контактов. Экспорт завершает запись."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записує час оновлень і стан пристрою до 10 хвилин. Без фото, положення очей і даних контактів. Експорт завершує запис."
+          }
+        }
+      }
+    },
+    "Prepare performance log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepare performance log"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подготовить журнал производительности"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підготувати журнал продуктивності"
+          }
+        }
+      }
+    },
+    "Share performance log": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share performance log"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться журналом производительности"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поділитися журналом продуктивності"
+          }
+        }
+      }
+    },
+    "Could not export log. Try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not export log. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось экспортировать журнал. Попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося експортувати журнал. Спробуйте ще раз."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -87,6 +87,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     }
 
     private func runSession() {
+        PerformanceDiagnostics.shared.event("scene_motion_started", values: ["usesCamera": usesCamera ? 1 : 0])
         #if DEBUG
         diagnosticStart = CACurrentMediaTime()
         cameraFrames = 0
@@ -118,6 +119,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
             motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] sample, _ in
                 MainActor.assumeIsolated {
                     guard let self, let sample, self.active, self.enabled else { return }
+                    PerformanceDiagnostics.shared.receivedSceneGyro(ageSeconds: CACurrentMediaTime() - sample.timestamp)
                     let q = sample.attitude.quaternion
                     let orientation = Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)
                     self.inertialViewer.seedIfNeeded(eye: self.neutralReference, orientation: orientation)
@@ -180,6 +182,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     }
 
     private func receive(position: ViewerPosition?, timestamp: Double) {
+        let age = abs(CACurrentMediaTime() - timestamp)
+        PerformanceDiagnostics.shared.receivedCamera(valid: position != nil && age < 0.15,
+                                                     ageSeconds: age)
         #if DEBUG
         cameraFrames += 1
         #endif
@@ -209,27 +214,33 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     nonisolated public func session(_ session: ARSession, didFailWithError error: Error) {
         Task { @MainActor [weak self] in
+            PerformanceDiagnostics.shared.event("camera_session_failed")
             self?.stop()
             self?.status = "Face tracking stopped; using gyro"
+            PerformanceDiagnostics.shared.setTrackingState("Face tracking stopped; using gyro")
         }
     }
 
     nonisolated public func sessionWasInterrupted(_ session: ARSession) {
         Task { @MainActor [weak self] in
+            PerformanceDiagnostics.shared.event("camera_session_interrupted")
             self?.target = nil
             self?.lastFaceTime = 0
             self?.status = "Face tracking interrupted; holding scene"
+            PerformanceDiagnostics.shared.setTrackingState("Face tracking interrupted; holding scene")
         }
     }
 
     nonisolated public func sessionInterruptionEnded(_ session: ARSession) {
         Task { @MainActor [weak self] in
+            PerformanceDiagnostics.shared.event("camera_session_interruption_ended")
             self?.stop()
             self?.start()
         }
     }
 
     fileprivate func tick(_ link: CADisplayLink) {
+        PerformanceDiagnostics.shared.receivedSceneTick()
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
         let estimate: ViewerPosition?
@@ -245,6 +256,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
             (estimate != nil ? "Gyro estimate; face out of view" :
              (targetEye == nil ? "Finding your face" : "Tracking lost; holding scene"))
         if status != nextStatus { status = nextStatus }
+        PerformanceDiagnostics.shared.setTrackingState(nextStatus)
         let elapsed = lastDisplayTime > 0 ? link.timestamp - lastDisplayTime : 1.0 / 60
         lastDisplayTime = link.timestamp
         sceneActivation = acquisition.step(hasPose: nextEye != nil || targetEye != nil, elapsed: elapsed)
@@ -273,6 +285,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     private func recordTrackingInput(_ state: String) {
         guard state != trackingInputState else { return }
+        PerformanceDiagnostics.shared.event("camera_input: " + state)
         trackingInputState = state
         #if DEBUG
         print("[FaceParallax] Input: \(state)")

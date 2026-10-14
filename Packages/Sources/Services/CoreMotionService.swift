@@ -72,7 +72,9 @@ public final class CoreMotionService: MotionService, @unchecked Sendable {
 
     public init() {
         var attitudeContinuation: AsyncStream<DeviceAttitude>.Continuation!
-        self.attitude = AsyncStream { attitudeContinuation = $0 }
+        // A renderer needs the newest pose, not a backlog of stale poses
+        // accumulated while a transition is busy.
+        self.attitude = AsyncStream(bufferingPolicy: .bufferingNewest(1)) { attitudeContinuation = $0 }
         self.attitudeContinuation = attitudeContinuation
 
         // Bounded buffering: when the debug screen is closed (the common case

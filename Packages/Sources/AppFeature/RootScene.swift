@@ -23,6 +23,9 @@ public struct RootScene: Scene {
     @State private var router = NavigationRouter()
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var tappedCardDismissing = false
+    #if DEBUG
+    @State private var motionHarnessCycles = 0
+    #endif
     @State private var pendingFirstCardCameraOffer = false
     @State private var firstCardCameraOffer = false
     @State private var reduceMotionEnabled = false
@@ -358,6 +361,19 @@ public struct RootScene: Scene {
                     onDismiss: {
                         router.tappedRecord = nil
                         tappedCardDismissing = false
+                        #if DEBUG
+                        if TransitionMotionMetrics.isEnabled {
+                            motionHarnessCycles += 1
+                            if motionHarnessCycles < 5 {
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .seconds(1))
+                                    router.tappedRecord = tapped
+                                }
+                            } else if ProcessInfo.processInfo.arguments.contains("-PerformanceDiagnosticsRecord") {
+                                Task { _ = try? await PerformanceDiagnostics.shared.export() }
+                            }
+                        }
+                        #endif
                     }
                 )
                 .environment(\.windowSceneProjection, projection)
