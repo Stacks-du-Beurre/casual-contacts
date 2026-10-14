@@ -117,8 +117,17 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let configuration = ARFaceTrackingConfiguration()
         configuration.maximumNumberOfTrackedFaces = 1
         configuration.isLightEstimationEnabled = false
+        configuration.providesAudioData = false
         if usesCamera && ARFaceTrackingConfiguration.isSupported &&
             AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+            // Face perspective needs video only. Keep music and podcasts from
+            // other apps playing if ARKit activates the application audio session.
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+            } catch {
+                // Audio configuration must not prevent the camera/gyro scene.
+                PerformanceDiagnostics.shared.event("camera_audio_configuration_failed")
+            }
             session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         }
         let generation = orientations.reset()
