@@ -117,26 +117,10 @@ public struct PhotoLayer: View {
 
     /// A separable smooth fade on the source image's four edges. Its central
     /// area remains fully opaque; the enlarged backing fills beyond the edges.
-    private func edgeMask(size: CGSize) -> some View {
-        let fade = min(80, min(size.width, size.height) * 0.15)
-        let x = fade / max(size.width, 1)
-        let y = fade / max(size.height, 1)
-        return LinearGradient(stops: [
-            .init(color: .clear, location: 0),
-            .init(color: .white.opacity(0.5), location: x / 2),
-            .init(color: .white, location: x),
-            .init(color: .white, location: 1 - x),
-            .init(color: .white.opacity(0.5), location: 1 - x / 2),
-            .init(color: .clear, location: 1)
-        ], startPoint: .leading, endPoint: .trailing)
-        .mask(LinearGradient(stops: [
-            .init(color: .clear, location: 0),
-            .init(color: .white.opacity(0.5), location: y / 2),
-            .init(color: .white, location: y),
-            .init(color: .white, location: 1 - y),
-            .init(color: .white.opacity(0.5), location: 1 - y / 2),
-            .init(color: .clear, location: 1)
-        ], startPoint: .top, endPoint: .bottom))
+    @ViewBuilder private func edgeMask(size: CGSize) -> some View {
+        if let bitmap = PhotoEdgeFadeMask.bitmap(size: size) {
+            Image(decorative: bitmap, scale: 1).resizable().interpolation(.high)
+        } else { Rectangle() }
     }
 
     /// Renders the image at `zoomMultiplier × scaledToFill`, with enough

@@ -32,8 +32,22 @@ private struct WindowCardFrameKey: EnvironmentKey {
 private struct WindowSceneProjectionKey: EnvironmentKey {
     static let defaultValue: WindowSceneProjection? = nil
 }
+private struct WindowCardSizeKey: EnvironmentKey {
+    static let defaultValue: CGSize = .zero
+}
+private struct LiveWindowGeometryKey: EnvironmentKey {
+    static let defaultValue = false
+}
 
 public extension EnvironmentValues {
+    var windowCardSize: CGSize {
+        get { self[WindowCardSizeKey.self] }
+        set { self[WindowCardSizeKey.self] = newValue }
+    }
+    var liveWindowGeometry: Bool {
+        get { self[LiveWindowGeometryKey.self] }
+        set { self[LiveWindowGeometryKey.self] = newValue }
+    }
     var windowCardFrame: CGRect? {
         get { self[WindowCardFrameKey.self] }
         set { self[WindowCardFrameKey.self] = newValue }
@@ -48,6 +62,8 @@ private struct WindowDepthModifier: ViewModifier {
     let fraction: Double
     @Environment(\.windowSceneProjection) private var scene
     @Environment(\.windowCardFrame) private var cardFrame
+    @Environment(\.windowCardSize) private var cardSize
+    @Environment(\.liveWindowGeometry) private var liveGeometry
 
     func body(content: Content) -> some View {
         if let scene {
@@ -55,13 +71,16 @@ private struct WindowDepthModifier: ViewModifier {
 
             content.visualEffect { view, geometry in
                 let local = geometry.frame(in: .named("CardScene"))
-                let center = cardFrame.map { CGRect(x: $0.minX + local.minX, y: $0.minY + local.minY,
+                let resolvedFrame = liveGeometry
+                    ? WindowSceneProjection.cardFrame(local: local, global: geometry.frame(in: .global), size: cardSize)
+                    : cardFrame
+                let center = resolvedFrame.map { CGRect(x: $0.minX + local.minX, y: $0.minY + local.minY,
                                                    width: local.width, height: local.height) }
                     ?? geometry.frame(in: .global)
                 let metersPerPoint = scene.screenWidthMeters / max(Double(scene.viewport.width), 1)
                 let x = Double(center.midX - scene.viewport.width / 2) * metersPerPoint
                 let y = -Double(center.midY - scene.viewport.height / 2) * metersPerPoint
-                let reference = scene.reference(for: cardFrame ?? center)
+                let reference = scene.reference(for: resolvedFrame ?? center)
                 let projection = WindowPlaneProjection(eye: scene.eye, reference: reference, depth: depth)
                 let scale = projection?.scale ?? 1
                 let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
@@ -83,6 +102,10 @@ extension View {
 }
 
 extension WindowSceneProjection {
+    nonisolated static func cardFrame(local: CGRect, global: CGRect, size: CGSize) -> CGRect {
+        CGRect(x: global.minX - local.minX, y: global.minY - local.minY,
+               width: size.width, height: size.height)
+    }
     func reference(for frame: CGRect) -> ViewerPosition {
         guard cardCenteredReference else { return reference }
         let metersPerPoint = screenWidthMeters / max(Double(viewport.width), 1)

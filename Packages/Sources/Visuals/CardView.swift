@@ -24,6 +24,7 @@ public struct CardView: View {
     @Bindable private var depthTuning = CardElementDepthTuning.shared
     @Environment(\.windowSceneProjection) private var windowScene
     @Environment(\.windowCardFrame) private var cardFrame
+    @Environment(\.liveWindowGeometry) private var liveGeometry
 
     public init(
         record: Record,
@@ -97,7 +98,8 @@ public struct CardView: View {
             .clipped()
             .contentShape(Rectangle())
             .coordinateSpace(.named(Self.cardCoordinateSpace))
-            .environment(\.windowCardFrame, cardFrame ?? geo.frame(in: .global))
+            .environment(\.windowCardSize, geo.size)
+            .environment(\.windowCardFrame, liveGeometry ? nil : cardFrame ?? geo.frame(in: .global))
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityLabel(for: record))

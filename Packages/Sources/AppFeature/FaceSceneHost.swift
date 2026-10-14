@@ -149,7 +149,6 @@ struct FaceSceneHost<Content: View>: View {
                     SettingsDivider()
                     SettingsToggleRow(label: ModuleLocalization.string("Expanded card", locale: locale), isOn: $expandedEnabled)
                     SettingsDivider()
-                    ModuleLocalization.text(tracker.status, locale: locale).font(CCDesign.Typography.caption2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     ModuleLocalization.text("Uses gyro motion by default. Optional camera mode runs only while an enabled card view is visible.", locale: locale).font(CCDesign.Typography.caption2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     privacyPolicyLink("Privacy policy").padding(16).frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -185,9 +184,6 @@ struct FaceSceneHost<Content: View>: View {
                 }
                 SettingsGroup(title: ModuleLocalization.string("Tracking", locale: locale)) {
                     parameter("Smoothing", value: $smoothingMS, range: 10...150, step: 5, unit: "ms")
-                    if let eye = tracker.eyePosition {
-                        Text(ModuleLocalization.string("Eye distance: %d mm", locale: locale, Int(eye.distance * 1000)))
-                    }
                     Button(ModuleLocalization.string("Reset tracking", locale: locale)) { tracker.recenter() }
                 }
                 SettingsGroup(title: ModuleLocalization.string("Screen calibration", locale: locale)) {

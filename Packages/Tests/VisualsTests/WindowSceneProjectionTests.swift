@@ -4,6 +4,14 @@ import CoreModels
 @testable import Visuals
 
 @Suite struct WindowSceneProjectionTests {
+    @Test func liveGeometryFindsCardOriginWhileScrolling() {
+        let local = CGRect(x: 40, y: 60, width: 184, height: 160)
+        let size = CGSize(width: 370, height: 211)
+        let first = WindowSceneProjection.cardFrame(local: local, global: local.offsetBy(dx: 16, dy: 320), size: size)
+        let scrolled = WindowSceneProjection.cardFrame(local: local, global: local.offsetBy(dx: 16, dy: 120), size: size)
+        #expect(first == CGRect(x: 16, y: 320, width: 370, height: 211))
+        #expect(scrolled == first.offsetBy(dx: 0, dy: -200))
+    }
     private func scene(cardCentered: Bool = true) -> WindowSceneProjection {
         WindowSceneProjection(eye: ViewerPosition(x: 0, y: 0, distance: 0.4),
                               reference: ViewerPosition(x: 0.03, y: 0.06, distance: 0.4),

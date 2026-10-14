@@ -123,6 +123,15 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
     func testDevicePerformanceLogRecordsMovingTransitions() {
         runMotionTransitions(withPhoto: true, diagnostics: true)
     }
+    func testListScrollsWithContinuousMotionAndPhoto() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
+                               "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
+                               "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
+        app.launch()
+        Thread.sleep(forTimeInterval: 21)
+        XCTAssertTrue(app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"].exists)
+    }
 
     func testPerformanceLogCanBePreparedFromSettings() {
         let app = XCUIApplication()

@@ -64,7 +64,8 @@ import UIKit
         link = nil
         guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
               let data = try? JSONEncoder().encode(samples) else { return }
-        let filename = ProcessInfo.processInfo.arguments.contains("-MotionHarnessPhoto")
+        let filename = ProcessInfo.processInfo.arguments.contains("-MotionScrollHarness")
+            ? "scroll-motion-photo-metrics.json" : ProcessInfo.processInfo.arguments.contains("-MotionHarnessPhoto")
             ? "transition-motion-photo-metrics.json" : "transition-motion-metrics.json"
         try? data.write(to: directory.appendingPathComponent(filename), options: .atomic)
     }

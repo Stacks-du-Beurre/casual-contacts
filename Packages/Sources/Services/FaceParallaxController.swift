@@ -29,7 +29,15 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var session = ARSession()
     @ObservationIgnored private let motion = CMMotionManager()
     @ObservationIgnored private var inertialViewer = InertialViewer()
-    @ObservationIgnored private var orientations: [(time: Double, value: Quaternion)] = []
+    @ObservationIgnored private let orientations = GyroOrientationBuffer()
+    @ObservationIgnored private let gyroQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "FaceParallax.gyro"
+        queue.maxConcurrentOperationCount = 1
+        queue.qualityOfService = .userInteractive
+        return queue
+    }()
+    @ObservationIgnored private var fallbackFailure: String?
     @ObservationIgnored private var displayLink: CADisplayLink?
     @ObservationIgnored private var linkTarget: DisplayLinkTarget?
     @ObservationIgnored private var projection = ViewerParallax(reference: .screenCentered(cameraHeightMeters: 0.065))
@@ -113,19 +121,15 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
             AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
             session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         }
-        orientations.removeAll()
+        let generation = orientations.reset()
         if motion.isDeviceMotionAvailable {
             motion.deviceMotionUpdateInterval = 1.0 / 60
-            motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] sample, _ in
-                MainActor.assumeIsolated {
-                    guard let self, let sample, self.active, self.enabled else { return }
-                    PerformanceDiagnostics.shared.receivedSceneGyro(ageSeconds: CACurrentMediaTime() - sample.timestamp)
-                    let q = sample.attitude.quaternion
-                    let orientation = Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)
-                    self.inertialViewer.seedIfNeeded(eye: self.neutralReference, orientation: orientation)
-                    self.orientations.append((sample.timestamp, orientation))
-                    if self.orientations.count > 120 { self.orientations.removeFirst() }
-                }
+            let buffer = orientations
+            motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: gyroQueue) { sample, _ in
+                guard let sample else { return }
+                let q = sample.attitude.quaternion
+                buffer.append(.init(time: sample.timestamp, value: Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)),
+                              generation: generation, deliveredAt: CACurrentMediaTime())
             }
         }
         let receiver = DisplayLinkTarget(owner: self)
@@ -148,7 +152,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         session.delegate = self
         session.delegateQueue = DispatchQueue(label: "FaceParallax.camera", qos: .userInteractive)
         motion.stopDeviceMotionUpdates()
-        orientations.removeAll()
+        orientations.reset()
         inertialViewer = InertialViewer()
         displayLink?.invalidate()
         displayLink = nil
@@ -204,7 +208,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         targetEye = position
         // ARFrame and Core Motion use seconds since boot. Pair the camera pose
         // with its nearest orientation, rather than a delayed delivery time.
-        if let sample = orientations.min(by: { abs($0.time - timestamp) < abs($1.time - timestamp) }),
+        if let sample = orientations.nearest(to: timestamp),
            abs(sample.time - timestamp) < 0.05 {
             inertialViewer.calibrate(eye: position, orientation: sample.value)
         }
@@ -243,12 +247,22 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         PerformanceDiagnostics.shared.receivedSceneTick()
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
+        let delivery = orientations.takeLatest()
+        PerformanceDiagnostics.shared.receivedSceneGyro(ageSeconds: delivery.maximumAge, count: delivery.count,
+                                                        renderAgeSeconds: delivery.latest.map { now - $0.time })
         let estimate: ViewerPosition?
         // Carry the last measured pose forward on every display tick, including
         // between valid camera frames. Tracking status no longer gates motion.
-        if let sample = orientations.last, abs(now - sample.time) < 0.15 {
+        if let sample = delivery.latest, abs(now - sample.time) < 0.15 {
+            inertialViewer.seedIfNeeded(eye: neutralReference, orientation: sample.value)
             estimate = inertialViewer.estimate(orientation: sample.value)
         } else { estimate = nil }
+        let failure = estimate != nil ? nil : delivery.latest == nil ? "no gyro sample" :
+            abs(now - (delivery.latest?.time ?? now)) >= 0.15 ? "stale gyro sample" : "invalid projected viewpoint"
+        if failure != fallbackFailure {
+            fallbackFailure = failure
+            PerformanceDiagnostics.shared.event("gyro_fallback: " + (failure ?? "available"))
+        }
         let nextEye = estimate ?? (tracked ? targetEye : nil)
         let predictedAttitude = estimate.flatMap { projection.attitude(for: $0) }
         let next = predictedAttitude ?? (tracked ? (target ?? fallback) : (targetEye == nil ? fallback : attitude))

@@ -45,6 +45,7 @@ import Observation
     @ObservationIgnored private var sceneTicks = 0
     @ObservationIgnored private var sceneGyroSamples = 0
     @ObservationIgnored private var maximumGyroAgeMS = 0.0
+    @ObservationIgnored private var maximumGyroRenderAgeMS = 0.0
     @ObservationIgnored private var context = "list"
     @ObservationIgnored private var trackingState = "unknown"
     @ObservationIgnored private var transitionStart = 0.0
@@ -152,10 +153,11 @@ import Observation
         sceneTicks += 1
         if awaitingScene { awaitingScene = false; recordFirstUpdate("first_scene_tick") }
     }
-    public func receivedSceneGyro(ageSeconds: Double) {
+    public func receivedSceneGyro(ageSeconds: Double, count: Int = 1, renderAgeSeconds: Double? = nil) {
         guard isRecording else { return }
-        sceneGyroSamples += 1
+        sceneGyroSamples += count
         maximumGyroAgeMS = max(maximumGyroAgeMS, abs(ageSeconds) * 1000)
+        if let renderAgeSeconds { maximumGyroRenderAgeMS = max(maximumGyroRenderAgeMS, abs(renderAgeSeconds) * 1000) }
     }
     public func receivedCamera(valid: Bool, ageSeconds: Double) {
         guard isRecording else { return }
@@ -208,6 +210,7 @@ import Observation
                             "staleCameraFrames": Double(staleCameraFrames), "maximumCameraAgeMS": maximumCameraAgeMS,
                             "sceneTicks": Double(sceneTicks), "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
                             "sceneGyroSamples": Double(sceneGyroSamples), "maximumGyroAgeMS": maximumGyroAgeMS,
+                            "maximumGyroRenderAgeMS": maximumGyroRenderAgeMS,
                             "residentMemoryMB": residentMemoryMB(),
                             "lowPowerMode": ProcessInfo.processInfo.isLowPowerModeEnabled ? 1 : 0],
                    timing: CallbackTimingSummary(intervalsMS: intervals)))
@@ -218,6 +221,7 @@ import Observation
         gyroUpdates = 0; cameraFrames = 0; validCameraFrames = 0; staleCameraFrames = 0
         maximumCameraAgeMS = 0; sceneTicks = 0
         sceneGyroSamples = 0; maximumGyroAgeMS = 0
+        maximumGyroRenderAgeMS = 0
     }
     private func recordFirstUpdate(_ name: String) {
         event(name, values: ["sinceForegroundMS": (CACurrentMediaTime() - foregroundStarted) * 1000])

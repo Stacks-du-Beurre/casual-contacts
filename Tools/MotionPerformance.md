@@ -19,12 +19,20 @@ The log includes app version/build, device hardware type (not its name or unique
 identifier), OS, refresh capability, scene options, relative event times,
 transition durations, callback median/p95/max, long callback-gap counts, camera
 delivery ages and validity counts, observed gyro pose changes, scene update
-counts, scene gyro packet counts and delivery age, tracking handoffs, foreground first-update times, resident memory,
+counts, scene gyro packet counts and delivery/render ages, tracking handoffs, foreground first-update times, resident memory,
 thermal state, Low Power Mode, and photo load duration. It does not include
 camera images, eye/face coordinates, photos, contact content, location, or
 account information. Gyro counts are changed poses observed by the UI, not raw
 sensor packet counts. Resident memory does not include all render-server/GPU
 memory. Callback timing still does not prove presented FPS.
+
+Scroll-phase events identify interacting, decelerating, animating, and idle
+intervals. Gyro-fallback events distinguish missing samples, stale samples, and
+an invalid projected viewpoint. Gyro delivery now runs on a serial background
+queue; `maximumGyroAgeMS` measures delivery age there, while
+`maximumGyroRenderAgeMS` measures the newest sample's age when the display
+callback consumes it. This differs from build 58, which delivered gyro samples
+on the main queue.
 
 Use an optimized simulator build for comparisons. Keep synthetic motion and
 nonzero perspective depth active. Display callback intervals measure main-thread
@@ -68,6 +76,25 @@ Repeat after terminating and relaunching the app. Compare the same build
 configuration, simulator, fixture, and host load. Separate first-run cache costs
 from warmed runs. Remove `-MotionHarnessPhoto` for the no-photo case; its output
 is `transition-motion-metrics.json`.
+
+For scrolling, add `-MotionScrollHarness`. The app performs five down/up cycles
+with continuous motion and writes `scroll-motion-photo-metrics.json`. The
+targeted UI test is `testListScrollsWithContinuousMotionAndPhoto`.
+
+## October 14 interaction retest
+
+Release-optimized simulator runs used active mock motion and 60 mm scene depth,
+without video recording during measurement. Five enter and five exit cycles
+passed for both photo and non-photo cases; five photo scroll cycles passed.
+Sixteen focused unit tests passed for geometry, photo fade/cache behavior, and
+gyro buffering across stalled consumption and session changes.
+
+Final median callback gaps were 140.91 ms entering and 118.90 ms exiting with
+photos, and 64.40 ms during the scroll stress run. The initial photo run measured
+139.40/96.46 ms; the initial scroll run measured 66.19 ms. Results are mixed and
+do not establish a transition improvement or 60 FPS. A device comparison is
+required. Experiments that cropped blur samples or removed list rasterization
+were discarded because they performed worse.
 
 ## Instruments and limits
 

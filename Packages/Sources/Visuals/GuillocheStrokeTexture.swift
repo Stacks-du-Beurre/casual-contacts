@@ -13,6 +13,41 @@ import Foundation
         value.totalCostLimit = 48 * 1024 * 1024
         return value
     }()
+    private final class Fingerprint {
+        let path: CGPath
+        let value: Int
+        init(path: CGPath, value: Int) { self.path = path; self.value = value }
+    }
+    private static let fingerprints: NSCache<NSNumber, Fingerprint> = {
+        let cache = NSCache<NSNumber, Fingerprint>()
+        cache.countLimit = 512
+        return cache
+    }()
+    private static func fingerprint(_ path: CGPath) -> Int {
+        let identity = NSNumber(value: UInt(bitPattern: Unmanaged.passUnretained(path).toOpaque()))
+        if let entry = fingerprints.object(forKey: identity) { return entry.value }
+        var hash = Hasher()
+        path.applyWithBlock { pointer in
+            let element = pointer.pointee
+            hash.combine(element.type.rawValue)
+            let count: Int
+            switch element.type {
+            case .moveToPoint, .addLineToPoint: count = 1
+            case .addQuadCurveToPoint: count = 2
+            case .addCurveToPoint: count = 3
+            case .closeSubpath: count = 0
+            @unknown default: count = 0
+            }
+            for index in 0..<count {
+                hash.combine(element.points[index].x)
+                hash.combine(element.points[index].y)
+            }
+        }
+        let value = hash.finalize()
+        // Retaining the immutable path prevents address reuse while cached.
+        fingerprints.setObject(Fingerprint(path: path, value: value), forKey: identity)
+        return value
+    }
 
     static func image(paths: [Path], size: CGSize, offset: CGFloat = 0,
                       opacity: Double = 1, scale: CGFloat = 2) -> Image? {
@@ -23,25 +58,11 @@ import Foundation
     static func bitmap(paths: [Path], size: CGSize, offset: CGFloat = 0,
                        opacity: Double = 1, scale: CGFloat = 2) -> CGImage? {
         var hash = Hasher()
+        hash.combine(paths.count)
         for path in paths {
             // CGPath's generic CF hash can collide for distinct outlines.
             // Include the actual commands and coordinates in the cache key.
-            path.cgPath.applyWithBlock { pointer in
-                let element = pointer.pointee
-                hash.combine(element.type.rawValue)
-                let count: Int
-                switch element.type {
-                case .moveToPoint, .addLineToPoint: count = 1
-                case .addQuadCurveToPoint: count = 2
-                case .addCurveToPoint: count = 3
-                case .closeSubpath: count = 0
-                @unknown default: count = 0
-                }
-                for index in 0..<count {
-                    hash.combine(element.points[index].x)
-                    hash.combine(element.points[index].y)
-                }
-            }
+            hash.combine(fingerprint(path.cgPath))
         }
         let key = "\(hash.finalize()):\(size.width):\(size.height):\(offset):\(opacity):\(scale)" as NSString
         if let entry = cache.object(forKey: key) {

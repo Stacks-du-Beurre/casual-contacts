@@ -59,6 +59,7 @@ public struct RecordsListScene: View {
     @State private var deletingRecordIDs: Set<Record.ID> = []
     @State private var deleteErrorMessage: String?
     @State private var sortCache = RecordsListSortCache()
+    @State private var isScrolling = false
     @Binding private var sortOption: SortOption
     @Binding private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
@@ -402,55 +403,81 @@ public struct RecordsListScene: View {
                 let buckets = bucketedVisibleRecords
                 let rows = Self.rows(for: buckets)
                 GeometryReader { listProxy in
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(rows) { row in
-                                switch row {
-                                case let .record(record):
-                                    RecordCardRow(
-                                        record: record,
-                                        attitude: attitude,
-                                        paths: paths,
-                                        photo: photoFor(record),
-                                        photoSize: photoSizeFor(record),
-                                        isHidden: hiddenRecordID == record.id,
-                                        viewportHeight: listProxy.size.height,
-                                        scrollCoordinateSpace: Self.scrollCoordinateSpace,
-                                        onTap: onTapRecord
-                                    )
-                                case .distanceSeparator:
-                                    // 1-mile group separator. Token color matches
-                                    // Figma `Line 60` from `D_Collection_View` /
-                                    // `L_Collection_View`. Spans the full list
-                                    // width — the LazyVStack's 16pt horizontal
-                                    // padding already insets the line to the same
-                                    // edges as the cards.
-                                    Rectangle()
-                                        .fill(navBarBottomLineColor)
-                                        .frame(height: 0.5)
-                                        .accessibilityHidden(true)
+                    ScrollViewReader { scrollProxy in
+                        ScrollView {
+                            LazyVStack(spacing: 8) {
+                                ForEach(rows) { row in
+                                    Group {
+                                        switch row {
+                                        case let .record(record):
+                                            RecordCardRow(
+                                                record: record,
+                                                attitude: attitude,
+                                                paths: paths,
+                                                photo: photoFor(record),
+                                                photoSize: photoSizeFor(record),
+                                                isHidden: hiddenRecordID == record.id,
+                                                usesLiveGeometry: isScrolling,
+                                                viewportHeight: listProxy.size.height,
+                                                scrollCoordinateSpace: Self.scrollCoordinateSpace,
+                                                onTap: onTapRecord
+                                            )
+                                        case .distanceSeparator:
+                                            // 1-mile group separator. Token color matches
+                                            // Figma `Line 60` from `D_Collection_View` /
+                                            // `L_Collection_View`. Spans the full list
+                                            // width — the LazyVStack's 16pt horizontal
+                                            // padding already insets the line to the same
+                                            // edges as the cards.
+                                            Rectangle()
+                                                .fill(navBarBottomLineColor)
+                                                .frame(height: 0.5)
+                                                .accessibilityHidden(true)
+                                        }
+                                    }
+                                    .id(row.id)
                                 }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                    }
-                    .coordinateSpace(name: Self.scrollCoordinateSpace)
-                    #if os(iOS)
-                    // `.interacting` fires the moment the user touches the scroll
-                    // surface (before any movement is detected), so the gyro
-                    // pipeline pauses on touch-down — not just once scrolling
-                    // begins. Programmatic scroll animation can be produced by
-                    // resorting/re-laying out the list; don't treat that as a
-                    // user interaction or the gyro stream can stay stopped.
-                    .onScrollPhaseChange { _, phase in
-                        onScrollInteractionChange(
-                            ScrollInteractionPolicy.shouldPauseMotion(
-                                for: ScrollInteractionPhase(phase)
+                        .coordinateSpace(name: Self.scrollCoordinateSpace)
+                        #if DEBUG && os(iOS)
+                        .task {
+                            guard ProcessInfo.processInfo.arguments.contains("-MotionScrollHarness"),
+                                  TransitionMotionMetrics.isEnabled,
+                                  let first = rows.first?.id, let last = rows.last?.id else { return }
+                            do {
+                                try await Task.sleep(for: .seconds(2))
+                                for _ in 0..<5 {
+                                    TransitionMotionMetrics.shared.begin("scroll")
+                                    withAnimation(.linear(duration: 1)) { scrollProxy.scrollTo(last, anchor: .bottom) }
+                                    try await Task.sleep(for: .seconds(1.5))
+                                    withAnimation(.linear(duration: 1)) { scrollProxy.scrollTo(first, anchor: .top) }
+                                    try await Task.sleep(for: .seconds(1.5))
+                                    TransitionMotionMetrics.shared.end()
+                                }
+                            } catch { return }
+                        }
+                        #endif
+                        #if os(iOS)
+                        // `.interacting` fires the moment the user touches the scroll
+                        // surface (before any movement is detected), so the gyro
+                        // pipeline pauses on touch-down — not just once scrolling
+                        // begins. Programmatic scroll animation can be produced by
+                        // resorting/re-laying out the list; don't treat that as a
+                        // user interaction or the gyro stream can stay stopped.
+                        .onScrollPhaseChange { _, phase in
+                            isScrolling = phase != .idle
+                            PerformanceDiagnostics.shared.event("scroll_phase: " + String(describing: phase))
+                            onScrollInteractionChange(
+                                ScrollInteractionPolicy.shouldPauseMotion(
+                                    for: ScrollInteractionPhase(phase)
+                                )
                             )
-                        )
+                        }
+                        #endif
                     }
-                    #endif
                 }
             }
 
@@ -536,9 +563,8 @@ enum RecordsListRow: Identifiable, Equatable {
     }
 }
 
-/// One row of the records list. Owns its own `@State` for the card's current
-/// global frame so tap-time frame capture can't cross-contaminate between rows
-/// the way a single shared dictionary could.
+/// One row owns tap-time geometry independently. Scrolling updates its small
+/// geometry holder without invalidating the card's SwiftUI body.
 private struct RecordCardRow: View {
     let record: Record
     let attitude: DeviceAttitude
@@ -546,14 +572,13 @@ private struct RecordCardRow: View {
     let photo: Image?
     let photoSize: CGSize?
     let isHidden: Bool
+    let usesLiveGeometry: Bool
     let viewportHeight: CGFloat
     let scrollCoordinateSpace: String
     let onTap: (Record, CGRect) -> Void
 
     @Bindable private var diagnostics = CardAnimationDiagnostics.shared
-    @State private var frame: CGRect = .zero
-    @State private var scrollFrame: CGRect = .zero
-    @State private var isActiveForAnimation = false
+    @State private var geometry = CardRowGeometry()
 
     var body: some View {
         CardView(
@@ -565,11 +590,8 @@ private struct RecordCardRow: View {
             photoSize: photoSize
         )
         .frame(height: 211)
-        .environment(\.windowCardFrame, frame == .zero ? nil : frame)
-        // Rasterize each card's full blend stack into a single Metal texture
-        // per row instead of paying ~20 offscreen passes per card per frame
-        // for the hologram blur + blend chains. opaque: false preserves the
-        // alpha so the rounded clip below stays correct.
+        .environment(\.liveWindowGeometry, usesLiveGeometry)
+        .environment(\.windowCardFrame, usesLiveGeometry || geometry.frame == .zero ? nil : geometry.frame)
         .drawingGroup(opaque: false)
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .accessibilityAddTraits(.isButton)
@@ -583,29 +605,38 @@ private struct RecordCardRow: View {
             updateFrames(globalFrame: snapshot.global, scrollFrame: snapshot.scroll)
         }
         .onAppear {
-            isActiveForAnimation = true
+            geometry.isActive = true
             diagnostics.registerMountedCard(id: record.id)
         }
         .onChange(of: viewportHeight) { _, _ in
-            updateFrames(globalFrame: frame, scrollFrame: scrollFrame)
+            updateFrames(globalFrame: geometry.frame, scrollFrame: geometry.scrollFrame)
         }
         .onDisappear {
-            isActiveForAnimation = false
+            geometry.isActive = false
             diagnostics.unregisterMountedCard(id: record.id)
         }
-        .onTapGesture { onTap(record, frame) }
+        .onTapGesture { onTap(record, geometry.frame) }
     }
 
     private func updateFrames(globalFrame: CGRect, scrollFrame: CGRect) {
-        frame = globalFrame
-        self.scrollFrame = scrollFrame
+        geometry.frame = globalFrame
+        geometry.scrollFrame = scrollFrame
         let isActive = CardAnimationVisibility.isActive(
             rowFrame: scrollFrame,
             viewportHeight: viewportHeight
         )
-        isActiveForAnimation = isActive
-        diagnostics.updateCardAnimation(id: record.id, isActive: isActive)
+        if geometry.isActive != isActive {
+            geometry.isActive = isActive
+            diagnostics.updateCardAnimation(id: record.id, isActive: isActive)
+        }
     }
+}
+
+/// Tap/visibility bookkeeping is not animation-driving SwiftUI state.
+private final class CardRowGeometry {
+    var frame: CGRect = .zero
+    var scrollFrame: CGRect = .zero
+    var isActive = false
 }
 
 enum CardRowMotionPolicy {
