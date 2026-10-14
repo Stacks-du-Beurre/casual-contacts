@@ -579,10 +579,13 @@ private struct RecordCardRow: View {
 
     @Bindable private var diagnostics = CardAnimationDiagnostics.shared
     @State private var geometry = CardRowGeometry()
+    @State private var isAnimationActive = true
 
     var body: some View {
         Group {
-            if isHidden {
+            if isHidden || !isAnimationActive {
+                // Offscreen rows retain their geometry but do not render card
+                // effects. The prewarm margin restores them before they enter.
                 // The zoom overlay owns this card until it returns. An opacity-zero
                 // CardView still rebuilt its backdrop and blur samples on exit.
                 Color.clear
@@ -634,6 +637,9 @@ private struct RecordCardRow: View {
             rowFrame: scrollFrame,
             viewportHeight: viewportHeight
         )
+        if isAnimationActive != isActive {
+            isAnimationActive = isActive
+        }
         if geometry.isActive != isActive {
             geometry.isActive = isActive
             diagnostics.updateCardAnimation(id: record.id, isActive: isActive)

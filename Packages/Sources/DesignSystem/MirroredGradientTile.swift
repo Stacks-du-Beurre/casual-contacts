@@ -15,11 +15,22 @@ public extension CCDesign.GradientBackdrop {
         if let tile = GradientTileCache.images.object(forKey: key) {
             return (Image(decorative: tile.image, scale: 1), CGFloat(tile.image.width) / 2)
         }
-        #if os(iOS)
-        guard let source = UIImage(named: assetName, in: .module, compatibleWith: nil)?.cgImage else { return nil }
-        #else
-        guard let source = Bundle.module.image(forResource: assetName)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
-        #endif
+        // Decode/downsample each source once, rather than resampling its full
+        // asset pixels for every transient aspect ratio during a zoom.
+        let sourceKey = assetName as NSString
+        let source: CGImage
+        if let cached = GradientTileCache.sources.object(forKey: sourceKey) {
+            source = cached.image
+        } else {
+            #if os(iOS)
+            guard let original = UIImage(named: assetName, in: .module, compatibleWith: nil)?.cgImage else { return nil }
+            #else
+            guard let original = Bundle.module.image(forResource: assetName)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+            #endif
+            source = Self.decodedGradientSource(original) ?? original
+            GradientTileCache.sources.setObject(GradientTileImage(source), forKey: sourceKey,
+                                               cost: source.bytesPerRow * source.height)
+        }
         let width = min(source.width, Int(CGFloat(source.height) * aspect))
         let height = min(source.height, Int(CGFloat(source.width) / aspect))
         let rendered = Self.renderTileSize(width: width, height: height)
@@ -57,6 +68,19 @@ public extension CCDesign.GradientBackdrop {
         GradientTileCache.images.setObject(GradientTileImage(image), forKey: key, cost: image.bytesPerRow * image.height)
         return (Image(decorative: image, scale: 1), CGFloat(tileWidth))
     }
+    static func decodedGradientSource(_ image: CGImage) -> CGImage? {
+        let scale = min(1, 768.0 / Double(max(image.width, image.height)))
+        let width = max(1, Int((Double(image.width) * scale).rounded()))
+        let height = max(1, Int((Double(image.height) * scale).rounded()))
+        guard let context = CGContext(data: nil, width: width, height: height,
+                                      bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
+    }
+
     static func renderTileSize(width: Int, height: Int) -> (width: Int, height: Int) {
         let scale = min(1, 192.0 / Double(max(width, height)))
         return (max(1, Int((Double(width) * scale).rounded())),
@@ -71,6 +95,11 @@ private final class GradientTileImage {
 }
 
 @MainActor private enum GradientTileCache {
+    static let sources: NSCache<NSString, GradientTileImage> = {
+        let cache = NSCache<NSString, GradientTileImage>()
+        cache.totalCostLimit = 8 * 1024 * 1024
+        return cache
+    }()
     static let images: NSCache<NSString, GradientTileImage> = {
         let cache = NSCache<NSString, GradientTileImage>()
         cache.totalCostLimit = 32 * 1024 * 1024

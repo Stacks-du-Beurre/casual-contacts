@@ -149,3 +149,33 @@ and exports diagnostics. Settled settings buckets contain no gyro or scene
 updates; the list resumes updates after dismissal. Unit tests check the
 projection endpoints, intermediate reference weights, pose easing, and the
 settings handoff's pause state.
+
+## Build 61 follow-up
+
+The device recording has Low Power Mode enabled throughout, normal thermal
+state, fresh camera frames, and healthy gyro delivery. Enter medians are
+37.89/42.18 ms; exits are 49.77/48.61 ms. Settled fullscreen callbacks return
+to about 16.7 ms. Build 60's recording had Low Power Mode off, so this is not
+a controlled before/after comparison. Settings suspension remains effective.
+
+The retained correction makes visibility bookkeeping actually stop rendering
+offscreen cards. Equal-height placeholders preserve scroll geometry; a 160 pt
+margin restores effects before a card reaches the viewport. Decoded gradient
+sources are bounded to 768 pixels on the longer axis and cached separately
+from aspect-specific mirrored tiles. This avoids repeated full-asset
+decoding/resampling during zoom while retaining the mirrored composition
+and all visible card motion.
+
+Under the optimized simulator photo/motion harness, five cycles passed for
+each interaction. Baseline median/p95 callback gaps in milliseconds were
+72.59/85.62 entering, 87.74/148.59 exiting, and 66.83/368.26 scrolling. The
+retained candidate measured 58.89/76.57, 71.12/108.50, and 64.75/298.60.
+Transitions improved in this stress test; scrolling remains expensive and
+these results do not establish 60 FPS or physical-device improvement.
+
+Disabling duplicate full-scene blur samples reduced scroll median gaps to
+36.17 ms, but changes the material appearance. System materials, cropped blur
+samples, a combined Canvas, and an atlas shader did not improve all
+interactions and were discarded. The blur and guilloche renderer remain
+unchanged. A new device recording is required to assess the retained changes,
+with the same Low Power Mode setting as the comparison when possible.
