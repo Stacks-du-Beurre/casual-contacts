@@ -37,7 +37,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
-          CC_SUBMIT_RELEASE: ${{ github.event_name == 'push' || inputs.submit }}
+          CC_SUBMIT_RELEASE: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'v-prepare-')) || inputs.submit }}
           FASTLANE_SKIP_UPDATE_CHECK: '1'
           FASTLANE_HIDE_CHANGELOG: '1'
           FASTLANE_OPT_OUT_USAGE: '1'

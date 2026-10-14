@@ -14,7 +14,7 @@ platform :ios do
     )
     root = File.expand_path("..", __dir__)
     build = nil
-    if ENV["CC_SUBMIT_RELEASE"] == "true"
+    if ENV.fetch("GITHUB_REF_NAME", "").start_with?("v-")
       UI.user_error!("Submission requires a v-* release tag") unless ENV.fetch("GITHUB_REF_NAME").start_with?("v-")
       client = Spaceship::ConnectAPI::APIClient.new(token: Spaceship::ConnectAPI.token)
       build = ReleaseBuild.wait(client,
