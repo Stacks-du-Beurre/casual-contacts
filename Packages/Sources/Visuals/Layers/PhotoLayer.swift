@@ -1,11 +1,21 @@
 import CoreModels
 import SwiftUI
 
+private struct PhotoFramingSizeKey: EnvironmentKey {
+    static let defaultValue: CGSize? = nil
+}
+
 private struct BlurredPhotoImagesKey: EnvironmentKey {
     static let defaultValue: [String: Image] = [:]
 }
 
 public extension EnvironmentValues {
+    /// Preserve the source card's photo framing when its presentation resizes.
+    var photoFramingSize: CGSize? {
+        get { self[PhotoFramingSizeKey.self] }
+        set { self[PhotoFramingSizeKey.self] = newValue }
+    }
+
     var blurredPhotoImages: [String: Image] {
         get { self[BlurredPhotoImagesKey.self] }
         set { self[BlurredPhotoImagesKey.self] = newValue }
@@ -27,6 +37,7 @@ public struct PhotoLayer: View {
         case recommended  // Phase 3 — designed-in, still renders correctly
     }
 
+    @Environment(\.photoFramingSize) private var framingSize
     @Environment(\.blurredPhotoImages) private var blurredPhotos
     @Environment(\.windowSceneProjection) private var windowScene
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -135,8 +146,9 @@ public struct PhotoLayer: View {
     private var framedImage: some View {
         if let imageSize, imageSize.width > 0, imageSize.height > 0 {
             GeometryReader { geo in
-                let result = PhotoLayer.focusLayout(
+                let result = PhotoLayer.presentationLayout(
                     container: geo.size,
+                    framingSize: style == .card ? framingSize : nil,
                     imageSize: imageSize,
                     focus: focus ?? .center,
                     zoomMultiplier: CGFloat(focusTuning.zoomMultiplier),
@@ -160,6 +172,32 @@ public struct PhotoLayer: View {
                 .resizable()
                 .scaledToFill()
         }
+    }
+
+    /// Calculate focus placement once against the source card's aspect ratio.
+    /// Larger presentations keep its translation and resize only for coverage;
+    /// they never clamp the focus again or snap to a new fullscreen crop.
+    static func presentationLayout(
+        container: CGSize, framingSize: CGSize?, imageSize: CGSize,
+        focus: NormalizedPoint, zoomMultiplier: CGFloat,
+        parallaxOffset: CGSize = .zero, parallaxOverscan: CGSize? = nil
+    ) -> (scaled: CGSize, offset: CGSize) {
+        guard let source = framingSize, source.width > 0, source.height > 0,
+              container.width > 0, container.height > 0 else {
+            return focusLayout(container: container, imageSize: imageSize, focus: focus,
+                               zoomMultiplier: zoomMultiplier, parallaxOffset: parallaxOffset,
+                               parallaxOverscan: parallaxOverscan)
+        }
+        let layout = focusLayout(container: source, imageSize: imageSize, focus: focus,
+                                 zoomMultiplier: zoomMultiplier)
+        // Keep the original focus translation in points. Enlarge only enough
+        // to cover the new bounds with that translation; do not re-center.
+        let offset = CGSize(width: layout.offset.width + parallaxOffset.width,
+                            height: layout.offset.height + parallaxOffset.height)
+        let reserve = parallaxOverscan ?? parallaxOffset
+        let scale = max(1, (container.width + 2 * (abs(layout.offset.width) + abs(reserve.width))) / layout.scaled.width,
+                        (container.height + 2 * (abs(layout.offset.height) + abs(reserve.height))) / layout.scaled.height)
+        return (CGSize(width: layout.scaled.width * scale, height: layout.scaled.height * scale), offset)
     }
 
     /// Computes the scaled image dimensions and the SwiftUI `.offset` needed

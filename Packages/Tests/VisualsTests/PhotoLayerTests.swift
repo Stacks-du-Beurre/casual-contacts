@@ -83,4 +83,20 @@ import CoreModels
         #expect(layout.offset.width == maxDX)
         #expect(layout.offset.height == -maxDY)
     }
+    @Test @MainActor func resizingPreservesSourcePhotoComposition() {
+        let source = CGSize(width: 350, height: 200)
+        let image = CGSize(width: 900, height: 1200)
+        let original = PhotoLayer.focusLayout(container: source, imageSize: image,
+                                             focus: NormalizedPoint(x: 0.3, y: 0.2), zoomMultiplier: 1)
+        for size in [source, CGSize(width: 375, height: 500), CGSize(width: 400, height: 850)] {
+            let layout = PhotoLayer.presentationLayout(container: size, framingSize: source,
+                                                       imageSize: image, focus: NormalizedPoint(x: 0.3, y: 0.2),
+                                                       zoomMultiplier: 1)
+            #expect(abs(layout.offset.width - original.offset.width) < 0.001)
+            #expect(abs(layout.offset.height - original.offset.height) < 0.001)
+            #expect(layout.scaled.width + 0.001 >= size.width + 2 * abs(layout.offset.width))
+            #expect(layout.scaled.height + 0.001 >= size.height + 2 * abs(layout.offset.height))
+        }
+    }
+
 }

@@ -196,6 +196,7 @@ private struct CardExpansionGeometry: AnimatableModifier {
                                    trailing: 24 * progress)
             )
             .frame(width: frame.width, height: frame.height)
+            .environment(\.photoFramingSize, source.size)
             .environment(\.windowCardFrame, frame)
             .environment(\.windowSceneProjection, scene?.expanding(progress: Double(progress),
                                                                   sourceUsesWindowScene: sourceUsesWindowScene))
