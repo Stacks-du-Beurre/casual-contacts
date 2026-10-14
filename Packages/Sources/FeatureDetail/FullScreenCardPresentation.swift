@@ -16,8 +16,13 @@ public struct FullScreenCardPresentation: View {
     public let onDelete: () -> Void
     public let onDismissStarted: () -> Void
     public let onDismiss: () -> Void
+    public let onDismissCancelled: () -> Void
 
-    @State private var expanded = false
+    @State private var progress: CGFloat = 0
+    @State private var ready = false
+    @State private var dragging = false
+    @State private var returning = false
+    @GestureState private var dragActive = false
     @State private var dismissing = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.locale) private var locale
@@ -26,7 +31,8 @@ public struct FullScreenCardPresentation: View {
                 paths: any CardPathProvider, photo: Image?, photoSize: CGSize?,
                 onEdit: @escaping () -> Void, onDelete: @escaping () -> Void,
                 onDismissStarted: @escaping () -> Void, onDismiss: @escaping () -> Void,
-                sourceUsesWindowScene: Bool = true) {
+                sourceUsesWindowScene: Bool = true,
+                onDismissCancelled: @escaping () -> Void = {}) {
         self.record = record
         self.sourceFrame = sourceFrame
         self.attitude = attitude
@@ -38,6 +44,7 @@ public struct FullScreenCardPresentation: View {
         self.onDelete = onDelete
         self.onDismissStarted = onDismissStarted
         self.onDismiss = onDismiss
+        self.onDismissCancelled = onDismissCancelled
     }
 
     public var body: some View {
@@ -51,7 +58,9 @@ public struct FullScreenCardPresentation: View {
                                          source: reduceMotion ? fullFrame : start, destination: fullFrame,
                                          safeArea: safeGeometry.safeAreaInsets,
                                          sourceUsesWindowScene: sourceUsesWindowScene,
-                                         progress: expanded ? 1 : 0)
+                                         progress: progress)
+                        .contentShape(Rectangle())
+                        .gesture(dismissDrag(height: fullFrame.height))
 
                     HStack {
                         Button(ModuleLocalization.string("Done", locale: locale)) { dismiss() }
@@ -75,8 +84,11 @@ public struct FullScreenCardPresentation: View {
                     .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, safeGeometry.safeAreaInsets.top + 8)
-                    .opacity(expanded ? 1 : 0)
-                    .allowsHitTesting(expanded && !dismissing)
+                    .opacity(progress)
+                    .allowsHitTesting(ready && !dragging && !returning && !dismissing)
+                }
+                .onChange(of: dragActive) { _, active in
+                    if !active && dragging && !dismissing { cancelDrag() }
                 }
                 .accessibilityAddTraits(.isModal)
                 .accessibilityAction(.escape) { dismiss() }
@@ -98,8 +110,9 @@ public struct FullScreenCardPresentation: View {
                     #endif
                     withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45),
                                   completionCriteria: .removed) {
-                        expanded = true
+                        progress = 1
                     } completion: {
+                        ready = true
                         #if os(iOS)
                         PerformanceDiagnostics.shared.endTransition("enter")
                         PerformanceDiagnostics.shared.setContext("fullscreen")
@@ -114,9 +127,7 @@ public struct FullScreenCardPresentation: View {
         }
     }
 
-    private func dismiss(then action: (() -> Void)? = nil) {
-        guard !dismissing else { return }
-        dismissing = true
+    private func beginDismissal() {
         onDismissStarted()
         #if os(iOS)
         PerformanceDiagnostics.shared.setContext("fullscreen_exit")
@@ -125,9 +136,62 @@ public struct FullScreenCardPresentation: View {
         #if DEBUG && os(iOS)
         TransitionMotionMetrics.shared.begin("exit")
         #endif
+    }
+
+    private func dismissDrag(height: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 12)
+            .updating($dragActive) { _, active, _ in active = true }
+            .onChanged { value in
+                guard ready, !dismissing, !returning else { return }
+                if !dragging {
+                    guard value.translation.height > abs(value.translation.width) else { return }
+                    dragging = true
+                    beginDismissal()
+                }
+                // Finger updates own progress directly, without queued animations.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    progress = CardDismissDrag.progress(translation: value.translation.height, height: height)
+                }
+            }
+            .onEnded { value in
+                guard dragging, !dismissing else { return }
+                if CardDismissDrag.shouldFinish(translation: value.translation.height,
+                                                predicted: value.predictedEndTranslation.height, height: height) {
+                    dismiss()
+                } else {
+                    cancelDrag()
+                }
+            }
+    }
+
+    private func cancelDrag() {
+        guard dragging, !returning, !dismissing else { return }
+        dragging = false
+        returning = true
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.3),
+                      completionCriteria: .removed) {
+            progress = 1
+        } completion: {
+            returning = false
+            onDismissCancelled()
+            #if os(iOS)
+            PerformanceDiagnostics.shared.endTransition("exit")
+            PerformanceDiagnostics.shared.event("interactive_exit_cancelled")
+            PerformanceDiagnostics.shared.setContext("fullscreen")
+            #endif
+        }
+    }
+
+    private func dismiss(then action: (() -> Void)? = nil) {
+        guard !dismissing else { return }
+        dismissing = true
+        if !dragging { beginDismissal() }
+        dragging = false
         withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .smooth(duration: 0.45),
                       completionCriteria: .removed) {
-            expanded = false
+            progress = 0
         } completion: {
             #if os(iOS)
             PerformanceDiagnostics.shared.endTransition("exit")
@@ -202,5 +266,17 @@ private struct CardExpansionGeometry: AnimatableModifier {
                                                                   sourceUsesWindowScene: sourceUsesWindowScene))
             .clipShape(RoundedRectangle(cornerRadius: 4 * (1 - progress)))
             .position(x: frame.midX - destination.minX, y: frame.midY - destination.minY)
+    }
+}
+
+/// Shared gesture thresholds, expressed relative to the screen height.
+enum CardDismissDrag {
+    static func travel(height: CGFloat) -> CGFloat { max(260, height * 0.65) }
+    static func progress(translation: CGFloat, height: CGFloat) -> CGFloat {
+        1 - min(1, max(0, translation / travel(height: height)))
+    }
+    static func shouldFinish(translation: CGFloat, predicted: CGFloat, height: CGFloat) -> Bool {
+        translation >= travel(height: height) * 0.25 ||
+            (translation > 24 && predicted >= travel(height: height) * 0.45)
     }
 }

@@ -92,6 +92,26 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Continue to camera permission"].waitForExistence(timeout: 2))
     }
 
+    func testFullscreenDragCanCancelAndDismiss() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITestReset", "YES", "-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en"]
+        app.launch()
+        let card = app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.tap()
+        let done = app.buttons["fullScreenCardDone"]
+        XCTAssertTrue(done.waitForExistence(timeout: 8))
+        XCTAssertTrue(NSPredicate(format: "hittable == true").evaluate(with: done))
+        let center = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        center.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        XCTAssertTrue(done.waitForExistence(timeout: 3))
+        let returned = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: done)
+        XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 5), .completed)
+        center.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(card.isHittable)
+    }
+
     func testFullscreenEditPhotoChooserDismissesKeyboard() {
         let app = XCUIApplication()
         app.launchArguments = ["-UITestReset", "YES", "-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en"]

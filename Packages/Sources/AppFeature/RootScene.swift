@@ -393,7 +393,8 @@ public struct RootScene: Scene {
                         }
                         #endif
                     },
-                    sourceUsesWindowScene: listProjection != nil
+                    sourceUsesWindowScene: listProjection != nil,
+                    onDismissCancelled: { tappedCardDismissing = false }
                 )
                 .environment(\.windowSceneProjection, projection)
                 .transition(.identity)
