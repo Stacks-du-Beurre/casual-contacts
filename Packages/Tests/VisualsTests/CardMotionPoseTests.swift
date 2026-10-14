@@ -38,4 +38,14 @@ import CoreModels
         #expect(face.interpolated(to: gyro, progress: 0.5).projection!.backingDepthMeters == 0.03)
         #expect(face.interpolated(to: gyro, progress: 1) == gyro)
     }
+
+    @Test func referenceWeightEasesInsteadOfSwitchingImmediately() {
+        let start = pose(x: 0, distance: 0.4)
+        let target = CardMotionPose(attitude: .zero, projection:
+            start.projection!.expanding(progress: 1, sourceUsesWindowScene: true))
+        let mid = start.interpolated(to: target, progress: 0.5)
+        #expect(mid.projection!.cardCenteredReferenceWeight == 0.5)
+        #expect(start.interpolated(to: target, progress: 0).projection!.cardCenteredReferenceWeight == 1)
+        #expect(start.interpolated(to: target, progress: 1).projection!.cardCenteredReferenceWeight == 0)
+    }
 }

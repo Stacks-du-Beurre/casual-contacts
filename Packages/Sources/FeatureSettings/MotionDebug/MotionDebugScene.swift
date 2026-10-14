@@ -104,6 +104,11 @@ public struct MotionDebugScene: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .task {
+            // Ordinary settings suspend the hidden cards' motion stream.
+            // This diagnostic screen explicitly needs the sensor while visible;
+            // RootScene still keeps card rendering paused behind it.
+            service.start()
+            defer { service.stop() }
             #if os(iOS)
             reduceMotionActive = UIAccessibility.isReduceMotionEnabled
             #endif

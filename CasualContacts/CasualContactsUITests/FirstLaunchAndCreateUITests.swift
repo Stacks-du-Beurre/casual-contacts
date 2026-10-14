@@ -155,6 +155,44 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(share.waitForExistence(timeout: 5))
     }
 
+    func testSettingsSuspendMovingCardsAndResume() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
+                               "-MotionPerformanceHarness", "-PerformanceDiagnosticsRecord",
+                               "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES",
+                               "-FaceScene.cameraEnabled", "NO"]
+        app.launch()
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 8))
+        app.buttons["Settings"].tap()
+        let scene = app.buttons["3D scene"]
+        for _ in 0..<6 {
+            if scene.exists && scene.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(scene.waitForExistence(timeout: 5))
+        scene.tap()
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+        Thread.sleep(forTimeInterval: 3)
+        app.swipeUp()
+        app.swipeDown()
+        app.buttons["Done"].tap()
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Settings"].tap()
+        for _ in 0..<6 {
+            if scene.exists && scene.isHittable { break }
+            app.swipeUp()
+        }
+        scene.tap()
+        let prepare = app.buttons["preparePerformanceLog"]
+        for _ in 0..<10 {
+            if prepare.exists && prepare.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(prepare.waitForExistence(timeout: 5))
+        prepare.tap()
+        XCTAssertTrue(app.buttons["sharePerformanceLog"].waitForExistence(timeout: 5))
+    }
+
     private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES",

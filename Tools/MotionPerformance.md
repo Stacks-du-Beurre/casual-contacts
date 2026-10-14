@@ -108,3 +108,44 @@ load. Use Animation Hitches on a physical device with an optimized build to
 verify rendering deadlines and smoothness. Apple's guidance recommends a real
 device for realistic hitch measurements:
 https://developer.apple.com/documentation/xcode/improving-app-responsiveness
+
+## Build 60 exit and settings investigation
+
+The device recording covers 37.7 seconds with Low Power Mode off and normal
+thermal state. The three enter transitions have median callback gaps of
+17.04, 20.83, and 18.71 ms. The three exits have medians of 21.87, 29.58, and
+27.60 ms, with p95 gaps of 35.21, 35.22, and 32.97 ms. Settled list and
+fullscreen intervals are generally near 16.7 ms. No camera frames are stale;
+the largest gyro delivery and render ages are 16.36 and 24.41 ms. These data
+point to transition rendering work rather than delayed sensor delivery.
+
+The exit resumed list rendering through a separate 16 ms task while the zoom
+also ran. The hidden selected row still contained a complete card, including
+its backdrop samples. Its closing overlay also used the fullscreen reference
+until removal, although list cards use their own frame centers. Both identity
+layouts and their blur samples render during the layout morph; this remains
+part of the transition cost.
+
+The correction uses SwiftUI's animation scheduler for pose resumption, replaces
+the hidden selected row with an equal-size placeholder, and blends the overlay
+reference back to the list reference during the zoom. Motion resumes at the
+start of dismissal. The zoom curve and approved fullscreen layout are unchanged.
+
+Settings now suspend both the scene tracker and the root gyro stream. The list
+holds its last pose and eases back when settings close. The pause remains in
+effect through the Settings-to-3D-scene sheet handoff. Diagnostic context markers
+record suspension and resumption. The explicit Motion debug screen starts its
+sensor while visible; the cards behind it remain held.
+
+The optimized simulator photo run has five enter/exit cycles with active mock
+motion and 60 mm depth. Median exit gaps fell from 148.20 to 85.34 ms; p95 gaps
+were 221.95 and 221.34 ms. Entry medians were 133.58 and 130.15 ms. A repeated
+candidate run produced an 84.32 ms exit median. The no-photo candidate exit
+median is 69.91 ms. These are callback measurements, not presented FPS. The
+slow tail remains and the device comparison is still required.
+
+The settings UI test opens each sheet, scrolls, closes it, returns to the list,
+and exports diagnostics. Settled settings buckets contain no gyro or scene
+updates; the list resumes updates after dismissal. Unit tests check the
+projection endpoints, intermediate reference weights, pose easing, and the
+settings handoff's pause state.

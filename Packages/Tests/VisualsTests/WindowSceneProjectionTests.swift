@@ -48,4 +48,29 @@ import CoreModels
         #expect(reference.x == value.reference.x)
         #expect(reference.y == value.reference.y)
     }
+
+    @Test func returningCardMatchesItsListReferenceAtHandoff() {
+        let frame = CGRect(x: 16, y: 250, width: 370, height: 211)
+        let full = scene(cardCentered: false)
+        let list = scene(cardCentered: true)
+        let returned = full.expanding(progress: 0, sourceUsesWindowScene: true)
+        #expect(returned.reference(for: frame) == list.reference(for: frame))
+        #expect(returned.backingDepthMeters == list.backingDepthMeters)
+        let a = WindowPlaneProjection(eye: returned.eye, reference: returned.reference(for: frame), depth: 0.06)!
+        let b = WindowPlaneProjection(eye: list.eye, reference: list.reference(for: frame), depth: 0.06)!
+        #expect(a.translationX == b.translationX)
+        #expect(a.translationY == b.translationY)
+        #expect(a.scale == b.scale)
+    }
+
+    @Test func referenceBlendsWithoutChangingFullScreenCalibration() {
+        let frame = CGRect(x: 16, y: 250, width: 370, height: 211)
+        let full = scene(cardCentered: false)
+        let listReference = scene().reference(for: frame)
+        let mid = full.expanding(progress: 0.5, sourceUsesWindowScene: true).reference(for: frame)
+        #expect(abs(mid.x - (listReference.x + full.reference.x) / 2) < 1e-9)
+        #expect(abs(mid.y - (listReference.y + full.reference.y) / 2) < 1e-9)
+        #expect(full.expanding(progress: 1, sourceUsesWindowScene: true).reference(for: frame) == full.reference)
+        #expect(full.expanding(progress: 0, sourceUsesWindowScene: false).backingDepthMeters == 0)
+    }
 }

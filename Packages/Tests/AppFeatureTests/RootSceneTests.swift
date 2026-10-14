@@ -68,6 +68,8 @@ import StorageTestSupport
         let router = NavigationRouter()
         #expect(router.showingCreate == false)
         #expect(router.showingSettings == false)
+        #expect(router.showingSceneSettings == false)
+        #expect(router.pendingSceneSettings == false)
         #expect(router.showingAbout == false)
         #expect(router.showingInListDeveloperSettings == false)
         #expect(router.locationPrimerContext == nil)
@@ -91,6 +93,21 @@ import StorageTestSupport
         )
         router.selectedRecordForMediumDetail = record
         #expect(router.selectedRecordForMediumDetail?.id == record.id)
+    }
+
+    @Test func settingsHandoffKeepsCardsPausedUntilSceneSettingsClose() {
+        let router = NavigationRouter()
+        #expect(!router.settingsCoverCards)
+        router.showingSettings = true
+        #expect(router.settingsCoverCards)
+        router.pendingSceneSettings = true
+        router.showingSettings = false
+        #expect(router.settingsCoverCards)
+        router.showingSceneSettings = true
+        router.pendingSceneSettings = false
+        #expect(router.settingsCoverCards)
+        router.showingSceneSettings = false
+        #expect(!router.settingsCoverCards)
     }
 
     @Test func tappedRecordHidesSourceRowDuringInPlaceExpansion() {

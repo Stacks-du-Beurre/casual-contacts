@@ -10,10 +10,12 @@ public struct WindowSceneProjection: Equatable, Sendable {
     public let viewport: CGSize
     public let reverseGuillocheDepthOrder: Bool
     public let cardCenteredReference: Bool
+    public let cardCenteredReferenceWeight: Double
 
     public init(eye: ViewerPosition, reference: ViewerPosition, backingDepthMeters: Double,
                 spacing: Double, screenWidthMeters: Double, viewport: CGSize,
-                reverseGuillocheDepthOrder: Bool = false, cardCenteredReference: Bool = false) {
+                reverseGuillocheDepthOrder: Bool = false, cardCenteredReference: Bool = false,
+                cardCenteredReferenceWeight: Double? = nil) {
         self.eye = eye
         self.reference = reference
         self.backingDepthMeters = backingDepthMeters
@@ -22,6 +24,18 @@ public struct WindowSceneProjection: Equatable, Sendable {
         self.viewport = viewport
         self.reverseGuillocheDepthOrder = reverseGuillocheDepthOrder
         self.cardCenteredReference = cardCenteredReference
+        self.cardCenteredReferenceWeight = max(0, min(1, cardCenteredReferenceWeight ?? (cardCenteredReference ? 1 : 0)))
+    }
+
+    /// The same physical viewpoint, with a continuous reference handoff as a
+    /// card moves between its list frame and the full screen.
+    public func expanding(progress: Double, sourceUsesWindowScene: Bool) -> Self {
+        let t = max(0, min(1, progress))
+        return Self(eye: eye, reference: reference,
+                    backingDepthMeters: backingDepthMeters * (sourceUsesWindowScene ? 1 : t),
+                    spacing: spacing, screenWidthMeters: screenWidthMeters, viewport: viewport,
+                    reverseGuillocheDepthOrder: reverseGuillocheDepthOrder,
+                    cardCenteredReferenceWeight: sourceUsesWindowScene ? 1 - t : 0)
     }
 }
 
@@ -107,10 +121,12 @@ extension WindowSceneProjection {
                width: size.width, height: size.height)
     }
     func reference(for frame: CGRect) -> ViewerPosition {
-        guard cardCenteredReference else { return reference }
+        guard cardCenteredReferenceWeight > 0 else { return reference }
         let metersPerPoint = screenWidthMeters / max(Double(viewport.width), 1)
-        return ViewerPosition(x: Double(frame.midX - viewport.width / 2) * metersPerPoint,
-                              y: -Double(frame.midY - viewport.height / 2) * metersPerPoint,
+        let x = Double(frame.midX - viewport.width / 2) * metersPerPoint
+        let y = -Double(frame.midY - viewport.height / 2) * metersPerPoint
+        return ViewerPosition(x: reference.x + (x - reference.x) * cardCenteredReferenceWeight,
+                              y: reference.y + (y - reference.y) * cardCenteredReferenceWeight,
                               distance: reference.distance)
     }
 }

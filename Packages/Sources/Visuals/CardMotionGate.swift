@@ -11,6 +11,8 @@ public struct CardMotionGate<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rendered: CardMotionPose?
     @State private var livePose = LiveCardMotionPose()
+    @State private var resumeProgress = 0.0
+    @State private var resumeGeneration = 0
 
     public init(attitude: DeviceAttitude, paused: Bool,
                 @ViewBuilder content: @escaping (DeviceAttitude) -> Content) {
@@ -26,37 +28,59 @@ public struct CardMotionGate<Content: View>: View {
     public var body: some View {
         // Live motion goes straight to the card. Do not copy every camera
         // update through SwiftUI state and trigger another list render.
-        let pose = rendered ?? (paused ? livePose.value ?? incoming : incoming)
-        content(pose.attitude)
-            .environment(\.windowSceneProjection, pose.projection)
+        let start = paused ? livePose.renderedValue ?? rendered ?? livePose.value ?? incoming : rendered ?? incoming
+        return CardMotionSurface(start: start,
+                          target: paused ? start : incoming,
+                          progress: rendered == nil || paused ? 0 : resumeProgress,
+                          mailbox: livePose,
+                          content: content)
             .onChange(of: incoming, initial: true) { _, value in
+                // Hold the last visible pose before a suspended tracker clears
+                // its input; do not capture that cleared pose as the freeze.
+                if paused && rendered == nil { rendered = livePose.renderedValue ?? livePose.value ?? value }
                 livePose.value = value
-                if paused && rendered == nil { rendered = value }
             }
             .onChange(of: paused) { _, value in
-                if value { rendered = rendered ?? livePose.value ?? incoming }
-            }
-            .task(id: paused) {
-                guard !paused, let start = rendered else { return }
+                resumeGeneration += 1
+                let generation = resumeGeneration
+                if value {
+                    rendered = livePose.renderedValue ?? rendered ?? livePose.value ?? incoming
+                    resumeProgress = 0
+                    return
+                }
+                guard rendered != nil else { return }
                 guard !reduceMotion else { rendered = nil; return }
-                let clock = ContinuousClock()
-                let began = clock.now
-                while !Task.isCancelled {
-                    let elapsed = began.duration(to: clock.now)
-                    let seconds = Double(elapsed.components.seconds)
-                        + Double(elapsed.components.attoseconds) / 1e18
-                    let t = min(1, seconds / 0.35)
-                    if let latest = livePose.value {
-                        rendered = start.interpolated(to: latest, progress: t * t * (3 - 2 * t))
-                    }
-                    if t >= 1 {
+                // Share SwiftUI's render cadence with the zoom transition;
+                // a separate sleeping task used to publish a second pose
+                // update every 16 ms while the list was already redrawing.
+                withAnimation(.easeInOut(duration: 0.35), completionCriteria: .removed) {
+                    resumeProgress = 1
+                } completion: {
+                    if generation == resumeGeneration && !paused {
                         rendered = nil
-                        break
                     }
-                    do { try await Task.sleep(for: .milliseconds(16)) }
-                    catch { break }
                 }
             }
+    }
+}
+
+private struct CardMotionSurface<Content: View>: View, Animatable {
+    let start: CardMotionPose
+    let target: CardMotionPose
+    var progress: Double
+    let mailbox: LiveCardMotionPose
+    let content: (DeviceAttitude) -> Content
+
+    nonisolated var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        let pose = start.interpolated(to: target, progress: progress)
+        return content(pose.attitude)
+            .environment(\.windowSceneProjection, pose.projection)
+            .onChange(of: pose, initial: true) { _, value in mailbox.renderedValue = value }
     }
 }
 
@@ -64,6 +88,7 @@ public struct CardMotionGate<Content: View>: View {
 @MainActor
 private final class LiveCardMotionPose {
     var value: CardMotionPose?
+    var renderedValue: CardMotionPose?
 }
 
 struct CardMotionPose: Equatable {
@@ -83,7 +108,8 @@ struct CardMotionPose: Equatable {
                 backingDepthMeters: mix(a.backingDepthMeters, b.backingDepthMeters),
                 spacing: mix(a.spacing, b.spacing), screenWidthMeters: mix(a.screenWidthMeters, b.screenWidthMeters),
                 viewport: b.viewport, reverseGuillocheDepthOrder: b.reverseGuillocheDepthOrder,
-                cardCenteredReference: b.cardCenteredReference)
+                cardCenteredReference: b.cardCenteredReference,
+                cardCenteredReferenceWeight: mix(a.cardCenteredReferenceWeight, b.cardCenteredReferenceWeight))
         } else if let value = target.projection ?? projection {
             // If only one view uses face tracking, enter or leave perspective
             // through zero depth instead of changing rendering mode abruptly.
@@ -92,7 +118,8 @@ struct CardMotionPose: Equatable {
                 eye: value.eye, reference: value.reference, backingDepthMeters: depth,
                 spacing: value.spacing, screenWidthMeters: value.screenWidthMeters,
                 viewport: value.viewport, reverseGuillocheDepthOrder: value.reverseGuillocheDepthOrder,
-                cardCenteredReference: value.cardCenteredReference)
+                cardCenteredReference: value.cardCenteredReference,
+                cardCenteredReferenceWeight: value.cardCenteredReferenceWeight)
         } else {
             scene = nil
         }

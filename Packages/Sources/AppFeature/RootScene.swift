@@ -20,7 +20,7 @@ import UIKit
 public struct RootScene: Scene {
 
     @State private var environment: AppEnvironment
-    @State private var router = NavigationRouter()
+    @State private var router = NavigationRouter(showingSceneSettings: ProcessInfo.processInfo.arguments.contains("-ScreenshotSceneSettings"))
     @State private var currentAttitude = DeviceAttitude.zero
     @State private var tappedCardDismissing = false
     #if DEBUG
@@ -126,6 +126,10 @@ public struct RootScene: Scene {
         Self.rootLocale(for: appLanguagePreference.wrappedValue)
     }
 
+    private var cardAnimationsPaused: Bool {
+        router.settingsCoverCards
+    }
+
     static func deleteErrorMessage(forRecordName name: String, locale: Locale) -> String {
         let displayName = name.isEmpty
             ? ModuleLocalization.string("this contact", locale: locale)
@@ -152,8 +156,11 @@ public struct RootScene: Scene {
         FaceSceneHost(
             listVisible: !router.showingCreate && router.editingRecord == nil,
             expandedVisible: router.tappedRecord != nil,
+            animationsPaused: cardAnimationsPaused,
             attitude: currentAttitude,
-            firstCardCameraOffer: $firstCardCameraOffer
+            firstCardCameraOffer: $firstCardCameraOffer,
+            showingSceneSettings: $router.showingSceneSettings,
+            onSceneSettingsPresented: { router.pendingSceneSettings = false }
         ) { tracker, listProjection, projection, showSceneSettings in
             trackedRootContent(tracker: tracker, listProjection: listProjection, projection: projection, showSceneSettings: showSceneSettings)
         }
@@ -164,7 +171,7 @@ public struct RootScene: Scene {
                                     projection: WindowSceneProjection?,
                                     showSceneSettings: Binding<Bool>) -> some View {
         CardMotionGate(attitude: tracker.enabled ? tracker.renderingAttitude : currentAttitude,
-                       paused: router.tappedRecord != nil && !tappedCardDismissing) { renderedAttitude in
+                       paused: cardAnimationsPaused || (router.tappedRecord != nil && !tappedCardDismissing)) { renderedAttitude in
             RecordsListScene(
                 store: environment.recordStore,
                 paths: environment.cardPathProvider,
@@ -236,12 +243,14 @@ public struct RootScene: Scene {
             reduceMotionEnabled = UIAccessibility.isReduceMotionEnabled
             currentAttitude = .zero
             environment.motionService.resetZeroPoint()
-            environment.motionService.start()
+            if !cardAnimationsPaused && !reduceMotionEnabled && scenePhase == .active { environment.motionService.start() }
             for await raw in environment.motionService.attitude {
                 // Re-read @State each tick so mid-session toggles from the
                 // UIAccessibility notification propagate on the next gyro sample.
                 let enabled = reduceMotionEnabled
-                currentAttitude = ReducedMotionAdapter.attitude(raw: raw, reduceMotionEnabled: enabled)
+                if !cardAnimationsPaused {
+                    currentAttitude = ReducedMotionAdapter.attitude(raw: raw, reduceMotionEnabled: enabled)
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
@@ -252,7 +261,7 @@ public struct RootScene: Scene {
                 // straggler sample to .zero.
                 environment.motionService.stop()
                 currentAttitude = .zero
-            } else {
+            } else if !cardAnimationsPaused && scenePhase == .active {
                 // Resume gyro sampling on the existing stream.
                 currentAttitude = .zero
                 environment.motionService.resetZeroPoint()
@@ -265,7 +274,7 @@ public struct RootScene: Scene {
             // both `.active` and reduce-motion off.
             switch newPhase {
             case .active:
-                if !reduceMotionEnabled {
+                if !reduceMotionEnabled && !cardAnimationsPaused {
                     currentAttitude = .zero
                     environment.motionService.resetZeroPoint()
                     environment.motionService.start()
@@ -285,6 +294,12 @@ public struct RootScene: Scene {
             @unknown default:
                 break
             }
+        }
+        .onChange(of: cardAnimationsPaused, initial: true) { _, paused in
+            PerformanceDiagnostics.shared.event(paused ? "card_motion_suspended: settings" : "card_motion_resumed: settings")
+            if paused { environment.motionService.stop() }
+            else if !reduceMotionEnabled && scenePhase == .active { environment.motionService.start() }
+            PerformanceDiagnostics.shared.setContext(paused ? "settings" : router.tappedRecord == nil ? "list" : "fullscreen")
         }
         .sheet(isPresented: $router.showingCreate, onDismiss: {
             if pendingFirstCardCameraOffer {
@@ -374,7 +389,8 @@ public struct RootScene: Scene {
                             }
                         }
                         #endif
-                    }
+                    },
+                    sourceUsesWindowScene: listProjection != nil
                 )
                 .environment(\.windowSceneProjection, projection)
                 .transition(.identity)
@@ -442,7 +458,11 @@ public struct RootScene: Scene {
                 }
             )
         }
-        .sheet(isPresented: $router.showingSettings) {
+        .sheet(isPresented: $router.showingSettings, onDismiss: {
+            if router.pendingSceneSettings {
+                showSceneSettings.wrappedValue = true
+            }
+        }) {
             SettingsSheet(
                 onAbout: { router.showingAbout = true },
                 languagePreference: appLanguagePreference,
@@ -452,11 +472,8 @@ public struct RootScene: Scene {
                 onOpenLetterGallery: openLetterGallery,
                 onShowInListDeveloperSettings: showInListDeveloperSettings,
                 onShowSceneSettings: {
+                    router.pendingSceneSettings = true
                     router.showingSettings = false
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(350))
-                        showSceneSettings.wrappedValue = true
-                    }
                 },
                 readLocationAuthorization: { environment.locationService.currentAuthorization() },
                 onLocationToggleTapped: { await handleSettingsLocationToggleTapped() },

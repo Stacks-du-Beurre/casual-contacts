@@ -12,8 +12,11 @@ import DesignSystem
 struct FaceSceneHost<Content: View>: View {
     let listVisible: Bool
     let expandedVisible: Bool
+    let animationsPaused: Bool
     let attitude: DeviceAttitude
     @Binding var firstCardCameraOffer: Bool
+    @Binding var showingSceneSettings: Bool
+    let onSceneSettingsPresented: () -> Void
     let content: (FaceParallaxController, WindowSceneProjection?, WindowSceneProjection?, Binding<Bool>) -> Content
     @AppStorage("FaceScene.listEnabled") private var listEnabled = false
     @AppStorage("FaceScene.expandedEnabled") private var expandedEnabled = false
@@ -27,7 +30,6 @@ struct FaceSceneHost<Content: View>: View {
     @State private var diagnostics = PerformanceDiagnostics.shared
     @State private var diagnosticExportURL: URL?
     @State private var diagnosticExportFailed = false
-    @State private var showingSceneSettings = ProcessInfo.processInfo.arguments.contains("-ScreenshotSceneSettings")
     @AppStorage("FaceScene.backingDepthMM") private var backingDepthMM = 60.0
     @AppStorage("FaceScene.layerSpacing") private var layerSpacing = 1.0
     @AppStorage("FaceScene.smoothingMS") private var smoothingMS = 35.0
@@ -95,6 +97,7 @@ struct FaceSceneHost<Content: View>: View {
         .onChange(of: reduceMotion) { _, _ in updateTracking() }
         .onChange(of: listVisible) { _, _ in updateTracking() }
         .onChange(of: expandedVisible) { _, _ in updateTracking() }
+        .onChange(of: animationsPaused) { _, _ in updateTracking() }
         .onChange(of: listEnabled) { _, _ in updateTracking() }
         .onChange(of: expandedEnabled) { _, _ in updateTracking() }
         .onChange(of: cameraHeightMM) { _, value in tracker.setCameraHeight(value / 1000) }
@@ -250,6 +253,7 @@ struct FaceSceneHost<Content: View>: View {
             .foregroundStyle(SettingsPalette.label(scheme))
             .background(SettingsPalette.sheetBackground(scheme))
             .onAppear {
+                onSceneSettingsPresented()
                 diagnostics.setContext("settings")
                 #if DEBUG
                 if ProcessInfo.processInfo.arguments.contains("-ScreenshotCameraExplanation") { setCameraExplanationPresented(true) }
@@ -275,7 +279,9 @@ struct FaceSceneHost<Content: View>: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .presentationBackground(SettingsPalette.sheetBackground(scheme))
-        .onDisappear { diagnostics.setContext(expandedVisible ? "fullscreen" : "list") }
+        .onDisappear {
+            if !animationsPaused { diagnostics.setContext(expandedVisible ? "fullscreen" : "list") }
+        }
         .alert(ModuleLocalization.string("Could not export log. Try again.", locale: locale), isPresented: $diagnosticExportFailed) {
             Button(ModuleLocalization.string("Done", locale: locale), role: .cancel) {}
         }
@@ -411,7 +417,7 @@ struct FaceSceneHost<Content: View>: View {
         tracker.smoothingSeconds = smoothingMS / 1000
         tracker.setCameraHeight(cameraHeightMM / 1000)
         let enabled = expandedVisible ? expandedEnabled : (listVisible && listEnabled)
-        tracker.setActive(scenePhase == .active && !reduceMotion && (listVisible || expandedVisible))
+        tracker.setActive(scenePhase == .active && !reduceMotion && !animationsPaused && (listVisible || expandedVisible))
         if tracker.enabled != enabled { tracker.setEnabled(enabled) }
     }
 }

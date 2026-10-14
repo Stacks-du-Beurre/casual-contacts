@@ -581,23 +581,32 @@ private struct RecordCardRow: View {
     @State private var geometry = CardRowGeometry()
 
     var body: some View {
-        CardView(
-            record: record,
-            size: .small,
-            attitude: CardRowMotionPolicy.renderedAttitude(attitude),
-            paths: paths,
-            photo: photo,
-            photoSize: photoSize
-        )
+        Group {
+            if isHidden {
+                // The zoom overlay owns this card until it returns. An opacity-zero
+                // CardView still rebuilt its backdrop and blur samples on exit.
+                Color.clear
+            } else {
+                CardView(
+                    record: record,
+                    size: .small,
+                    attitude: CardRowMotionPolicy.renderedAttitude(attitude),
+                    paths: paths,
+                    photo: photo,
+                    photoSize: photoSize
+                )
+                .frame(height: 211)
+                .environment(\.liveWindowGeometry, usesLiveGeometry)
+                .environment(\.windowCardFrame, usesLiveGeometry || geometry.frame == .zero ? nil : geometry.frame)
+                .drawingGroup(opaque: false)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+        }
         .frame(height: 211)
-        .environment(\.liveWindowGeometry, usesLiveGeometry)
-        .environment(\.windowCardFrame, usesLiveGeometry || geometry.frame == .zero ? nil : geometry.frame)
-        .drawingGroup(opaque: false)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("recordCard_\(record.id.uuidString)")
         .zoomSource(.card(record.id))
-        .opacity(isHidden ? 0 : 1)
+        .accessibilityHidden(isHidden)
         .onGeometryChange(for: CardFrameSnapshot.self) { geo in
             CardFrameSnapshot(global: geo.frame(in: .global),
                               scroll: geo.frame(in: .named(scrollCoordinateSpace)))

@@ -11,6 +11,7 @@ public struct FullScreenCardPresentation: View {
     public let paths: any CardPathProvider
     public let photo: Image?
     public let photoSize: CGSize?
+    public let sourceUsesWindowScene: Bool
     public let onEdit: () -> Void
     public let onDelete: () -> Void
     public let onDismissStarted: () -> Void
@@ -24,13 +25,15 @@ public struct FullScreenCardPresentation: View {
     public init(record: Record, sourceFrame: CGRect, attitude: DeviceAttitude,
                 paths: any CardPathProvider, photo: Image?, photoSize: CGSize?,
                 onEdit: @escaping () -> Void, onDelete: @escaping () -> Void,
-                onDismissStarted: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+                onDismissStarted: @escaping () -> Void, onDismiss: @escaping () -> Void,
+                sourceUsesWindowScene: Bool = true) {
         self.record = record
         self.sourceFrame = sourceFrame
         self.attitude = attitude
         self.paths = paths
         self.photo = photo
         self.photoSize = photoSize
+        self.sourceUsesWindowScene = sourceUsesWindowScene
         self.onEdit = onEdit
         self.onDelete = onDelete
         self.onDismissStarted = onDismissStarted
@@ -47,6 +50,7 @@ public struct FullScreenCardPresentation: View {
                                          photo: photo, photoSize: photoSize,
                                          source: reduceMotion ? fullFrame : start, destination: fullFrame,
                                          safeArea: safeGeometry.safeAreaInsets,
+                                         sourceUsesWindowScene: sourceUsesWindowScene,
                                          progress: expanded ? 1 : 0)
 
                     HStack {
@@ -149,13 +153,15 @@ private struct ExpandingCardSurface: View {
     let source: CGRect
     let destination: CGRect
     let safeArea: EdgeInsets
+    let sourceUsesWindowScene: Bool
     var progress: CGFloat
 
     var body: some View {
         CardView(record: record, size: .large, attitude: attitude, paths: paths,
                  photo: photo, photoSize: photoSize)
             .modifier(CardExpansionGeometry(source: source, destination: destination,
-                                            safeArea: safeArea, progress: progress))
+                                            safeArea: safeArea, sourceUsesWindowScene: sourceUsesWindowScene,
+                                            progress: progress))
     }
 }
 
@@ -165,6 +171,8 @@ private struct CardExpansionGeometry: AnimatableModifier {
     let source: CGRect
     let destination: CGRect
     let safeArea: EdgeInsets
+    let sourceUsesWindowScene: Bool
+    @Environment(\.windowSceneProjection) private var scene
     var progress: CGFloat
 
     nonisolated var animatableData: CGFloat {
@@ -189,6 +197,8 @@ private struct CardExpansionGeometry: AnimatableModifier {
             )
             .frame(width: frame.width, height: frame.height)
             .environment(\.windowCardFrame, frame)
+            .environment(\.windowSceneProjection, scene?.expanding(progress: Double(progress),
+                                                                  sourceUsesWindowScene: sourceUsesWindowScene))
             .clipShape(RoundedRectangle(cornerRadius: 4 * (1 - progress)))
             .position(x: frame.midX - destination.minX, y: frame.midY - destination.minY)
     }

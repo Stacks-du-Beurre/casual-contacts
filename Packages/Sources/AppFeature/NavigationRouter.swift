@@ -19,7 +19,12 @@ public final class NavigationRouter {
 
     public var showingCreate = false
     public var showingSettings = false
+    public var showingSceneSettings = false
+    public var pendingSceneSettings = false
     public var showingAbout = false
+    var settingsCoverCards: Bool {
+        showingSettings || showingSceneSettings || pendingSceneSettings || showingAbout
+    }
     public var showingInListDeveloperSettings = false
     public var locationPrimerContext: LocationPrimerContext?
     public var selectedRecordForMediumDetail: Record?
@@ -33,7 +38,9 @@ public final class NavigationRouter {
     /// ever observed in DEBUG builds.
     public var showingDebugLetterGallery: Bool = false
 
-    public init() {}
+    public init(showingSceneSettings: Bool = false) {
+        self.showingSceneSettings = showingSceneSettings
+    }
 
     public func clearSelections<S: Sequence>(keeping ids: S) where S.Element == Record.ID {
         let kept = Set(ids)
