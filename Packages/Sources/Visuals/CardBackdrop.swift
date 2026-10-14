@@ -111,7 +111,8 @@ public struct CardBackdrop: View {
                 tint: .white,
                 attitude: rotationGuillocheAttitude,
                 usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
-                reveal: reveal
+                reveal: reveal,
+                minimumOpacity: Self.rotationOpacityFloor(for: record.metadata.timeOfDay)
             )
             .equatable()
             .offset(rotationGuillocheOffset)
@@ -147,7 +148,7 @@ public struct CardBackdrop: View {
                 reveal: reveal
             )
             .frame(width: 184, height: 160)
-            .opacity(0.55)
+            .opacity(Self.blendOpacity(for: record.metadata.timeOfDay))
         }
         .onAppear {
             // Snap to the current visibility on first render so stable views
@@ -177,6 +178,30 @@ public struct CardBackdrop: View {
             withAnimation(.linear(duration: Self.revealDuration)) {
                 reveal = shown ? 1 : 0
             }
+        }
+    }
+
+    // Raise contrast on bright gradients; retain the existing night opacities
+    // and any user-selected rotation opacity above these measured floors.
+    static func rotationOpacityFloor(for time: TimeOfDay) -> Double {
+        switch time {
+        case .dawn: 0.37
+        case .sunrise: 0.42
+        case .midday: 0.43
+        case .sunset: 0.37
+        case .dusk: 0.25
+        case .night, .midnight: 0
+        }
+    }
+
+    static func blendOpacity(for time: TimeOfDay) -> Double {
+        switch time {
+        case .dawn: 0.77
+        case .sunrise: 0.87
+        case .midday: 0.89
+        case .sunset: 0.71
+        case .dusk: 0.60
+        case .night, .midnight: 0.55
         }
     }
 

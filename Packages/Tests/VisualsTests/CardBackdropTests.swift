@@ -44,6 +44,17 @@ import CoreModels
         ).body
     }
 
+    @Test func contrastAdjustmentRaisesSelectedBackgrounds() {
+        for time in [TimeOfDay.night, .midnight] {
+            #expect(CardBackdrop.rotationOpacityFloor(for: time) == 0)
+            #expect(CardBackdrop.blendOpacity(for: time) == 0.55)
+        }
+        for time in [TimeOfDay.dawn, .sunrise, .midday, .sunset, .dusk] {
+            #expect(CardBackdrop.rotationOpacityFloor(for: time) > 0.23)
+            #expect(CardBackdrop.blendOpacity(for: time) > 0.55)
+        }
+    }
+
     @Test func rotationGuillocheUsageSeparatesPhotoCards() {
         #expect(CardBackdrop.rotationGuillocheUsage(hasPhoto: false) == .card)
         #expect(CardBackdrop.rotationGuillocheUsage(hasPhoto: true) == .cardPhoto)

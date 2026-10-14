@@ -93,9 +93,9 @@ public final class PhotoCache {
                 kCGImageSourceThumbnailMaxPixelSize: 512
               ] as CFDictionary) else { return nil }
         let image = CIImage(cgImage: thumbnail)
-        // Approximately 15 points when enlarged to a 10× phone-width backing.
+        // Approximately 7 points when enlarged to a 10× phone-width backing.
         // Work at thumbnail resolution; no blur filter runs during card motion.
-        let radius = 15 * Double(thumbnail.width) / (393 * 10)
+        let radius = 7 * Double(thumbnail.width) / (393 * 10)
         let blurred = image.clampedToExtent()
             .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: radius])
             .cropped(to: image.extent)

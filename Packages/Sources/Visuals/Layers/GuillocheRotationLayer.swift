@@ -7,6 +7,7 @@ public struct GuillocheRotationLayer: View, Animatable, Equatable {
     nonisolated public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.paths == rhs.paths && lhs.tint == rhs.tint && lhs.attitude == rhs.attitude
             && lhs.usage == rhs.usage && lhs.reveal == rhs.reveal
+            && lhs.minimumOpacity == rhs.minimumOpacity
     }
 
     /// Which calling context the layer is used in — picks the matching
@@ -22,6 +23,7 @@ public struct GuillocheRotationLayer: View, Animatable, Equatable {
     public let tint: Color
     public let attitude: DeviceAttitude
     public let usage: Usage
+    public let minimumOpacity: Double
     public var reveal: Double
 
     /// `Animatable` hook — SwiftUI interpolates `reveal` between frames via
@@ -42,21 +44,23 @@ public struct GuillocheRotationLayer: View, Animatable, Equatable {
         tint: Color = CCDesign.Colors.L4,
         attitude: DeviceAttitude = .zero,
         usage: Usage = .card,
-        reveal: Double = 1.0
+        reveal: Double = 1.0,
+        minimumOpacity: Double = 0
     ) {
         self.paths = paths
         self.tint = tint
         self.attitude = attitude
         self.usage = usage
         self.reveal = reveal
+        self.minimumOpacity = minimumOpacity
     }
 
     /// Stroke opacity, sourced from the per-usage tuning slider so the dev
     /// panel can dial card variants and empty-state independently.
     private var opacity: Double {
         switch usage {
-        case .card: tuning.cardOpacity
-        case .cardPhoto: tuning.cardPhotoOpacity
+        case .card: max(tuning.cardOpacity, minimumOpacity)
+        case .cardPhoto: max(tuning.cardPhotoOpacity, minimumOpacity)
         case .emptyState: tuning.emptyStateOpacity
         }
     }
