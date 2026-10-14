@@ -22,6 +22,8 @@ public final class PhotoFocusTuning {
 
         /// Opacity of the luminosity-blended photo over the card backdrop.
         public static let opacity: Double = VisualDeveloperSettingsDefaults.zodiacAndPhoto.photoOpacity
+
+        public static let simplePhoto = true
     }
 
     /// Slider value 1.0 maps to this multiplier on scaledToFill, so the face
@@ -56,13 +58,14 @@ public final class PhotoFocusTuning {
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.simplePhoto = defaults.bool(forKey: Key.simplePhoto)
+        self.simplePhoto = defaults.object(forKey: Key.simplePhoto) == nil
+            ? Defaults.simplePhoto : defaults.bool(forKey: Key.simplePhoto)
         self.faceZoom = Self.read(defaults, Key.faceZoom, fallback: Defaults.faceZoom)
         self.opacity = Self.read(defaults, Key.opacity, fallback: Defaults.opacity)
     }
 
     public func reset() {
-        simplePhoto = false
+        simplePhoto = Defaults.simplePhoto
         faceZoom = Defaults.faceZoom
         opacity = Defaults.opacity
     }
