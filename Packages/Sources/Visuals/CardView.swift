@@ -25,6 +25,7 @@ public struct CardView: View {
     @Environment(\.windowSceneProjection) private var windowScene
     @Environment(\.windowCardFrame) private var cardFrame
     @Environment(\.liveWindowGeometry) private var liveGeometry
+    @Environment(\.cardMaterialInteractionActive) private var materialInteractionActive
 
     public init(
         record: Record,
@@ -49,11 +50,18 @@ public struct CardView: View {
     public var body: some View {
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
-            // Build the backdrop view value once per body evaluation and hand the
-            // same struct to the three consumers (card background, name hologram
-            // sample, location pill sample) instead of reconstructing it through
-            // three separate `@ViewBuilder` closures.
+            // Keep the visible artwork live. Text materials can reuse a
+            // prepared scene sample while scrolling or zooming.
             let sharedBackdrop = backdrop()
+            let sampledBackdrop = CardMaterialSample(
+                recordKey: record.hashValue ^ (photo == nil ? 0 : 1),
+                attitude: attitude,
+                paused: Self.shouldHoldMaterial(liveGeometry: liveGeometry || materialInteractionActive, size: size, progress: expansionProgress),
+                size: geo.size,
+                frame: cardFrame ?? geo.frame(in: .global)
+            ) { sampledAttitude, snapshot in
+                backdrop(attitude: sampledAttitude, snapshot: snapshot)
+            }
             ZStack {
                 // Developer toggle (`CardBlendTuning.hideBackdrop`) omits the
                 // backdrop from both the rendered card and the text layer's
@@ -68,7 +76,7 @@ public struct CardView: View {
                 if size != .large {
                     ornaments().padding(contentInsets)
                 } else {
-                    fullScreenIdentity(layout: layout, backdrop: sharedBackdrop)
+                    fullScreenIdentity(layout: layout, backdrop: sampledBackdrop)
                         .opacity(expansionProgress)
                 }
 
@@ -83,7 +91,7 @@ public struct CardView: View {
                         if blendTuning.hideBackdrop {
                             Color.clear
                         } else {
-                            sharedBackdrop
+                            sampledBackdrop
                         }
                     }
                 )
@@ -101,8 +109,16 @@ public struct CardView: View {
             .environment(\.windowCardSize, geo.size)
             .environment(\.windowCardFrame, liveGeometry ? nil : cardFrame ?? geo.frame(in: .global))
         }
+        .environment(\.usesCachedCardMaterials, true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityLabel(for: record))
+    }
+
+    private static func shouldHoldMaterial(liveGeometry: Bool, size: CardSize, progress: CGFloat) -> Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-MotionLiveMaterials") { return false }
+        #endif
+        return liveGeometry || (size == .large && progress < 1)
     }
 
     private static let cardCoordinateSpace = "CardScene"
@@ -161,7 +177,8 @@ public struct CardView: View {
     }
 
     @ViewBuilder
-    private func backdrop() -> some View {
+    private func backdrop(attitude sampledAttitude: DeviceAttitude? = nil, snapshot: Bool = false) -> some View {
+        let attitude = sampledAttitude ?? self.attitude
         // Use `.overlay(alignment:)` to position the constellation at the
         // top-trailing corner of `CardBackdrop`. The previous implementation
         // wrapped the `ZodiacLayer` in `.frame(maxWidth: .infinity, maxHeight:
@@ -179,7 +196,8 @@ public struct CardView: View {
             attitude: attitude,
             paths: paths,
             photo: photo,
-            photoSize: photoSize
+            photoSize: photoSize,
+            isStaticSample: snapshot
         )
         .overlay(alignment: .topTrailing) {
             // Zodiac stars (constellation): 100×90 pinned to the right edge,
@@ -190,7 +208,7 @@ public struct CardView: View {
                 ZodiacLayer(sign: sign, attitude: attitude, variant: .constellation, parallax: false)
                     .frame(width: 100, height: 90)
                     .padding(.top, 37)
-                    .offset(depthOffset(layer: depthTuning.zodiacConstellationLayer))
+                    .offset(depthOffset(layer: depthTuning.zodiacConstellationLayer, attitude: attitude))
                     .windowDepth(0.25)
                     .accessibilityHidden(true)
             }
@@ -225,11 +243,11 @@ public struct CardView: View {
     }
 
     /// Depth-layer translation matching the card's blend stack physics.
-    private func depthOffset(layer: Int) -> CGSize {
+    private func depthOffset(layer: Int, attitude sampledAttitude: DeviceAttitude? = nil) -> CGSize {
         if windowScene != nil { return .zero }
         return GuillocheBlendLayer.depthOffset(
             layer: layer,
-            attitude: attitude,
+            attitude: sampledAttitude ?? attitude,
             depthScale: blendTuning.depthScale,
             maxLayer: CardElementDepthTuning.layerRange.upperBound,
             reverseDepthOrder: blendTuning.reverseDepthOrder,

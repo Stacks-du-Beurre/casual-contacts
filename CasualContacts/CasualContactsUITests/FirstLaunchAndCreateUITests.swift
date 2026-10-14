@@ -120,14 +120,27 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionTransitions(withPhoto: true)
     }
 
+    func testFullscreenTransitionsWithLiveMaterialsAndPhoto() {
+        runMotionTransitions(withPhoto: true, liveMaterials: true)
+    }
+
     func testDevicePerformanceLogRecordsMovingTransitions() {
         runMotionTransitions(withPhoto: true, diagnostics: true)
     }
     func testListScrollsWithContinuousMotionAndPhoto() {
+        runMotionScrolls(liveMaterials: false)
+    }
+
+    func testListScrollsWithLiveMaterialsAndContinuousMotionAndPhoto() {
+        runMotionScrolls(liveMaterials: true)
+    }
+
+    private func runMotionScrolls(liveMaterials: Bool) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
                                "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
+        if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         app.launch()
         Thread.sleep(forTimeInterval: 21)
         XCTAssertTrue(app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"].exists)
@@ -193,13 +206,14 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sharePerformanceLog"].waitForExistence(timeout: 5))
     }
 
-    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false) {
+    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false, liveMaterials: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES",
                                "-ScreenshotLanguage", "en", "-MotionPerformanceHarness",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES",
                                "-FaceScene.cameraEnabled", "NO"]
         if withPhoto { app.launchArguments.append("-MotionHarnessPhoto") }
+        if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         if diagnostics { app.launchArguments.append("-PerformanceDiagnosticsRecord") }
         app.launch()
         let card = app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"]
@@ -209,6 +223,24 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         // accessibility snapshots while animation frame timings are recorded.
         Thread.sleep(forTimeInterval: 25)
         XCTAssertTrue(app.buttons["fullScreenCardDone"].waitForNonExistence(timeout: 8))
+        if diagnostics {
+            app.buttons["Settings"].tap()
+            let scene = app.buttons["3D scene"]
+            for _ in 0..<6 {
+                if scene.exists && scene.isHittable { break }
+                app.swipeUp()
+            }
+            XCTAssertTrue(scene.waitForExistence(timeout: 5))
+            scene.tap()
+            let prepare = app.buttons["preparePerformanceLog"]
+            for _ in 0..<10 {
+                if prepare.exists && prepare.isHittable { break }
+                app.swipeUp()
+            }
+            XCTAssertTrue(prepare.waitForExistence(timeout: 5))
+            prepare.tap()
+            XCTAssertTrue(app.buttons["sharePerformanceLog"].waitForExistence(timeout: 8))
+        }
     }
 
     func testFirstLaunchShowsEmptyState() {

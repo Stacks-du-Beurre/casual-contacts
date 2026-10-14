@@ -15,6 +15,7 @@ import SwiftUI
 /// path when `HologramPill` was folded into `HologramText`. Use this
 /// wherever you need the chrome without the luminosity hologram texture.
 public struct BackdropBlurPill<Backdrop: View, Content: View>: View {
+    @Environment(\.usesCachedCardMaterials) private var usesCachedMaterial
 
     public let fill: Color
     public let blurRadius: CGFloat
@@ -58,10 +59,17 @@ public struct BackdropBlurPill<Backdrop: View, Content: View>: View {
                 GeometryReader { geo in
                     let frame = geo.frame(in: .named(coordinateSpaceName))
                     ZStack(alignment: .topLeading) {
-                        backdrop
-                            .frame(width: backdropSize.width, height: backdropSize.height)
-                            .offset(x: -frame.minX, y: -frame.minY)
-                            .blur(radius: blurRadius)
+                        if usesCachedMaterial {
+                            backdrop
+                                .frame(width: backdropSize.width, height: backdropSize.height)
+                                .offset(x: -frame.minX, y: -frame.minY)
+                                .environment(\.cardMaterialBlurRadius, blurRadius)
+                        } else {
+                            backdrop
+                                .frame(width: backdropSize.width, height: backdropSize.height)
+                                .offset(x: -frame.minX, y: -frame.minY)
+                                .blur(radius: blurRadius)
+                        }
 
                         fill
                     }

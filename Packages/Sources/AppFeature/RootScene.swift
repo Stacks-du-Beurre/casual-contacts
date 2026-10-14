@@ -210,6 +210,7 @@ public struct RootScene: Scene {
                 },
                 onDistanceSortRequest: handleDistanceSortRequested
             )
+            .environment(\.cardMaterialInteractionActive, router.tappedRecord != nil)
         }
         .environment(\.windowSceneProjection, listProjection)
         .onChange(of: environment.recordStore.records.map(\.id)) { _, ids in

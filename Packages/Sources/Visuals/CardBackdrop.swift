@@ -13,6 +13,7 @@ public struct CardBackdrop: View {
     public let photo: Image?
     public let photoSize: CGSize?
     public let showsGuilloche: Bool
+    public let isStaticSample: Bool
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
@@ -36,7 +37,8 @@ public struct CardBackdrop: View {
         paths: any CardPathProvider,
         photo: Image? = nil,
         photoSize: CGSize? = nil,
-        showsGuilloche: Bool = true
+        showsGuilloche: Bool = true,
+        isStaticSample: Bool = false
     ) {
         self.record = record
         self.attitude = attitude
@@ -44,10 +46,15 @@ public struct CardBackdrop: View {
         self.photo = photo
         self.photoSize = photoSize
         self.showsGuilloche = showsGuilloche
+        self.isStaticSample = isStaticSample
     }
 
     public var body: some View {
         let accoutrements = record.accoutrements
+        let renderedReveal = isStaticSample ? (showsGuilloche ? 1.0 : 0.0) : self.reveal
+        let swirlPaths = isStaticSample
+            ? GuillocheRotationLayer.swirlPaths(from: paths.rotationPaths(for: accoutrements.letter).first)
+            : cachedSwirlPaths
         let density: CCVisuals.Guilloche.LineDensity = .cards
         // While the guilloche is visible we use the live letter; during the
         // exit animation we freeze on the letter that was last shown so the
@@ -107,11 +114,11 @@ public struct CardBackdrop: View {
             // animate per-path opacity into and out of view. At `reveal == 0`
             // each layer short-circuits stroking so the cost is negligible.
             GuillocheRotationLayer(
-                paths: cachedSwirlPaths,
+                paths: swirlPaths,
                 tint: .white,
                 attitude: rotationGuillocheAttitude,
                 usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
-                reveal: reveal,
+                reveal: renderedReveal,
                 minimumOpacity: Self.rotationOpacityFloor(for: record.metadata.timeOfDay)
             )
             .equatable()
@@ -145,7 +152,7 @@ public struct CardBackdrop: View {
                 movementScaleY: blendTuning.guillocheMovementScaleY,
                 perspectiveAmount: elementDepthTuning.perspectiveAmount,
                 skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
-                reveal: reveal
+                reveal: renderedReveal
             )
             .frame(width: 184, height: 160)
             .opacity(Self.blendOpacity(for: record.metadata.timeOfDay))

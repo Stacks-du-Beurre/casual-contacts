@@ -60,6 +60,17 @@ public struct RecordsListScene: View {
     @State private var deleteErrorMessage: String?
     @State private var sortCache = RecordsListSortCache()
     @State private var isScrolling = false
+    #if DEBUG
+    @State private var harnessScrolling = false
+    #endif
+
+    private var renderingDuringScroll: Bool {
+        #if DEBUG
+        isScrolling || harnessScrolling
+        #else
+        isScrolling
+        #endif
+    }
     @Binding private var sortOption: SortOption
     @Binding private var currentLocation: LocationInfo?
     @Binding private var pendingDeleteRecord: Record?
@@ -417,7 +428,7 @@ public struct RecordsListScene: View {
                                                 photo: photoFor(record),
                                                 photoSize: photoSizeFor(record),
                                                 isHidden: hiddenRecordID == record.id,
-                                                usesLiveGeometry: isScrolling,
+                                                usesLiveGeometry: renderingDuringScroll,
                                                 viewportHeight: listProxy.size.height,
                                                 scrollCoordinateSpace: Self.scrollCoordinateSpace,
                                                 onTap: onTapRecord
@@ -449,6 +460,8 @@ public struct RecordsListScene: View {
                                   let first = rows.first?.id, let last = rows.last?.id else { return }
                             do {
                                 try await Task.sleep(for: .seconds(2))
+                                harnessScrolling = true
+                                defer { harnessScrolling = false }
                                 for _ in 0..<5 {
                                     TransitionMotionMetrics.shared.begin("scroll")
                                     withAnimation(.linear(duration: 1)) { scrollProxy.scrollTo(last, anchor: .bottom) }

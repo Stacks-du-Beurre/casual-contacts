@@ -179,3 +179,37 @@ samples, a combined Canvas, and an atlas shader did not improve all
 interactions and were discarded. The blur and guilloche renderer remain
 unchanged. A new device recording is required to assess the retained changes,
 with the same Low Power Mode setting as the comparison when possible.
+
+## Cached interaction materials
+
+Low Power Mode remains a supported optimization condition. The card artwork,
+face/gyro inputs, and foreground hologram textures remain live. Only the hidden
+scene copies used by text blur materials reuse a prepared bitmap during scroll
+and zoom. The bitmap includes the guilloche at its settled reveal state. Blur
+is rendered into that bitmap once. Live materials return through a 180 ms
+crossfade. List materials remain held through fullscreen dismissal, although
+the visible list artwork resumes immediately.
+
+Preparation starts after 500 ms of settled activity. It is cancelled during
+interactions, covered settings, and inactive scene phases. The cache has a
+16 MiB cost limit; exact-size and fallback entries both count against that
+budget. It contains generated card imagery in memory and does not write files.
+Cold or evicted entries use the live material until a sample is available.
+Diagnostic events record cache availability and preparation duration, without
+images or viewpoint coordinates. Simulator preparation durations were roughly
+1–2 ms per image. Settings diagnostics contain no preparations between the
+suspension and resumption markers, and settled buckets have no sensor updates.
+
+The scripted scroll harness now explicitly activates the scrolling geometry
+policy. ScrollViewReader animations did not reliably report the same phases as
+finger scrolling. `-MotionLiveMaterials` is a DEBUG-only comparison switch. The
+optimized build with that switch measured median/p95 gaps of 89.86/113.47 ms
+entering, 82.64/167.39 ms exiting, and 63.42/432.92 ms scrolling. The retained
+cache-enabled run measured 35.09/57.37, 55.60/83.15, and 47.47/331.85 ms, with
+five cycles per phase and nonzero mock motion/depth throughout. These compare
+the two material policies within the same renderer, not GPU-presented FPS or a
+controlled physical-device build 62 comparison. The slower scroll tail remains.
+
+Focused rendering tests check live blur pixel parity and verify that static
+samples include guilloche without waiting for an appearance/reveal callback.
+The on-device Low Power Mode comparison is still required.

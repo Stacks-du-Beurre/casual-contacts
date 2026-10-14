@@ -7,6 +7,7 @@ public struct CardMotionGate<Content: View>: View {
     private let attitude: DeviceAttitude
     private let paused: Bool
     private let content: (DeviceAttitude) -> Content
+    @Environment(\.cardRenderingSuspended) private var renderingSuspended
     @Environment(\.windowSceneProjection) private var projection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rendered: CardMotionPose?
@@ -34,6 +35,7 @@ public struct CardMotionGate<Content: View>: View {
                           progress: rendered == nil || paused ? 0 : resumeProgress,
                           mailbox: livePose,
                           content: content)
+            .environment(\.cardRenderingSuspended, paused || renderingSuspended)
             .onChange(of: incoming, initial: true) { _, value in
                 // Hold the last visible pose before a suspended tracker clears
                 // its input; do not capture that cleared pose as the freeze.

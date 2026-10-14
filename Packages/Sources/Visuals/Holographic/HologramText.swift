@@ -30,6 +30,7 @@ import CoreModels
 /// Opacity + motion values read from `HologramTuning.shared`, so the
 /// developer-settings panel can live-tune the stack.
 public struct HologramText<Backdrop: View>: View {
+    @Environment(\.usesCachedCardMaterials) private var usesCachedMaterial
 
     public let text: String
     public let font: Font
@@ -103,11 +104,19 @@ public struct HologramText<Backdrop: View>: View {
 
             ZStack {
                 if showsBackdropBlur {
-                    backdrop
-                        .frame(width: backdropSize.width, height: backdropSize.height)
-                        .offset(x: -frame.minX, y: -frame.minY)
-                        .blur(radius: blurRadius)
-                        .opacity(tuning.backdropBlurOpacity)
+                    if usesCachedMaterial {
+                        backdrop
+                            .frame(width: backdropSize.width, height: backdropSize.height)
+                            .offset(x: -frame.minX, y: -frame.minY)
+                            .environment(\.cardMaterialBlurRadius, blurRadius)
+                            .opacity(tuning.backdropBlurOpacity)
+                    } else {
+                        backdrop
+                            .frame(width: backdropSize.width, height: backdropSize.height)
+                            .offset(x: -frame.minX, y: -frame.minY)
+                            .blur(radius: blurRadius)
+                            .opacity(tuning.backdropBlurOpacity)
+                    }
                 }
 
                 Color.white
