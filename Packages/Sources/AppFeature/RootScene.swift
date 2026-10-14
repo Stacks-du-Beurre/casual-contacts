@@ -210,6 +210,8 @@ public struct RootScene: Scene {
                 },
                 onDistanceSortRequest: handleDistanceSortRequested
             )
+            // Keep the destination card stationary until the zoom lands.
+            .scrollDisabled(tappedCardDismissing)
             .environment(\.cardMaterialInteractionActive, router.tappedRecord != nil)
         }
         .environment(\.windowSceneProjection, listProjection)
