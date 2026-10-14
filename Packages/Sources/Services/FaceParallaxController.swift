@@ -124,13 +124,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let generation = orientations.reset()
         if motion.isDeviceMotionAvailable {
             motion.deviceMotionUpdateInterval = 1.0 / 60
-            let buffer = orientations
-            motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: gyroQueue) { sample, _ in
-                guard let sample else { return }
-                let q = sample.attitude.quaternion
-                buffer.append(.init(time: sample.timestamp, value: Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)),
-                              generation: generation, deliveredAt: CACurrentMediaTime())
-            }
+            motion.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: gyroQueue,
+                                            withHandler: orientations.motionHandler(generation: generation))
         }
         let receiver = DisplayLinkTarget(owner: self)
         linkTarget = receiver

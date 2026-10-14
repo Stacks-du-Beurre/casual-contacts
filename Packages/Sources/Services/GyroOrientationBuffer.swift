@@ -1,8 +1,24 @@
 import Foundation
 import CoreModels
+#if os(iOS)
+import CoreMotion
+import QuartzCore
+#endif
 
 /// Small synchronized history: sensor delivery never waits for SwiftUI work.
 final class GyroOrientationBuffer: @unchecked Sendable {
+    #if os(iOS)
+    // Construct outside the controller's MainActor context: CoreMotion invokes
+    // this callback on its operation queue, not the main executor.
+    nonisolated func motionHandler(generation: Int) -> @Sendable (CMDeviceMotion?, Error?) -> Void {
+        { [self] sample, _ in
+            guard let sample else { return }
+            let q = sample.attitude.quaternion
+            append(.init(time: sample.timestamp, value: Quaternion(x: q.x, y: q.y, z: q.z, w: q.w)),
+                   generation: generation, deliveredAt: CACurrentMediaTime())
+        }
+    }
+    #endif
     struct Sample: Sendable {
         let time: Double
         let value: Quaternion

@@ -3,6 +3,16 @@ import CoreModels
 @testable import Services
 
 @Suite struct GyroOrientationBufferTests {
+    #if os(iOS)
+    @Test @MainActor func motionCallbackCanRunOffMainExecutor() async {
+        let buffer = GyroOrientationBuffer()
+        let handler = buffer.motionHandler(generation: buffer.reset())
+        // Even when obtained by a MainActor caller, the real callback must not
+        // inherit that executor. A nil sensor packet exercises its entry check.
+        await Task.detached { handler(nil, nil) }.value
+        #expect(buffer.takeLatest().count == 0)
+    }
+    #endif
     @Test func newestSampleSurvivesWithoutMainThreadConsumption() {
         let buffer = GyroOrientationBuffer()
         let generation = buffer.reset()
