@@ -31,10 +31,16 @@ public final class PhotoFocusTuning {
     private enum Key {
         static let faceZoom = "PhotoFocusTuning.faceZoom"
         static let opacity = "PhotoFocusTuning.opacity"
+        static let simplePhoto = "PhotoFocusTuning.simplePhoto"
     }
 
     public var faceZoom: Double {
         didSet { defaults.set(faceZoom, forKey: Key.faceZoom) }
+    }
+
+    /// One screen-fixed, clipped photo without depth projection or backing.
+    public var simplePhoto: Bool {
+        didSet { defaults.set(simplePhoto, forKey: Key.simplePhoto) }
     }
 
     public var opacity: Double {
@@ -50,11 +56,13 @@ public final class PhotoFocusTuning {
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        self.simplePhoto = defaults.bool(forKey: Key.simplePhoto)
         self.faceZoom = Self.read(defaults, Key.faceZoom, fallback: Defaults.faceZoom)
         self.opacity = Self.read(defaults, Key.opacity, fallback: Defaults.opacity)
     }
 
     public func reset() {
+        simplePhoto = false
         faceZoom = Defaults.faceZoom
         opacity = Defaults.opacity
     }

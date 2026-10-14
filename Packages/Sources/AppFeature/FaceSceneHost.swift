@@ -36,6 +36,7 @@ struct FaceSceneHost<Content: View>: View {
     @AppStorage("FaceScene.screenWidthMM") private var screenWidthMM = 66.6
     @AppStorage("FaceScene.cameraHeightMM") private var cameraHeightMM = 65.0
     @AppStorage("FaceScene.savedPreset") private var savedPreset = ""
+    @Bindable private var photoTuning = PhotoFocusTuning.shared
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Environment(\.colorScheme) private var scheme
     @Environment(\.locale) private var locale
@@ -178,6 +179,10 @@ struct FaceSceneHost<Content: View>: View {
                     }
                 }
                 SettingsGroup(title: ModuleLocalization.string("Scene", locale: locale)) {
+                    SettingsToggleRow(label: ModuleLocalization.string("Simple fixed photo", locale: locale), isOn: $photoTuning.simplePhoto)
+                    ModuleLocalization.text("Uses one photo clipped to the card, without photo motion, edge fade, or blurred backing.", locale: locale)
+                        .font(CCDesign.Typography.caption2).padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                    SettingsDivider()
                     parameter("Backing depth", value: $backingDepthMM, range: 0...150, step: 5, unit: "mm")
                     parameter("Layer spacing", value: $layerSpacing, range: 0.5...2, step: 0.1, unit: "")
                     ModuleLocalization.text("The rotation guilloche stays on the deepest blend layer.", locale: locale)

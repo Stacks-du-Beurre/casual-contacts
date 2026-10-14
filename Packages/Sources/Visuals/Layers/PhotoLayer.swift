@@ -83,36 +83,40 @@ public struct PhotoLayer: View {
 
     /// Project both copies together. Reserve a wide backing before projection
     /// so the sharp photograph keeps its existing scale and movement.
-    private var cardImage: some View {
-        ZStack {
-            if windowScene != nil {
-                GeometryReader { geometry in
-                    // Ten card widths/heights exceed the default 80-degree
-                    // coverage budget. Scale up further for deeper scene settings.
-                    let depth = (windowScene?.backingDepthMeters ?? 0.06)
-                        * pow(0.75, windowScene?.spacing ?? 1)
-                    let coverageScale = max(10, 10 * depth / 0.045)
-                    let coverage = CGSize(width: geometry.size.width * coverageScale,
-                                          height: geometry.size.height * coverageScale)
-                    let layout = Self.focusLayout(
-                        container: coverage,
-                        imageSize: imageSize ?? geometry.size,
-                        focus: focus ?? .center,
-                        zoomMultiplier: 1
-                    )
-                    (photoID.flatMap { blurredPhotos[$0.filename] } ?? image).resizable()
-                        .frame(width: layout.scaled.width, height: layout.scaled.height)
-                        .offset(x: layout.offset.width, y: layout.offset.height)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+    @ViewBuilder private var cardImage: some View {
+        if focusTuning.simplePhoto {
+            framedImage.clipped()
+        } else {
+            ZStack {
+                if windowScene != nil {
+                    GeometryReader { geometry in
+                        // Ten card widths/heights exceed the default 80-degree
+                        // coverage budget. Scale up further for deeper scene settings.
+                        let depth = (windowScene?.backingDepthMeters ?? 0.06)
+                            * pow(0.75, windowScene?.spacing ?? 1)
+                        let coverageScale = max(10, 10 * depth / 0.045)
+                        let coverage = CGSize(width: geometry.size.width * coverageScale,
+                                              height: geometry.size.height * coverageScale)
+                        let layout = Self.focusLayout(
+                            container: coverage,
+                            imageSize: imageSize ?? geometry.size,
+                            focus: focus ?? .center,
+                            zoomMultiplier: 1
+                        )
+                        (photoID.flatMap { blurredPhotos[$0.filename] } ?? image).resizable()
+                            .frame(width: layout.scaled.width, height: layout.scaled.height)
+                            .offset(x: layout.offset.width, y: layout.offset.height)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
                 }
+                framedImage
             }
-            framedImage
+            .scaleEffect(windowScene == nil ? 1 : 1.3)
+            .windowDepth(0.75)
+            // Clip after projection so compositing stays at card size, rather than
+            // allocating an offscreen surface for the enlarged backing's bounds.
+            .clipped()
         }
-        .scaleEffect(windowScene == nil ? 1 : 1.3)
-        .windowDepth(0.75)
-        // Clip after projection so compositing stays at card size, rather than
-        // allocating an offscreen surface for the enlarged backing's bounds.
-        .clipped()
     }
 
     /// A separable smooth fade on the source image's four edges. Its central
@@ -136,14 +140,14 @@ public struct PhotoLayer: View {
                     imageSize: imageSize,
                     focus: focus ?? .center,
                     zoomMultiplier: CGFloat(focusTuning.zoomMultiplier),
-                    parallaxOffset: parallaxOffset,
-                    parallaxOverscan: parallaxOverscan
+                    parallaxOffset: focusTuning.simplePhoto ? .zero : parallaxOffset,
+                    parallaxOverscan: focusTuning.simplePhoto ? .zero : parallaxOverscan
                 )
                 image
                     .resizable()
                     .frame(width: result.scaled.width, height: result.scaled.height)
                     .mask {
-                        if windowScene != nil { edgeMask(size: result.scaled) }
+                        if windowScene != nil && !focusTuning.simplePhoto { edgeMask(size: result.scaled) }
                         else { Rectangle() }
                     }
                     .offset(x: result.offset.width, y: result.offset.height)

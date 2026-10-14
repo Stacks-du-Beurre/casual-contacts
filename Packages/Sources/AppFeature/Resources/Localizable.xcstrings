@@ -1628,6 +1628,50 @@
           }
         }
       }
+    },
+    "Simple fixed photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simple fixed photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Простое неподвижное фото"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просте нерухоме фото"
+          }
+        }
+      }
+    },
+    "Uses one photo clipped to the card, without photo motion, edge fade, or blurred backing.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses one photo clipped to the card, without photo motion, edge fade, or blurred backing."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одно фото в границах карточки, без движения, затухания краёв и размытого фона."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одне фото в межах картки, без руху, згасання країв і розмитого тла."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
