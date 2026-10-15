@@ -285,3 +285,50 @@ paths and was removed. Raw ignored artifacts use `bgra-control-`,
 `build/motion-performance/`. No builds or other profiling ran during measured
 cycles. The next image-preparation target is the cached text-material output,
 rather than assuming the small gradient and stroke caches dominate the profile.
+
+## Broad text-material resolution experiment (rejected)
+
+Reducing only the cached broad-blur material (radius >=20 pt) from 1.5× to
+0.5× resolution left sharper materials and the visible live card unchanged.
+An optimized continuous-motion/photo simulator comparison gave:
+
+| Renderer | Enter median/p95 ms | Exit median/p95 ms | Scroll median/p95 ms |
+| --- | --- | --- | --- |
+| Original control | 35.36 / 57.36 | 41.90 / 74.38 | 47.02 / 216.31 |
+| Lower-resolution broad blur | 36.68 / 58.40 | 55.16 / 82.27 | 47.85 / 183.69 |
+
+Five cycles per phase passed in both UI runs. There was no useful transition
+improvement, and the experiment was removed. No visual parity claim is made
+for this rejected prototype. Ignored metrics use `material-scale-control-`
+and `material-scale-experiment-` prefixes. Inspection also found that the
+shipped Neon_3 texture is only 338×338; oversized hologram source artwork is
+not supported as the explanation for texture upload cost.
+
+## Opaque list surface experiment (rejected)
+
+Using an opaque list drawing group when the gradient backdrop is visible
+preserved the transparent path for the developer hide-backdrop option.
+The original control above was compared with two experiment runs and a fresh
+original control. Each used five photo/motion cycles per scenario:
+
+| Renderer | Enter median/p95 ms | Exit median/p95 ms | Scroll median/p95 ms |
+| --- | --- | --- | --- |
+| Original control | 35.36 / 57.36 | 41.90 / 74.38 | 47.02 / 216.31 |
+| Opaque row | 35.04 / 54.25 | 38.83 / 65.08 | 46.10 / 214.89 |
+| Opaque row repeat | 34.39 / 56.74 | 50.63 / 73.18 | 48.33 / 184.34 |
+| Original control repeat | 34.22 / 57.06 | 50.14 / 80.84 | 47.09 / 151.28 |
+
+All scenarios passed, but exit timing varied more between runs than between
+implementations. The change was removed. Raw ignored artifacts use
+`opaque-row-experiment-`, `opaque-row-repeat-`, and
+`opaque-row-control-repeat-` prefixes. No production changes remain from
+these experiments.
+
+The next acceptance gate is build 72 device transition evidence. Its supplied
+recording contains only scrolling and settings, so it cannot establish whether
+entry or exit remain slow after the camera cadence change. CoreDevice currently
+reports the user's paired iPhone as unavailable. Obtain a recording with five
+open/close cycles for a photo card and a non-photo card, while moving the phone,
+in Low Power Mode; then repeat with Low Power Mode off. Keep the existing
+visuals and use those traces to decide the next implementation change rather
+than retaining changes supported only by simulator texture-upload costs.
