@@ -27,6 +27,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     public var renderingAttitude: DeviceAttitude { displayLink == nil ? fallback : attitude }
 
     @ObservationIgnored private var session = ARSession()
+    @ObservationIgnored private nonisolated let cameraCadence = CameraPoseCadence()
     @ObservationIgnored private let motion = CMMotionManager()
     @ObservationIgnored private var inertialViewer = InertialViewer()
     @ObservationIgnored private let orientations = GyroOrientationBuffer()
@@ -114,7 +115,14 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         lastDisplayTime = 0
         smoother.reset(to: fallback)
         attitude = fallback
+        cameraCadence.reset()
         let configuration = ARFaceTrackingConfiguration()
+        if let format = ARFaceTrackingConfiguration.supportedVideoFormats.first(where: { $0.framesPerSecond == 30 }) {
+            configuration.videoFormat = format
+        }
+        PerformanceDiagnostics.shared.event("camera_cadence", values: [
+            "captureFPS": Double(configuration.videoFormat.framesPerSecond), "poseFPS": 30, "displayTargetHz": 60
+        ])
         configuration.maximumNumberOfTrackedFaces = 1
         configuration.isLightEstimationEnabled = false
         configuration.providesAudioData = false
@@ -174,6 +182,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     nonisolated public func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let timestamp = frame.timestamp
+        guard cameraCadence.accepts(timestamp) else { return }
         var position: ViewerPosition?
         if let face = frame.anchors.compactMap({ $0 as? ARFaceAnchor }).first, face.isTracked {
             let left = face.leftEyeTransform.columns.3
