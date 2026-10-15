@@ -213,3 +213,30 @@ controlled physical-device build 62 comparison. The slower scroll tail remains.
 Focused rendering tests check live blur pixel parity and verify that static
 samples include guilloche without waiting for an appearance/reveal callback.
 The on-device Low Power Mode comparison is still required.
+
+## Retained Core Animation blend paths — 2026-10-15
+
+Build 72 is the camera-cadence baseline. It prefers a native 30 fps ARKit
+format and limits pose extraction to 30 Hz. Display smoothing and gyro
+prediction still run at the display cadence. The simulator cannot measure
+real camera capture cost.
+
+A local DEBUG-only experiment replaced the blend stack with retained
+CAShapeLayer paths and updated layer transforms. Static material samples
+kept the original renderer. Two scopes were tested: all card presentations,
+then list cards only. No host build ran during measurement. The final control
+repeat used the same simulator test binaries as the list-only experiment.
+
+| Renderer | Entry median / p95 ms | Exit median / p95 ms | Scroll median / p95 ms |
+| --- | --- | --- | --- |
+| Original control | 36.0 / 58.1 | 45.4 / 64.3 | 48.1 / 183.5 |
+| Retained paths, all cards | 39.5 / 56.4 | 49.4 / 81.6 | 44.5 / 151.1 |
+| Retained paths, list only | 35.8 / 59.0 | 53.5 / 79.4 | 45.9 / 154.8 |
+| Original control repeat | 35.7 / 56.7 | 48.4 / 76.2 | 47.8 / 217.2 |
+
+The small scroll improvement did not justify the exit regression and new
+renderer. The prototype and its temporary test switches were removed.
+Raw metrics are under ignored build/motion-performance/retained-*.json.
+These are display-callback intervals, not GPU-presented frame rates.
+Next: profile the original scroll renderer to identify CPU hot paths before
+selecting another cache boundary. Preserve the approved visual effects.
