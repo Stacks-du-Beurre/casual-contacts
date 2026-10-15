@@ -240,3 +240,48 @@ Raw metrics are under ignored build/motion-performance/retained-*.json.
 These are display-callback intervals, not GPU-presented frame rates.
 Next: profile the original scroll renderer to identify CPU hot paths before
 selecting another cache boundary. Preserve the approved visual effects.
+
+## Build 72 device follow-up (October 15)
+
+The 25.3-second device recording uses iPhone18,1 / iOS 27.2, Low Power Mode
+throughout, and normal thermal state. `camera_cadence` confirms native capture
+at 30 FPS, pose sampling at 30 FPS, and a 60 Hz display target. During repeated
+scrolling (sample windows ending at 3.03–19.19 seconds), 948 callbacks over
+17.17 seconds give 55.2 callbacks/s. Twelve callback intervals exceed 33 ms;
+the largest is 43.44 ms. The previous build 68 recording's slower scroll
+windows were approximately 40–46 callbacks/s, but gestures and face visibility
+differ, so this is encouraging device evidence rather than a controlled causal
+comparison. There are no fullscreen transitions in either recording.
+
+ARKit face input is intermittently unavailable; gyro prediction continues.
+No camera deliveries are classified stale. Material captures occur before
+scrolling and after the list settles, not during the active scroll interval.
+Memory settles near 296 MB. Settings stops scene/camera updates but contains
+an isolated 109.5 ms callback gap, so that hitch cannot be attributed to active
+face processing. These counters do not measure GPU-presented frames.
+
+## Cached bitmap format experiment (rejected)
+
+A five-second `sample` capture of the moving simulator list shows substantial
+RenderBox image texture preparation, vImage channel conversion, and simulator
+texture upload work. This is CPU sampling, including waits, not GPU timing or
+a physical-device profile. A separate Time Profiler recording again failed to
+finish and is not used as evidence.
+
+Changing the mirrored gradient and rotation stroke caches from RGBA to native
+little-endian premultiplied BGRA preserved color and artwork orientation in
+five focused tests. Two optimized simulator runs with photo cards, continuous
+motion, and five cycles per scenario gave mixed timing results:
+
+| Renderer | Enter median/p95 ms | Exit median/p95 ms | Scroll median/p95 ms |
+| --- | --- | --- | --- |
+| Original control | 37.31 / 56.75 | 43.32 / 78.15 | 47.13 / 150.79 |
+| BGRA caches | 34.87 / 54.84 | 43.61 / 64.69 | 47.56 / 167.20 |
+| BGRA repeat | 37.89 / 56.51 | 39.56 / 68.82 | 46.80 / 204.07 |
+
+All UI scenarios passed. The change did not consistently improve all relevant
+paths and was removed. Raw ignored artifacts use `bgra-control-`,
+`bgra-experiment-`, and `bgra-repeat-` prefixes under
+`build/motion-performance/`. No builds or other profiling ran during measured
+cycles. The next image-preparation target is the cached text-material output,
+rather than assuming the small gradient and stroke caches dominate the profile.
