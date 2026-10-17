@@ -144,6 +144,10 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionTransitions(withPhoto: true, liveMaterials: true)
     }
 
+    func testFullscreenTransitionsWithLegacyGuillocheAndPhoto() {
+        runMotionTransitions(withPhoto: true, legacyGuilloche: true)
+    }
+
     func testDevicePerformanceLogRecordsMovingTransitions() {
         runMotionTransitions(withPhoto: true, diagnostics: true)
     }
@@ -159,6 +163,10 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: false)
     }
 
+    func testListScrollsWithLegacyGuillocheAndPerformanceDiagnosticsAndPhoto() {
+        runMotionScrolls(liveMaterials: false, diagnostics: true, legacyGuilloche: true)
+    }
+
     func testListScrollsWithPerformanceDiagnosticsAndPhoto() {
         runMotionScrolls(liveMaterials: false, diagnostics: true)
     }
@@ -167,11 +175,12 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: true)
     }
 
-    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false) {
+    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false, legacyGuilloche: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
                                "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
+        if legacyGuilloche { app.launchArguments.append("-MotionLayeredGuilloche") }
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }
         if diagnostics { app.launchArguments.append("-PerformanceDiagnosticsRecord") }
@@ -241,12 +250,13 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sharePerformanceLog"].waitForExistence(timeout: 5))
     }
 
-    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false, liveMaterials: Bool = false, unthrottled: Bool = false) {
+    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false, liveMaterials: Bool = false, unthrottled: Bool = false, legacyGuilloche: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES",
                                "-ScreenshotLanguage", "en", "-MotionPerformanceHarness",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES",
                                "-FaceScene.cameraEnabled", "NO"]
+        if legacyGuilloche { app.launchArguments.append("-MotionLayeredGuilloche") }
         if withPhoto { app.launchArguments.append("-MotionHarnessPhoto") }
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }

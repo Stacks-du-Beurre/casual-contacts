@@ -110,6 +110,7 @@ public struct CardView: View {
             .contentShape(Rectangle())
             .coordinateSpace(.named(Self.cardCoordinateSpace))
             .environment(\.windowCardSize, geo.size)
+            .environment(\.usesProjectedGuillocheCanvas, size == .small)
             .environment(\.windowCardFrame, liveGeometry ? nil : cardFrame ?? geo.frame(in: .global))
         }
         .environment(\.usesCachedCardMaterials, true)

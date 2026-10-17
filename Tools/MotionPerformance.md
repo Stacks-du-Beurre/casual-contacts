@@ -540,3 +540,43 @@ then open/close both a photo card and a non-photo card several times while
 moving the phone. Export with the existing Prepare/Share performance log flow.
 Keep Low Power Mode off for the first recording; a separate recording with it
 on is useful. Normal motion stays enabled in both recordings.
+
+
+## October 17 list guilloché Canvas candidate
+
+Build 75 device diagnostics showed main-thread use averaging 84% of one core,
+while measured scene-update calculation consumed under 1 ms per second.
+The following Release-optimized simulator experiments used the same phone,
+photo fixture, 60 mm depth, continuous motion, and five automated scroll cycles.
+No compilation or screen recording ran during the timing windows.
+
+| Renderer | Median callback gap (ms) | p95 gap (ms) |
+| --- | ---: | ---: |
+| Original layered control | 48.39 | 233.60 |
+| Individual stroke drawing groups (discarded) | 48.01 | 215.98 |
+| Single projected Canvas | 38.25 | 133.16 |
+| Original layered control repeat | 47.90 | 233.36 |
+| Canvas repeat | 43.18 | 150.20 |
+| Final list-only Canvas | 38.71 | 149.53 |
+
+A Canvas for fullscreen artwork regressed dismissal median timing (51.95 ms
+versus 39.93 ms control), so the shipped candidate uses Canvas only for small
+list cards. Fullscreen and zoom-overlay cards retain the layered renderer.
+The final photo transition medians were 33.49 ms entering and 39.88 ms exiting;
+control medians were 38.38 and 39.93 ms. Exit p95 was 63.83 ms versus 75.79 ms.
+Five enter/exit cycles also passed without a photo.
+
+The Canvas draws the original paths individually with their existing opacity,
+stroke width, reveal progression, depth order, and affine plane projection.
+Its drawing surface spans the card so projected paths can leave the original
+184-by-160 artwork box without being cropped. Gyro-only mode remains layered.
+Image-renderer comparisons against the original layered face-mode renderer
+used actual A-circle artwork and three eye positions, including reversed depth
+order. All three produced zero channel differences on this simulator. Five
+focused test functions passed, including four motion interpolation tests.
+
+The simulator results identify a device-test candidate, not 120 GPU-presented
+frames per second. TestFlight must confirm the gain and appearance on hardware.
+The existing performance recorder is retained. A simulator-only
+`-MotionLayeredGuilloche` flag under `-MotionPerformanceHarness` runs the original
+renderer for repeatable control measurements; it cannot select a device mode.

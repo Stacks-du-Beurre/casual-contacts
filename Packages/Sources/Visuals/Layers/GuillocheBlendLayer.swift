@@ -27,6 +27,10 @@ public struct GuillocheBlendLayer: View, Animatable {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.windowSceneProjection) private var windowScene
+    @Environment(\.windowCardFrame) private var cardFrame
+    @Environment(\.windowCardSize) private var cardSize
+    @Environment(\.liveWindowGeometry) private var liveGeometry
+    @Environment(\.usesProjectedGuillocheCanvas) private var useProjectedCanvas
 
     /// Default depth-scaling — how many points the Nth path offsets per unit of
     /// roll/pitch at the maximum depth. Empty-state hero uses a larger value for
@@ -71,6 +75,17 @@ public struct GuillocheBlendLayer: View, Animatable {
         #if os(iOS)
         let _ = PerformanceDiagnostics.shared.receivedViewBody(.blendStack)
         #endif
+        Group {
+            if let scene = windowScene, useProjectedCanvas && !CardRenderProbe.layeredGuilloche {
+                projectedCanvas(scene)
+            } else {
+                layeredPaths
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var layeredPaths: some View {
         ZStack {
             ForEach(paths.indices, id: \.self) { index in
                 let path = paths[index]
@@ -108,7 +123,44 @@ public struct GuillocheBlendLayer: View, Animatable {
                     ))
             }
         }
-        .accessibilityHidden(true)
+    }
+
+    private func projectedCanvas(_ scene: WindowSceneProjection) -> some View {
+        GeometryReader { geometry in
+            let local = geometry.frame(in: .named("CardScene"))
+            let resolvedFrame = liveGeometry
+                ? WindowSceneProjection.cardFrame(local: local, global: geometry.frame(in: .global), size: cardSize)
+                : cardFrame
+            let center = resolvedFrame.map { CGRect(x: $0.minX + local.minX, y: $0.minY + local.minY, width: local.width, height: local.height) }
+                ?? geometry.frame(in: .global)
+            // Paths can project outside the 184 × 160 artwork frame. Keep
+            // the whole card available so Canvas does not crop that motion.
+            let canvasSize = CGSize(width: max(cardSize.width, geometry.size.width),
+                                    height: max(cardSize.height, geometry.size.height))
+            let inset = CGSize(width: (canvasSize.width - geometry.size.width) / 2,
+                               height: (canvasSize.height - geometry.size.height) / 2)
+            let metersPerPoint = scene.screenWidthMeters / max(Double(scene.viewport.width), 1)
+            let x = Double(center.midX - scene.viewport.width / 2) * metersPerPoint
+            let y = -Double(center.midY - scene.viewport.height / 2) * metersPerPoint
+            let reference = scene.reference(for: resolvedFrame ?? center)
+            Canvas { context, _ in
+                for index in paths.indices {
+                    let fraction = CardSceneDepth.blendFraction(index: index, count: paths.count, reversed: scene.reverseGuillocheDepthOrder)
+                    let depth = scene.backingDepthMeters * pow(max(0, min(1, fraction)), scene.spacing)
+                    let projection = WindowPlaneProjection(eye: scene.eye, reference: reference, depth: depth)
+                    let scale = projection?.scale ?? 1
+                    let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
+                    let dy = -((scale - 1) * y + (projection?.translationY ?? 0)) / metersPerPoint
+                    var layer = context
+                    layer.translateBy(x: canvasSize.width / 2 + dx, y: canvasSize.height / 2 + dy)
+                    layer.scaleBy(x: scale, y: scale)
+                    layer.translateBy(x: -geometry.size.width / 2, y: -geometry.size.height / 2)
+                    layer.stroke(paths[index], with: .color(tint.opacity(0.8 * localReveal(forIndex: index))), lineWidth: 0.5)
+                }
+            }
+            .frame(width: canvasSize.width, height: canvasSize.height)
+            .offset(x: -inset.width, y: -inset.height)
+        }
     }
 
     /// Per-path reveal opacity. Under Reduce Motion every path shares the
@@ -295,5 +347,17 @@ public struct GuillocheBlendLayer: View, Animatable {
         let perspectiveNormalized = projected / maxProjected
         let perspectiveDelta = perspectiveNormalized - t
         return max(0, t + perspectiveDelta * CGFloat(max(0, perspectiveAmount)))
+    }
+}
+
+private struct ProjectedGuillocheCanvasKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// List-only renderer. Large canvases made fullscreen dismissal slower.
+    var usesProjectedGuillocheCanvas: Bool {
+        get { self[ProjectedGuillocheCanvasKey.self] }
+        set { self[ProjectedGuillocheCanvasKey.self] = newValue }
     }
 }
