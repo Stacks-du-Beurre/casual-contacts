@@ -58,6 +58,32 @@ import Observation
     @ObservationIgnored private var rows: [Row] = []
     @ObservationIgnored private var metadata: [String: String] = [:]
 
+    @ObservationIgnored private var transitionCameraFrames = 0
+    @ObservationIgnored private var transitionMaximumCameraAgeMS = 0.0
+    @ObservationIgnored private var transitionMinimumScheduledMS = Double.infinity
+    @ObservationIgnored private var transitionMaximumScheduledMS = 0.0
+
+    public override init() {
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(powerStateChanged),
+                                               name: .NSProcessInfoPowerStateDidChange, object: nil)
+    }
+
+    @objc nonisolated private func powerStateChanged() {
+        Task { @MainActor [weak self] in self?.updateDisplayFrameRate() }
+    }
+
+    private func updateDisplayFrameRate() {
+        guard let link else { return }
+        link.preferredFrameRateRange = CardDisplayFrameRate.range(
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond))
+        event("diagnostic_display_cadence", values: [
+            "minimumHz": Double(link.preferredFrameRateRange.minimum),
+            "preferredHz": Double(link.preferredFrameRateRange.preferred ?? 0)
+        ])
+    }
+
     private struct Row: Codable, Sendable {
         let seconds: Double
         let event: String
@@ -101,8 +127,9 @@ import Observation
         hasRecording = true
         event("recording_started")
         let displayLink = CADisplayLink(target: self, selector: #selector(tick(_:)))
-        // Match the existing tracker; do not request a higher device refresh rate.
-        displayLink.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        // Match scene pacing so recording does not request a different refresh rate.
+        displayLink.preferredFrameRateRange = CardDisplayFrameRate.range(lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond))
         displayLink.add(to: .main, forMode: .common)
         link = displayLink
     }
@@ -166,12 +193,20 @@ import Observation
         if valid && awaitingCamera { awaitingCamera = false; recordFirstUpdate("first_valid_camera_delivery") }
         if ageSeconds >= 0.15 { staleCameraFrames += 1 }
         maximumCameraAgeMS = max(maximumCameraAgeMS, abs(ageSeconds) * 1000)
+        if transitionName != nil {
+            transitionCameraFrames += 1
+            transitionMaximumCameraAgeMS = max(transitionMaximumCameraAgeMS, abs(ageSeconds) * 1000)
+        }
     }
 
     public func beginTransition(_ name: String, hasPhoto: Bool) {
         guard isRecording else { return }
         transitionName = name
         transitionStart = CACurrentMediaTime()
+        transitionCameraFrames = 0
+        transitionMaximumCameraAgeMS = 0
+        transitionMinimumScheduledMS = .infinity
+        transitionMaximumScheduledMS = 0
         transitionIntervals = []
         event(name + "_started", values: ["hasPhoto": hasPhoto ? 1 : 0])
     }
@@ -179,7 +214,11 @@ import Observation
         guard isRecording, transitionName == name else { return }
         append(Row(seconds: CACurrentMediaTime() - started, event: name + "_completed",
                    context: context, tracking: trackingState,
-                   values: ["durationMS": (CACurrentMediaTime() - transitionStart) * 1000],
+                   values: ["durationMS": (CACurrentMediaTime() - transitionStart) * 1000,
+                            "cameraFrames": Double(transitionCameraFrames),
+                            "maximumCameraAgeMS": transitionMaximumCameraAgeMS,
+                            "minimumScheduledIntervalMS": transitionMinimumScheduledMS.isFinite ? transitionMinimumScheduledMS : 0,
+                            "maximumScheduledIntervalMS": transitionMaximumScheduledMS],
                    timing: CallbackTimingSummary(intervalsMS: transitionIntervals)))
         transitionName = nil
         transitionIntervals = []
@@ -188,6 +227,10 @@ import Observation
     @objc private func tick(_ displayLink: CADisplayLink) {
         let now = CACurrentMediaTime()
         expectedIntervalMS = (displayLink.targetTimestamp - displayLink.timestamp) * 1000
+        if transitionName != nil {
+            transitionMinimumScheduledMS = min(transitionMinimumScheduledMS, expectedIntervalMS)
+            transitionMaximumScheduledMS = max(transitionMaximumScheduledMS, expectedIntervalMS)
+        }
         if previous > 0 {
             let interval = (now - previous) * 1000
             intervals.append(interval)

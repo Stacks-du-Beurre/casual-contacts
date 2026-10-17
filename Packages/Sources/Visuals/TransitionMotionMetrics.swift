@@ -1,4 +1,5 @@
 #if DEBUG && os(iOS)
+import CoreModels
 import Foundation
 import UIKit
 
@@ -35,7 +36,8 @@ import UIKit
         maxDepthMeters = 0
         began = CACurrentMediaTime()
         let link = CADisplayLink(target: self, selector: #selector(tick(_:)))
-        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
+        link.preferredFrameRateRange = CardDisplayFrameRate.range(lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                                                               maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond))
         link.add(to: .main, forMode: .common)
         self.link?.invalidate()
         self.link = link

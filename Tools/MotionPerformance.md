@@ -332,3 +332,53 @@ open/close cycles for a photo card and a non-photo card, while moving the phone,
 in Low Power Mode; then repeat with Low Power Mode off. Keep the existing
 visuals and use those traces to decide the next implementation change rather
 than retaining changes supported only by simulator texture-upload costs.
+
+## Build 72 transition trace and frame-pacing request
+
+The 40-second October 15 device trace includes six enter/exit pairs, Low Power
+Mode off throughout, and thermal state normal then fair. Ten of twelve
+transitions have no callback interval above 33 ms. One photo-card entry has
+20.42 ms median / 35.63 ms p95; its exit has 29.85 / 42.14 ms, maximum
+61.69 ms. A later non-photo exit has a single 49.52 ms gap. Other transitions
+are mostly near 16.7 ms. Two scrolling windows contain delayed camera delivery,
+up to 204.6 ms, while gyro delivery remains fresh.
+
+Many scrolling windows report a scheduled callback interval of 25 ms, matching
+approximately 40 callbacks/s. The existing 30–60 Hz request permits that cadence;
+these windows must not all be described as missed 60 Hz rendering deadlines.
+
+The candidate policy requests 60–120 Hz on ProMotion displays in normal mode,
+60–60 Hz on standard displays, and retains the previous 30–60 Hz range in Low
+Power Mode. The app now includes the required ProMotion Info.plist opt-in. Both the scene and diagnostic display links
+use the same policy and update via the power-state notification on the main
+actor. Camera capture/pose sampling stays at 30 FPS. iOS can still override
+frame-rate requests. Transition completion diagnostics now include camera count,
+maximum camera age, and minimum/maximum scheduled callback interval for that
+transition. These distinguish input stalls, adaptive pacing, and actual callback
+gaps without adding image or contact data. Device improvement remains unverified
+until a new device build is tested; simulator tests cannot establish ProMotion
+or Low Power Mode behavior.
+
+Validation: nine focused cadence/timing/transition-export tests passed, the
+production Release generic-iOS build passed, and the optimized simulator
+moving-photo diagnostic scenario passed five enter/exit cycles. All ten exported
+completion rows contain the new camera and scheduled-interval fields with
+nonempty callback summaries. Unit coverage verifies camera counts/ages reset
+between transitions and an export before any display tick contains finite zero
+scheduled intervals. These are implementation checks, not a measured device
+pacing improvement or a fix claim for the isolated photo-exit stall.
+
+## ProMotion candidate verification (October 17)
+
+30 Hz pose cadence plus elapsed-time display smoothing passes at both 60 and
+120 display updates/s in parameterized tests. The sampling gate accepts exactly
+30 targets in either case and the intervening smoothed attitudes keep moving.
+Frame-rate policy tests cover 120 Hz hardware, 60 Hz hardware, and Low Power
+Mode. All ten focused tests (eleven parameter cases) pass. The production
+Release build passes and its built Info.plist contains the ProMotion opt-in.
+The existing optimized simulator moving-photo entry/exit and scrolling scenarios
+also pass five cycles each. This simulator reports a 60 Hz maximum, so neither
+its callback timings nor the unit simulation prove actual 120 FPS or reduced
+rendering cost on a phone. The candidate requests up to 120 Hz while card scene
+motion is active; face pose processing remains 30 Hz. This is a device-test
+candidate, not a claim that the prior 40 Hz scroll symptom has been fixed.

@@ -22,18 +22,19 @@ import CoreModels
         #expect(cadence.accepts(0))
         #expect(!cadence.accepts(.nan))
     }
-    @Test func thirtyHzTargetsKeepMovingOnInterveningDisplayFrames() {
+    @Test(arguments: [60, 120])
+    func thirtyHzTargetsKeepMovingOnInterveningDisplayFrames(displayHz: Int) {
         let cadence = CameraPoseCadence()
         var smoother = DisplayAttitudeSmoother()
         var target = DeviceAttitude.zero
         var previous = 0.0
         var updates = 0
-        for frame in 0..<60 {
-            if cadence.accepts(Double(frame) / 60) {
-                target = DeviceAttitude(pitch: 0, roll: Double(frame + 1) / 120)
+        for frame in 0..<displayHz {
+            if cadence.accepts(Double(frame) / Double(displayHz)) {
+                target = DeviceAttitude(pitch: 0, roll: Double(frame + 1) / Double(displayHz * 2))
                 updates += 1
             }
-            let displayed = smoother.step(toward: target, elapsed: 1.0 / 60)
+            let displayed = smoother.step(toward: target, elapsed: 1.0 / Double(displayHz))
             #expect(displayed.roll > previous)
             #expect(displayed.roll - previous < 0.02)
             previous = displayed.roll

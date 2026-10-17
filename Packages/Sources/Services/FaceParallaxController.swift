@@ -59,6 +59,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
 
     public override init() {
         super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(powerStateChanged),
+                                               name: .NSProcessInfoPowerStateDidChange, object: nil)
         session.delegate = self
         session.delegateQueue = DispatchQueue(label: "FaceParallax.camera", qos: .userInteractive)
     }
@@ -121,7 +123,9 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
             configuration.videoFormat = format
         }
         PerformanceDiagnostics.shared.event("camera_cadence", values: [
-            "captureFPS": Double(configuration.videoFormat.framesPerSecond), "poseFPS": 30, "displayTargetHz": 60
+            "captureFPS": Double(configuration.videoFormat.framesPerSecond), "poseFPS": 30, "displayTargetHz": Double(CardDisplayFrameRate.range(
+                lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond)).preferred ?? 60)
         ])
         configuration.maximumNumberOfTrackedFaces = 1
         configuration.isLightEstimationEnabled = false
@@ -147,10 +151,26 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         let receiver = DisplayLinkTarget(owner: self)
         linkTarget = receiver
         let link = CADisplayLink(target: receiver, selector: #selector(DisplayLinkTarget.tick(_:)))
-        link.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        link.preferredFrameRateRange = CardDisplayFrameRate.range(lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond))
         link.add(to: .main, forMode: .common)
         displayLink = link
         status = "Finding your face"
+    }
+
+    @objc nonisolated private func powerStateChanged() {
+        Task { @MainActor [weak self] in self?.updateDisplayFrameRate() }
+    }
+
+    private func updateDisplayFrameRate() {
+        guard let displayLink else { return }
+        displayLink.preferredFrameRateRange = CardDisplayFrameRate.range(
+            lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+            maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond))
+        PerformanceDiagnostics.shared.event("scene_display_cadence", values: [
+            "minimumHz": Double(displayLink.preferredFrameRateRange.minimum),
+            "preferredHz": Double(displayLink.preferredFrameRateRange.preferred ?? 0)
+        ])
     }
 
     private func stop() {
