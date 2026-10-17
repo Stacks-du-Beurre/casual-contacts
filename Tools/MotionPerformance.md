@@ -382,3 +382,44 @@ its callback timings nor the unit simulation prove actual 120 FPS or reduced
 rendering cost on a phone. The candidate requests up to 120 Hz while card scene
 motion is active; face pose processing remains 30 Hz. This is a device-test
 candidate, not a claim that the prior 40 Hz scroll symptom has been fixed.
+
+## Separate display and pose cadence candidate (October 17)
+
+Build 73's device trace schedules 8.33 ms display callbacks, but active list
+windows average 85.6 callbacks/s (68–110 across windows). Camera input stays at
+29.9/s with no stale deliveries and normal thermal state, Low Power Mode off.
+No fullscreen transitions were recorded. This removes the earlier missing
+ProMotion opt-in as the explanation for the remaining callback gaps.
+
+The next candidate keeps the ProMotion display-link request, but gates pose
+prediction/smoothing/publication to 60 Hz before observable scene values change.
+Elapsed-time smoothing still uses time since the previous accepted update.
+At 30 Hz display cadence every callback is accepted. Late callbacks consume the
+latest pose without replaying a backlog. Camera processing remains 30 Hz.
+`sceneDisplayCallbacks` now counts display-link invocations, while `sceneTicks`
+counts accepted pose updates; `scenePoseTargetHz` reports 60 in the cadence event.
+This avoids interpreting lower pose counts as dropped display callbacks.
+
+Description wrapping and holographic name glyphs are equality-isolated from
+motion inputs. Text, width and font changes still invalidate them normally.
+No image, blur, depth, or layer-order changes are part of this candidate.
+The static name/description screenshot region (x<1000, excluding system chrome,
+on a 1206×2622 fixture screenshot) is pixel identical to the original. Small
+unrelated differences remain at the right edge; no full-image parity claim is made.
+
+The debug waveform targets 120 source ticks/s and uses the same pose gate.
+`-MotionHarnessUnthrottled` bypasses it for a control comparison. The simulator
+has a 60 Hz maximum, so this is a load/regression test, not physical 120 Hz proof.
+Five photo-card cycles per scenario, without concurrent host builds, measured:
+
+| Variant | Enter median/p95 ms | Exit median/p95 ms | Scroll median/p95 ms |
+| --- | --- | --- | --- |
+| Unthrottled source, original text | 36.01 / 54.46 | 39.83 / 75.99 | 46.17 / 198.07 |
+| 60 Hz publication, static text isolation | 34.37 / 55.12 | 53.63 / 83.87 | 47.45 / 167.49 |
+
+The result is mixed, not a confirmed speedup; previous runs also show large exit
+variance. Keep this explicitly experimental pending the phone comparison.
+Ignored raw metrics use `pose-publication-control-` and
+`pose-publication-candidate-` prefixes. The UI scenarios, focused cadence/card
+checks, and production Release build passed. On-device acceptance should compare
+build 73 with the new candidate using the same cards and Low Power Mode state.

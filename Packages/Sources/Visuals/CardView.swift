@@ -376,7 +376,7 @@ struct CardTextLayer<Backdrop: View>: View {
                         DescriptionPills(
                             text: record.description,
                             maxPillWidth: max(0, layout.size.width - 32 - 60)
-                        )
+                        ).equatable()
                     }
                 }
                 .padding(EdgeInsets(top: 0, leading: 8, bottom: 14, trailing: 0))

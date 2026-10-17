@@ -147,6 +147,14 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
     func testDevicePerformanceLogRecordsMovingTransitions() {
         runMotionTransitions(withPhoto: true, diagnostics: true)
     }
+    func testListScrollsWithUnthrottledMotionAndPhoto() {
+        runMotionScrolls(liveMaterials: false, unthrottled: true)
+    }
+
+    func testFullscreenTransitionsWithUnthrottledMotionAndPhoto() {
+        runMotionTransitions(withPhoto: true, unthrottled: true)
+    }
+
     func testListScrollsWithContinuousMotionAndPhoto() {
         runMotionScrolls(liveMaterials: false)
     }
@@ -155,12 +163,13 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: true)
     }
 
-    private func runMotionScrolls(liveMaterials: Bool) {
+    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
                                "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
+        if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }
         app.launch()
         Thread.sleep(forTimeInterval: 21)
         XCTAssertTrue(app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"].exists)
@@ -226,7 +235,7 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         XCTAssertTrue(app.buttons["sharePerformanceLog"].waitForExistence(timeout: 5))
     }
 
-    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false, liveMaterials: Bool = false) {
+    private func runMotionTransitions(withPhoto: Bool, diagnostics: Bool = false, liveMaterials: Bool = false, unthrottled: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES",
                                "-ScreenshotLanguage", "en", "-MotionPerformanceHarness",
@@ -234,6 +243,7 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
                                "-FaceScene.cameraEnabled", "NO"]
         if withPhoto { app.launchArguments.append("-MotionHarnessPhoto") }
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
+        if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }
         if diagnostics { app.launchArguments.append("-PerformanceDiagnosticsRecord") }
         app.launch()
         let card = app.buttons["recordCard_DEBC1102-0000-0000-0000-000000000001"]

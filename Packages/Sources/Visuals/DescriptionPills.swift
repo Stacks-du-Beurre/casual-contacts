@@ -14,7 +14,7 @@ import DesignSystem
 ///
 /// Line splitting uses CoreText against the actual render font so the break
 /// points match what SwiftUI would draw.
-struct DescriptionPills: View {
+struct DescriptionPills: View, Equatable {
 
     let text: String
     let maxPillWidth: CGFloat

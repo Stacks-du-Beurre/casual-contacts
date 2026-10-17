@@ -2,7 +2,7 @@ import Foundation
 import CoreModels
 
 /// Zero motion for normal screenshot captures. The debug performance harness
-/// can instead emit a repeatable 60 Hz waveform to exercise live card redraws.
+/// can instead emit a repeatable waveform with a 120 Hz source and 60 Hz pose publications to exercise live card redraws.
 final class ScreenshotMotionService: MotionService, @unchecked Sendable {
 
     private let lock = NSLock()
@@ -33,14 +33,18 @@ final class ScreenshotMotionService: MotionService, @unchecked Sendable {
             lock.withLock {
                 guard motionTask == nil else { return }
                 let continuation = attitudeContinuation
+                let unthrottled = ProcessInfo.processInfo.arguments.contains("-MotionHarnessUnthrottled")
                 motionTask = Task.detached {
                     let began = ContinuousClock.now
+                    var cadence = SceneUpdateCadence()
                     while !Task.isCancelled {
                         let elapsed = began.duration(to: .now)
                         let t = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
-                        continuation?.yield(DeviceAttitude(pitch: sin(t * 1.7) * 0.65,
-                                                           roll: cos(t * 1.3) * 0.75))
-                        do { try await Task.sleep(for: .milliseconds(16)) }
+                        if unthrottled || cadence.accepts(t) {
+                            continuation?.yield(DeviceAttitude(pitch: sin(t * 1.7) * 0.65,
+                                                               roll: cos(t * 1.3) * 0.75))
+                        }
+                        do { try await Task.sleep(for: .microseconds(8333)) }
                         catch { break }
                     }
                 }

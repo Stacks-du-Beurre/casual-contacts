@@ -43,6 +43,7 @@ import Observation
     @ObservationIgnored private var staleCameraFrames = 0
     @ObservationIgnored private var maximumCameraAgeMS = 0.0
     @ObservationIgnored private var sceneTicks = 0
+    @ObservationIgnored private var sceneDisplayCallbacks = 0
     @ObservationIgnored private var sceneGyroSamples = 0
     @ObservationIgnored private var maximumGyroAgeMS = 0.0
     @ObservationIgnored private var maximumGyroRenderAgeMS = 0.0
@@ -175,6 +176,10 @@ import Observation
         gyroUpdates += 1
         if awaitingGyro { awaitingGyro = false; recordFirstUpdate("first_gyro_pose_change") }
     }
+    public func receivedSceneDisplayCallback() {
+        guard isRecording else { return }
+        sceneDisplayCallbacks += 1
+    }
     public func receivedSceneTick() {
         guard isRecording else { return }
         sceneTicks += 1
@@ -251,6 +256,7 @@ import Observation
                             "expectedCallbackIntervalMS": expectedIntervalMS,
                             "cameraFrames": Double(cameraFrames), "validCameraFrames": Double(validCameraFrames),
                             "staleCameraFrames": Double(staleCameraFrames), "maximumCameraAgeMS": maximumCameraAgeMS,
+                            "sceneDisplayCallbacks": Double(sceneDisplayCallbacks),
                             "sceneTicks": Double(sceneTicks), "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
                             "sceneGyroSamples": Double(sceneGyroSamples), "maximumGyroAgeMS": maximumGyroAgeMS,
                             "maximumGyroRenderAgeMS": maximumGyroRenderAgeMS,
@@ -262,7 +268,7 @@ import Observation
     private func resetBucket() {
         intervals = []
         gyroUpdates = 0; cameraFrames = 0; validCameraFrames = 0; staleCameraFrames = 0
-        maximumCameraAgeMS = 0; sceneTicks = 0
+        maximumCameraAgeMS = 0; sceneTicks = 0; sceneDisplayCallbacks = 0
         sceneGyroSamples = 0; maximumGyroAgeMS = 0
         maximumGyroRenderAgeMS = 0
     }

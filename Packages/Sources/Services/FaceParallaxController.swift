@@ -44,6 +44,7 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     @ObservationIgnored private var projection = ViewerParallax(reference: .screenCentered(cameraHeightMeters: 0.065))
     @ObservationIgnored private var neutralReference = ViewerPosition.screenCentered(cameraHeightMeters: 0.065)
     @ObservationIgnored private var smoother = DisplayAttitudeSmoother()
+    @ObservationIgnored private var sceneCadence = SceneUpdateCadence()
     @ObservationIgnored private var target: DeviceAttitude?
     @ObservationIgnored private var targetEye: ViewerPosition?
     @ObservationIgnored private var lastFaceTime: TimeInterval = 0
@@ -118,12 +119,13 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         smoother.reset(to: fallback)
         attitude = fallback
         cameraCadence.reset()
+        sceneCadence = SceneUpdateCadence()
         let configuration = ARFaceTrackingConfiguration()
         if let format = ARFaceTrackingConfiguration.supportedVideoFormats.first(where: { $0.framesPerSecond == 30 }) {
             configuration.videoFormat = format
         }
         PerformanceDiagnostics.shared.event("camera_cadence", values: [
-            "captureFPS": Double(configuration.videoFormat.framesPerSecond), "poseFPS": 30, "displayTargetHz": Double(CardDisplayFrameRate.range(
+            "captureFPS": Double(configuration.videoFormat.framesPerSecond), "poseFPS": 30, "scenePoseTargetHz": 60, "displayTargetHz": Double(CardDisplayFrameRate.range(
                 lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
                 maximumRefreshHz: Float(UIScreen.main.maximumFramesPerSecond)).preferred ?? 60)
         ])
@@ -277,6 +279,8 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
     }
 
     fileprivate func tick(_ link: CADisplayLink) {
+        PerformanceDiagnostics.shared.receivedSceneDisplayCallback()
+        guard sceneCadence.accepts(link.timestamp) else { return }
         PerformanceDiagnostics.shared.receivedSceneTick()
         let now = CACurrentMediaTime()
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3

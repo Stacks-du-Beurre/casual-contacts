@@ -80,20 +80,7 @@ public struct HologramText<Backdrop: View>: View {
     }
 
     private var textStack: some View {
-        ZStack(alignment: .leading) {
-            Text(text)
-                .font(font)
-                .foregroundStyle(.black)
-                .blendMode(.overlay)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-
-            Text(text)
-                .font(font)
-                .foregroundStyle(Color.black.opacity(0.2))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-        }
+        HologramTextGlyphs(text: text, font: font).equatable()
     }
 
     private var chromaticStack: some View {
@@ -150,4 +137,28 @@ public struct HologramText<Backdrop: View>: View {
             .allowsHitTesting(false)
         }
     }
+}
+
+/// Glyph layout and blend styling do not depend on motion.
+private struct HologramTextGlyphs: View, Equatable {
+    let text: String
+    let font: Font
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Text(text)
+                .font(font)
+                .foregroundStyle(.black)
+                .blendMode(.overlay)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            Text(text)
+                .font(font)
+                .foregroundStyle(Color.black.opacity(0.2))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
 }
