@@ -283,6 +283,10 @@ public final class FaceParallaxController: NSObject, @preconcurrency ARSessionDe
         guard sceneCadence.accepts(link.timestamp) else { return }
         PerformanceDiagnostics.shared.receivedSceneTick()
         let now = CACurrentMediaTime()
+        let measuring = PerformanceDiagnostics.shared.isRecording
+        defer {
+            if measuring { PerformanceDiagnostics.shared.receivedSceneWork(seconds: CACurrentMediaTime() - now) }
+        }
         let tracked = lastFaceTime > 0 && now - lastFaceTime < 0.3
         let delivery = orientations.takeLatest()
         PerformanceDiagnostics.shared.receivedSceneGyro(ageSeconds: delivery.maximumAge, count: delivery.count,

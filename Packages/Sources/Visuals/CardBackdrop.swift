@@ -50,6 +50,9 @@ public struct CardBackdrop: View {
     }
 
     public var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.backdrop)
+        #endif
         let accoutrements = record.accoutrements
         let renderedReveal = isStaticSample ? (showsGuilloche ? 1.0 : 0.0) : self.reveal
         let swirlPaths = isStaticSample
@@ -100,32 +103,36 @@ public struct CardBackdrop: View {
         )
 
         ZStack {
-            if let windowScene {
-                WindowGradientBackdrop(timeOfDay: record.metadata.timeOfDay, scene: windowScene)
-            } else {
-                GradientLayer(
-                    timeOfDay: record.metadata.timeOfDay,
-                    attitude: attitude,
-                    mode: .balancedAtRest
-                )
+            if !CardRenderProbe.omitGradient {
+                if let windowScene {
+                    WindowGradientBackdrop(timeOfDay: record.metadata.timeOfDay, scene: windowScene)
+                } else {
+                    GradientLayer(
+                        timeOfDay: record.metadata.timeOfDay,
+                        attitude: attitude,
+                        mode: .balancedAtRest
+                    )
+                }
             }
 
             // Always mount both guilloche layers so the `reveal` driver can
             // animate per-path opacity into and out of view. At `reveal == 0`
             // each layer short-circuits stroking so the cost is negligible.
-            GuillocheRotationLayer(
-                paths: swirlPaths,
-                tint: .white,
-                attitude: rotationGuillocheAttitude,
-                usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
-                reveal: renderedReveal,
-                minimumOpacity: Self.rotationOpacityFloor(for: record.metadata.timeOfDay)
-            )
-            .equatable()
-            .offset(rotationGuillocheOffset)
-            // Share the deepest blend plane exactly, including its scale and
-            // global translation, rather than adding a separate swirl depth.
-            .windowDepth(blendPaths.count > 1 ? CardSceneDepth.deepestBlendFraction : 0)
+            if !CardRenderProbe.omitGuilloche {
+                GuillocheRotationLayer(
+                    paths: swirlPaths,
+                    tint: .white,
+                    attitude: rotationGuillocheAttitude,
+                    usage: Self.rotationGuillocheUsage(hasPhoto: photo != nil),
+                    reveal: renderedReveal,
+                    minimumOpacity: Self.rotationOpacityFloor(for: record.metadata.timeOfDay)
+                )
+                .equatable()
+                .offset(rotationGuillocheOffset)
+                // Share the deepest blend plane exactly, including its scale and
+                // global translation, rather than adding a separate swirl depth.
+                .windowDepth(blendPaths.count > 1 ? CardSceneDepth.deepestBlendFraction : 0)
+            }
 
             if let photo {
                 PhotoLayer(
@@ -139,23 +146,25 @@ public struct CardBackdrop: View {
                 )
             }
 
-            GuillocheBlendLayer(
-                paths: blendPaths,
-                density: density,
-                attitude: attitude,
-                tint: .white,
-                depthScale: blendTuning.depthScale,
-                reversed: true,
-                reverseDepthOrder: blendTuning.reverseDepthOrder,
-                reverseMotionDirection: blendTuning.reverseMotionDirection,
-                movementScaleX: blendTuning.guillocheMovementScaleX,
-                movementScaleY: blendTuning.guillocheMovementScaleY,
-                perspectiveAmount: elementDepthTuning.perspectiveAmount,
-                skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
-                reveal: renderedReveal
-            )
-            .frame(width: 184, height: 160)
-            .opacity(Self.blendOpacity(for: record.metadata.timeOfDay))
+            if !CardRenderProbe.omitGuilloche {
+                GuillocheBlendLayer(
+                    paths: blendPaths,
+                    density: density,
+                    attitude: attitude,
+                    tint: .white,
+                    depthScale: blendTuning.depthScale,
+                    reversed: true,
+                    reverseDepthOrder: blendTuning.reverseDepthOrder,
+                    reverseMotionDirection: blendTuning.reverseMotionDirection,
+                    movementScaleX: blendTuning.guillocheMovementScaleX,
+                    movementScaleY: blendTuning.guillocheMovementScaleY,
+                    perspectiveAmount: elementDepthTuning.perspectiveAmount,
+                    skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
+                    reveal: renderedReveal
+                )
+                .frame(width: 184, height: 160)
+                .opacity(Self.blendOpacity(for: record.metadata.timeOfDay))
+            }
         }
         .onAppear {
             // Snap to the current visibility on first render so stable views

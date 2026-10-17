@@ -68,6 +68,9 @@ public struct GuillocheBlendLayer: View, Animatable {
     }
 
     public var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.blendStack)
+        #endif
         ZStack {
             ForEach(paths.indices, id: \.self) { index in
                 let path = paths[index]

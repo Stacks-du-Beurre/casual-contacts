@@ -35,6 +35,9 @@ struct CardMaterialSample<Content: View>: View {
     }
 
     var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.materialSample)
+        #endif
         let image = preparedImage
         ZStack {
             if let image {

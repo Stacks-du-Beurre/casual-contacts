@@ -37,6 +37,11 @@ import Observation
     @ObservationIgnored private var previous = 0.0
     @ObservationIgnored private var intervals: [Double] = []
     @ObservationIgnored private var expectedIntervalMS = 0.0
+    @ObservationIgnored private var cpuBaseline: DiagnosticCPUReading?
+    @ObservationIgnored private var work = RenderingWorkBucket()
+    @ObservationIgnored private var transitionWork = RenderingWorkBucket()
+    @ObservationIgnored private var transitionCPUStart: DiagnosticCPUReading?
+    @ObservationIgnored private var maximumCallbackOverrunMS = 0.0
     @ObservationIgnored private var gyroUpdates = 0
     @ObservationIgnored private var cameraFrames = 0
     @ObservationIgnored private var validCameraFrames = 0
@@ -94,7 +99,7 @@ import Observation
         var timing: CallbackTimingSummary?
     }
     private struct Report: Codable, Sendable {
-        let schemaVersion = 1
+        let schemaVersion = 2
         let note = "Display callbacks measure main-thread cadence, not GPU-presented FPS. Times are seconds since recording began. No images, positions, contacts, or identifiers are recorded."
         let metadata: [String: String]
         let rows: [Row]
@@ -107,6 +112,7 @@ import Observation
         bucketStart = started
         previous = 0
         resetBucket()
+        cpuBaseline = DiagnosticCPUReading.capture()
         var system = utsname()
         uname(&system)
         let hardware = withUnsafePointer(to: &system.machine) {
@@ -160,6 +166,8 @@ import Observation
             foregroundStarted = CACurrentMediaTime()
             awaitingGyro = true; awaitingCamera = true; awaitingScene = true
         }
+        cpuBaseline = DiagnosticCPUReading.capture()
+        if !active { transitionCPUStart = nil }
         previous = 0 // Background time is not a rendering stall.
         bucketStart = CACurrentMediaTime()
         link?.isPaused = !active
@@ -184,6 +192,16 @@ import Observation
         guard isRecording else { return }
         sceneTicks += 1
         if awaitingScene { awaitingScene = false; recordFirstUpdate("first_scene_tick") }
+    }
+    public func receivedViewBody(_ body: DiagnosticViewBody) {
+        guard isRecording else { return }
+        work.receivedBody(body)
+        if transitionName != nil { transitionWork.receivedBody(body) }
+    }
+    public func receivedSceneWork(seconds: Double) {
+        guard isRecording else { return }
+        work.receivedSceneWork(seconds: seconds)
+        if transitionName != nil { transitionWork.receivedSceneWork(seconds: seconds) }
     }
     public func receivedSceneGyro(ageSeconds: Double, count: Int = 1, renderAgeSeconds: Double? = nil) {
         guard isRecording else { return }
@@ -213,17 +231,25 @@ import Observation
         transitionMinimumScheduledMS = .infinity
         transitionMaximumScheduledMS = 0
         transitionIntervals = []
+        transitionWork = RenderingWorkBucket()
+        transitionCPUStart = DiagnosticCPUReading.capture()
         event(name + "_started", values: ["hasPhoto": hasPhoto ? 1 : 0])
     }
     public func endTransition(_ name: String) {
         guard isRecording, transitionName == name else { return }
+        let elapsed = CACurrentMediaTime() - transitionStart
+        var values = transitionWork.values
+        if let first = transitionCPUStart, let last = DiagnosticCPUReading.capture() {
+            values.merge(last.values(since: first, elapsed: elapsed)) { _, new in new }
+        }
+        values.merge(["durationMS": elapsed * 1000,
+                      "cameraFrames": Double(transitionCameraFrames),
+                      "maximumCameraAgeMS": transitionMaximumCameraAgeMS,
+                      "minimumScheduledIntervalMS": transitionMinimumScheduledMS.isFinite ? transitionMinimumScheduledMS : 0,
+                      "maximumScheduledIntervalMS": transitionMaximumScheduledMS]) { _, new in new }
         append(Row(seconds: CACurrentMediaTime() - started, event: name + "_completed",
                    context: context, tracking: trackingState,
-                   values: ["durationMS": (CACurrentMediaTime() - transitionStart) * 1000,
-                            "cameraFrames": Double(transitionCameraFrames),
-                            "maximumCameraAgeMS": transitionMaximumCameraAgeMS,
-                            "minimumScheduledIntervalMS": transitionMinimumScheduledMS.isFinite ? transitionMinimumScheduledMS : 0,
-                            "maximumScheduledIntervalMS": transitionMaximumScheduledMS],
+                   values: values,
                    timing: CallbackTimingSummary(intervalsMS: transitionIntervals)))
         transitionName = nil
         transitionIntervals = []
@@ -232,6 +258,7 @@ import Observation
     @objc private func tick(_ displayLink: CADisplayLink) {
         let now = CACurrentMediaTime()
         expectedIntervalMS = (displayLink.targetTimestamp - displayLink.timestamp) * 1000
+        maximumCallbackOverrunMS = max(maximumCallbackOverrunMS, max(0, now - displayLink.targetTimestamp) * 1000)
         if transitionName != nil {
             transitionMinimumScheduledMS = min(transitionMinimumScheduledMS, expectedIntervalMS)
             transitionMaximumScheduledMS = max(transitionMaximumScheduledMS, expectedIntervalMS)
@@ -250,22 +277,32 @@ import Observation
         guard isRecording else { return }
         let elapsed = CACurrentMediaTime() - bucketStart
         guard elapsed > 0 else { return }
+        let cpu = DiagnosticCPUReading.capture()
+        var values = work.values
+        if let first = cpuBaseline, let last = cpu {
+            values.merge(last.values(since: first, elapsed: elapsed)) { _, new in new }
+        }
+        cpuBaseline = cpu
+        values["maximumCallbackOverrunMS"] = maximumCallbackOverrunMS
+        values.merge(["windowSeconds": elapsed, "gyroUpdates": Double(gyroUpdates),
+                      "expectedCallbackIntervalMS": expectedIntervalMS,
+                      "cameraFrames": Double(cameraFrames), "validCameraFrames": Double(validCameraFrames),
+                      "staleCameraFrames": Double(staleCameraFrames), "maximumCameraAgeMS": maximumCameraAgeMS,
+                      "sceneDisplayCallbacks": Double(sceneDisplayCallbacks),
+                      "sceneTicks": Double(sceneTicks), "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
+                      "sceneGyroSamples": Double(sceneGyroSamples), "maximumGyroAgeMS": maximumGyroAgeMS,
+                      "maximumGyroRenderAgeMS": maximumGyroRenderAgeMS,
+                      "residentMemoryMB": residentMemoryMB(),
+                      "lowPowerMode": ProcessInfo.processInfo.isLowPowerModeEnabled ? 1 : 0]) { _, new in new }
         append(Row(seconds: CACurrentMediaTime() - started, event: "sample",
                    context: context, tracking: trackingState,
-                   values: ["windowSeconds": elapsed, "gyroUpdates": Double(gyroUpdates),
-                            "expectedCallbackIntervalMS": expectedIntervalMS,
-                            "cameraFrames": Double(cameraFrames), "validCameraFrames": Double(validCameraFrames),
-                            "staleCameraFrames": Double(staleCameraFrames), "maximumCameraAgeMS": maximumCameraAgeMS,
-                            "sceneDisplayCallbacks": Double(sceneDisplayCallbacks),
-                            "sceneTicks": Double(sceneTicks), "thermalState": Double(ProcessInfo.processInfo.thermalState.rawValue),
-                            "sceneGyroSamples": Double(sceneGyroSamples), "maximumGyroAgeMS": maximumGyroAgeMS,
-                            "maximumGyroRenderAgeMS": maximumGyroRenderAgeMS,
-                            "residentMemoryMB": residentMemoryMB(),
-                            "lowPowerMode": ProcessInfo.processInfo.isLowPowerModeEnabled ? 1 : 0],
+                   values: values,
                    timing: CallbackTimingSummary(intervalsMS: intervals)))
         resetBucket()
     }
     private func resetBucket() {
+        work = RenderingWorkBucket()
+        maximumCallbackOverrunMS = 0
         intervals = []
         gyroUpdates = 0; cameraFrames = 0; validCameraFrames = 0; staleCameraFrames = 0
         maximumCameraAgeMS = 0; sceneTicks = 0; sceneDisplayCallbacks = 0

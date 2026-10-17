@@ -48,6 +48,9 @@ public struct CardView: View {
     }
 
     public var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.card)
+        #endif
         return GeometryReader { geo in
             let layout = CardLayout(size: geo.size)
             // Keep the visible artwork live. Text materials can reuse a
@@ -80,7 +83,7 @@ public struct CardView: View {
                         .opacity(expansionProgress)
                 }
 
-                if size != .large || expansionProgress < 1 {
+                if !CardRenderProbe.omitText && (size != .large || expansionProgress < 1) {
                 CardTextLayer(
                     record: record,
                     size: .medium,
@@ -283,6 +286,9 @@ struct CardTextLayer<Backdrop: View>: View {
     @ViewBuilder let backdrop: () -> Backdrop
 
     var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.cardText)
+        #endif
         if size == .large {
             fullScreenContent
         } else {

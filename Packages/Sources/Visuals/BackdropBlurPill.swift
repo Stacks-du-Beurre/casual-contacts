@@ -59,16 +59,18 @@ public struct BackdropBlurPill<Backdrop: View, Content: View>: View {
                 GeometryReader { geo in
                     let frame = geo.frame(in: .named(coordinateSpaceName))
                     ZStack(alignment: .topLeading) {
-                        if usesCachedMaterial {
-                            backdrop
-                                .frame(width: backdropSize.width, height: backdropSize.height)
-                                .offset(x: -frame.minX, y: -frame.minY)
-                                .environment(\.cardMaterialBlurRadius, blurRadius)
-                        } else {
-                            backdrop
-                                .frame(width: backdropSize.width, height: backdropSize.height)
-                                .offset(x: -frame.minX, y: -frame.minY)
-                                .blur(radius: blurRadius)
+                        if !CardRenderProbe.omitMaterial {
+                            if usesCachedMaterial {
+                                backdrop
+                                    .frame(width: backdropSize.width, height: backdropSize.height)
+                                    .offset(x: -frame.minX, y: -frame.minY)
+                                    .environment(\.cardMaterialBlurRadius, blurRadius)
+                            } else {
+                                backdrop
+                                    .frame(width: backdropSize.width, height: backdropSize.height)
+                                    .offset(x: -frame.minX, y: -frame.minY)
+                                    .blur(radius: blurRadius)
+                            }
                         }
 
                         fill

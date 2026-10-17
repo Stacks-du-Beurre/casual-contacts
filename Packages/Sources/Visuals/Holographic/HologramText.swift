@@ -74,6 +74,9 @@ public struct HologramText<Backdrop: View>: View {
     }
 
     public var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.hologram)
+        #endif
         textStack
             .padding(.horizontal, 6)
             .background(alignment: .topLeading) { chromaticStack }
@@ -90,7 +93,7 @@ public struct HologramText<Backdrop: View>: View {
             let overscanH = geo.size.height * Self.textureOverscan
 
             ZStack {
-                if showsBackdropBlur {
+                if showsBackdropBlur && !CardRenderProbe.omitMaterial {
                     if usesCachedMaterial {
                         backdrop
                             .frame(width: backdropSize.width, height: backdropSize.height)
@@ -110,26 +113,28 @@ public struct HologramText<Backdrop: View>: View {
                     .opacity(tuning.whiteFillOpacity)
                     .allowsHitTesting(false)
 
-                Image(hologram.rawValue, bundle: .module)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: overscanW, height: overscanH)
-                    .offset(
-                        x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
-                        y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
-                    )
-                    .opacity(tuning.lightenOpacity)
-                    .blendMode(.lighten)
-                    .allowsHitTesting(false)
+                if !CardRenderProbe.omitHologram {
+                    Image(hologram.rawValue, bundle: .module)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: overscanW, height: overscanH)
+                        .offset(
+                            x: CGFloat(attitude.roll) * CGFloat(tuning.translationScaleX),
+                            y: CGFloat(attitude.pitch) * CGFloat(tuning.translationScaleY)
+                        )
+                        .opacity(tuning.lightenOpacity)
+                        .blendMode(.lighten)
+                        .allowsHitTesting(false)
 
-                Image(hologram.rawValue, bundle: .module)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: overscanW, height: overscanH)
-                    .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
-                    .opacity(tuning.luminosityOpacity)
-                    .blendMode(.luminosity)
-                    .allowsHitTesting(false)
+                    Image(hologram.rawValue, bundle: .module)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: overscanW, height: overscanH)
+                        .rotationEffect(.degrees(attitude.roll * tuning.rotationDegrees))
+                        .opacity(tuning.luminosityOpacity)
+                        .blendMode(.luminosity)
+                        .allowsHitTesting(false)
+                }
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()

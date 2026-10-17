@@ -284,6 +284,9 @@ public struct RecordsListScene: View {
     }
 
     public var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.list)
+        #endif
         GeometryReader { proxy in
             // Same anchor as EmptyStateView: 375pt iPhone 11 Pro canvas, floor
             // at Figma size, cap at 1.3× so iPad widths don't overshoot.

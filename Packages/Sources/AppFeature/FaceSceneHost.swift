@@ -44,6 +44,9 @@ struct FaceSceneHost<Content: View>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        #if os(iOS)
+        let _ = PerformanceDiagnostics.shared.receivedViewBody(.sceneHost)
+        #endif
         content(tracker, listEnabled ? windowProjection(cardCentered: true) : nil,
                 expandedEnabled ? windowProjection(cardCentered: false) : nil, $showingSceneSettings)
         .sheet(isPresented: $showingSceneSettings) { sceneSettings }

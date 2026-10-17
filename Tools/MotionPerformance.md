@@ -423,3 +423,120 @@ Ignored raw metrics use `pose-publication-control-` and
 `pose-publication-candidate-` prefixes. The UI scenarios, focused cadence/card
 checks, and production Release build passed. On-device acceptance should compare
 build 73 with the new candidate using the same cards and Low Power Mode state.
+
+## Build 74 follow-up: isolate scroll rendering cost
+
+The October 17 build 74 device recording averages 88.1 display callbacks/s,
+58.5 accepted scene poses/s and 30.0 camera frames/s over complete active-list
+windows. Build 73 averaged 85.6 callbacks/s. Pose publication has decreased,
+but the recordings do not establish a meaningful scroll speedup. Low Power Mode
+is off, thermal state is normal, and no fullscreen transitions are present.
+
+The paired phone is unavailable to CoreDevice. An eight-second simulator CPU
+sample during the optimized moving-photo scroll harness finds 2,071 of 4,852
+main-thread samples inside RenderBox display/compositing. This includes waits;
+it is neither exclusive CPU time nor a device GPU measurement. Texture
+preparation/upload and channel conversion are substantial. Projection and
+location-label work account for far fewer samples. Time Profiler again failed
+to finish; only the completed `sample` capture is used as evidence.
+
+The same simulator binary, fixture and five down/up cycles give the following
+layer-isolation results. Values are callback median/p95 in milliseconds.
+
+| Visible layers | Median | p95 |
+| --- | ---: | ---: |
+| All | 47.81 | 147.59 |
+| All, repeat | 48.42 | 148.84 |
+| Without compact text/materials | 19.44 | 49.57 |
+| Without gradient | 45.81 | 134.99 |
+| Without guilloche | 22.12 | 46.79 |
+| Without frosted backdrop samples | 33.83 | 65.16 |
+| Without name hologram textures | 45.57 | 137.73 |
+| Split-test control, all | 48.13 | 149.65 |
+
+These ablations identify costly components; removing artwork is not a proposed
+product change. Raw artifacts use `render-probe-` under ignored
+`build/motion-performance/`. Simulator-only DEBUG flags are
+`-MotionOmitText`, `-MotionOmitGradient`, `-MotionOmitGuilloche`,
+`-MotionOmitMaterial` and `-MotionOmitHologram`. They require
+`-MotionPerformanceHarness` and never hide production content.
+
+An equality-wrapper experiment around blend strokes and location labels was
+removed: scroll median 47.28 → 46.65 ms is within observed run variance.
+It did not address the dominant material/compositing work.
+
+Three crop variants were tested against full-image controls. Each crops an
+already-blurred sample to the visible pill, retains its original placement, and
+keeps live backgrounds, blur strength, hologram motion, depth and photo framing.
+
+| Variant | Scroll median / p95 ms |
+| --- | --- |
+| Shared-provider crop control | 47.06 / 183.40 |
+| Shared-provider crop | 47.81 / 166.58 |
+| Shared-provider crop repeat | 47.99 / 200.04 |
+| Independent-buffer/full-surface control | 44.59 / 132.92 |
+| Independent-buffer/full-surface crop | 45.34 / 134.30 |
+| Independent-buffer/full-surface repeat | 47.28 / 133.96 |
+| Compact drawing-surface control | 48.36 / 198.05 |
+| Compact drawing-surface crop | 47.58 / 166.17 |
+| Compact drawing-surface repeat | 47.40 / 215.81 |
+| Compact drawing-surface control repeat | 48.01 / 231.44 |
+
+All runs use five cycles, active synthetic motion, positive perspective depth,
+and no concurrent host build or profiler. Reduce Motion is not enabled for the
+performance comparisons. The independent copies reduce sample textures from
+555×317 to regions such as 236×39 and 99×7; startup logging confirms that the
+crop path runs. Five focused rendering/cache test methods (six parameter cases)
+pass for the compact prototype, including exact bitmap-grid parity and composed
+chrome tolerance of at most two 8-bit channel levels. These checks verify the
+prototype, not a speedup. Initial resizable-image variants introduced subpixel
+sampling differences and were corrected before the final comparison.
+
+The improvement is too small and inconsistent to retain. All crop helpers,
+caches, prototype tests and full-image control switches were removed. Only the
+simulator-only layer-isolation switches and this report remain. Raw artifacts
+use `crop-`, `crop-copy-` and `compact-` prefixes under the ignored metrics folder.
+
+The result identifies material composition and guilloche rendering as useful
+profiling targets, but does not establish the phone's CPU/GPU bottleneck or a
+safe rendering optimization. Obtain a physical-device SwiftUI/Time Profiler and
+rendering-hitch trace before selecting another rendering replacement. Further
+camera sampling reductions are not supported by these measurements.
+
+Final validation after removing the prototypes: production Release generic-iOS
+build passed; the optimized simulator moving-photo scroll and fullscreen UI
+scenarios passed five cycles each. The latter covers five entries and five
+exits. No crop code or prototype tests remain. The default renderer and camera
+cadence stay approved; these checks do not establish a phone speedup.
+
+## TestFlight work diagnostics (schema 2)
+
+Hardware testing uses TestFlight and the existing opt-in JSON export; a cable
+or local-network connection to the Mac is not required. Samples now include
+`processCPUMS`, `mainThreadCPUMS` and their `*CPUCorePercent` rates. One fully
+occupied CPU core is 100%; process use can exceed 100% across multiple threads.
+CPU readings are omitted if the platform clocks fail, and the CPU baseline is
+reset on foreground changes. Background elapsed time is not charged to the
+next foreground bucket.
+
+`viewBody_*` fields count scene host, list, card, card text, backdrop, material
+sample, hologram and blend-stack body evaluations. They count SwiftUI updates,
+not rendered frames. `sceneWorkCount`, `sceneWorkTotalMS` and
+`sceneWorkMaximumMS` time accepted scene-pose updates. They do not include
+deferred SwiftUI layout or GPU work. Transition completion rows carry their own
+CPU and work counters so a one-second sample cannot hide a short transition.
+`maximumCallbackOverrunMS` measures callbacks that arrive past the display
+link's next target time; it is not GPU presentation timing.
+
+All new counters are aggregated in memory. No per-frame log rows or disk writes,
+live settings readouts, contact content, camera frames or pose coordinates are
+added. The renderer and 30 Hz camera/60 Hz scene policy are unchanged. These
+metrics distinguish expensive input work, excessive view invalidation, and
+main-thread CPU pressure; low CPU with delayed callbacks does not alone prove
+a GPU bottleneck.
+
+On the diagnostic TestFlight build, record roughly 20 seconds of scrolling,
+then open/close both a photo card and a non-photo card several times while
+moving the phone. Export with the existing Prepare/Share performance log flow.
+Keep Low Power Mode off for the first recording; a separate recording with it
+on is useful. Normal motion stays enabled in both recordings.
