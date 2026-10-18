@@ -580,3 +580,75 @@ frames per second. TestFlight must confirm the gain and appearance on hardware.
 The existing performance recorder is retained. A simulator-only
 `-MotionLayeredGuilloche` flag under `-MotionPerformanceHarness` runs the original
 renderer for repeatable control measurements; it cannot select a device mode.
+
+
+## October 17 premixed opaque stroke experiment (discarded)
+
+Tested replacing stroke alpha with an opaque RGB color computed as
+`white * alpha + meanGradientRGB * (1 - alpha)`. Canonical gradient means
+were computed from the source PNGs. Blend colors included both the 0.8 stroke
+alpha and the per-time-of-day group opacity; the experiment removed that group
+opacity. Rotation strokes used the current effective rotation opacity and an
+opaque cached stroke texture. Antialiased edge coverage and the card's other
+compositing remained. Normal app behavior was never switched to this mode.
+
+The seven-gradient side-by-side render showed a clear loss of bright buildup at
+line intersections, especially in night and midnight artwork. A constant opaque
+line color cannot preserve that overlap-dependent brightness or the changing
+colors of a photo beneath it.
+
+The same optimized moving-photo scroll harness measured the following callback
+gaps, without concurrent compilation or recording during timing windows:
+
+| Renderer | Median (ms) | p95 (ms) |
+| --- | ---: | ---: |
+| Current transparent strokes | 41.64 | 167.26 |
+| Premixed opaque strokes | 44.74 | 183.55 |
+| Premixed repeat | 41.59 | 199.25 |
+
+No consistent timing improvement was found. The experimental source changes
+were removed; build 76 remains the device-test candidate. Comparison PNG and
+raw timing data are retained locally under build/motion-performance and /tmp.
+
+
+## October 17 update-isolation and material experiments (discarded)
+
+Build 76's device log improved scroll-heavy display callbacks from 94.7/s to
+109.2/s versus build 75, with main-thread CPU dropping from 86.1% to 74.8% of
+one core. These recordings were not controlled workloads: gestures and valid
+face-frame delivery differed, and the newer recording had fair thermal state.
+After settings settled, scene updates and card evaluations were zero. Neither
+recording included fullscreen transitions.
+
+Tested the proposed list-update isolation and held-material changes with the
+same optimized simulator/photo/60 mm-depth moving scroll harness. Source
+motion remained active. No builds or screen recording ran during timed tests.
+
+| Experiment | Median callback gap (ms) | p95 (ms) |
+| --- | ---: | ---: |
+| Original control | 39.39 | 114.58 |
+| Leaf attitude delivery alone | 44.30 | 119.64 |
+| Root motion holder | 49.94 | 215.21 |
+| Prebuilt list plus leaf motion | 50.92 | 161.72 |
+| Prebuilt list plus held material changes | 50.22 | 149.72 |
+| Combined atomic attitude/projection delivery | 41.92 | 118.04 |
+| Held material changes alone | 40.08 | 148.94 |
+| Opaque card raster surface | 38.70 | 133.41 |
+| Unflattened card surface | 140.96 | 821.98 |
+| Original control repeat | 40.75 | 117.32 |
+
+Prebuilding the list reduced list body evaluations from 37.28/s to 1.17/s,
+but main-thread CPU time stayed about 582–585 ms/s and timing worsened.
+Lower body evaluation counts did not establish a performance improvement.
+The held-material experiment moved the full-environment dependency into a
+live-only capture task, skipped pose-mailbox updates while held, and reused
+an equatable bitmap leaf. The combined atomic pose recovered the structural
+refactor's regression but did not outperform either control.
+
+No candidate met the requirement for a repeatable timing gain without visual
+tradeoffs. All experimental app/test source changes were removed. Build 76
+remains the current device-test build; no new TestFlight build was requested.
+The raw measurements and prototype source copies remain in ignored
+build/motion-performance for further investigation. Future work should measure
+cost within the moving artwork/rendering paths rather than infer CPU cost
+from list body counts alone.
