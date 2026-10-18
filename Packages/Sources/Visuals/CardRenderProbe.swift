@@ -3,6 +3,8 @@ import Foundation
 /// Simulator-only ablations for the moving-card performance harness. Never
 /// removes content in a production build or outside the explicit harness.
 enum CardRenderProbe {
+    static let omitSecurityThread = enabled("-MotionOmitSecurityThread")
+    static let omitMicroprint = enabled("-MotionOmitMicroprint")
     static let deferMissingMaterials = enabled("-MotionDeferMissingMaterials")
     static let layeredGuilloche = enabled("-MotionLayeredGuilloche")
     static let omitGradient = enabled("-MotionOmitGradient")

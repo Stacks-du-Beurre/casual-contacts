@@ -26,6 +26,11 @@ public struct CardView: View {
     @Environment(\.windowCardFrame) private var cardFrame
     @Environment(\.liveWindowGeometry) private var liveGeometry
     @Environment(\.cardMaterialInteractionActive) private var materialInteractionActive
+    @State private var microprintImage: CGImage?
+
+    private var microprintInCanvas: Bool {
+        size == .small && windowScene != nil && !CardRenderProbe.layeredGuilloche
+    }
 
     public init(
         record: Record,
@@ -73,6 +78,15 @@ public struct CardView: View {
                     sharedBackdrop
                 }
 
+                if !blendTuning.hideBackdrop && !CardRenderProbe.omitSecurityThread && !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    CardSecurityThread(record: record, attitude: attitude,
+                                       expansion: size == .large ? expansionProgress : 0)
+                }
+
+                if !microprintInCanvas && !CardRenderProbe.omitGuilloche && !CardRenderProbe.omitMicroprint && !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    CardMicroprintLayer(record: record, expansion: size == .large ? expansionProgress : 0, attitude: attitude)
+                }
+
                 // Figural ornaments — rendered above the sampled backdrop so the
                 // hologram text and frosted location pill don't blur the moon,
                 // constellation, or zodiac figure into their chrome.
@@ -114,6 +128,14 @@ public struct CardView: View {
             .environment(\.windowCardFrame, liveGeometry ? nil : cardFrame ?? geo.frame(in: .global))
         }
         .environment(\.usesCachedCardMaterials, true)
+        .onChange(of: MicroprintInscription(record: record), initial: true) { _, inscription in
+            guard size == .small, !CardRenderProbe.omitMicroprint,
+                  !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                microprintImage = nil
+                return
+            }
+            microprintImage = MicroprintTexture.compact(for: inscription)
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityLabel(for: record))
     }
@@ -201,6 +223,7 @@ public struct CardView: View {
             paths: paths,
             photo: photo,
             photoSize: photoSize,
+            microprintImage: !snapshot && microprintInCanvas ? microprintImage : nil,
             isStaticSample: snapshot
         )
         .overlay(alignment: .topTrailing) {

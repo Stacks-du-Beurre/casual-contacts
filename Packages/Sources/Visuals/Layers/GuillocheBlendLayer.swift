@@ -16,6 +16,8 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let movementScaleY: Double
     public let perspectiveAmount: Double
     public let skewAmount: Double
+    public let microprintImage: CGImage?
+    public let microprintOpacity: Double
     public var reveal: Double
 
     /// `Animatable` hook — SwiftUI interpolates `reveal` per frame so each
@@ -54,6 +56,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         movementScaleY: Double = 1.0,
         perspectiveAmount: Double = 1.0,
         skewAmount: Double = 0.08,
+        microprintImage: CGImage? = nil,
+        microprintOpacity: Double = 1,
         reveal: Double = 1.0
     ) {
         self.paths = paths
@@ -68,6 +72,8 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.movementScaleY = movementScaleY
         self.perspectiveAmount = perspectiveAmount
         self.skewAmount = skewAmount
+        self.microprintImage = microprintImage
+        self.microprintOpacity = microprintOpacity
         self.reveal = reveal
     }
 
@@ -156,6 +162,23 @@ public struct GuillocheBlendLayer: View, Animatable {
                     layer.scaleBy(x: scale, y: scale)
                     layer.translateBy(x: -geometry.size.width / 2, y: -geometry.size.height / 2)
                     layer.stroke(paths[index], with: .color(tint.opacity(0.8 * localReveal(forIndex: index))), lineWidth: 0.5)
+                }
+                if let microprintImage, reveal >= 1 {
+                    // The inscription has its own plane, independent of the
+                    // stack's depth order. The front outline stays untouched.
+                    let depth = scene.backingDepthMeters * pow(CardMicroprintLayer.depthFraction, scene.spacing)
+                    let projection = WindowPlaneProjection(eye: scene.eye, reference: reference, depth: depth)
+                    let scale = projection?.scale ?? 1
+                    let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
+                    let dy = -((scale - 1) * y + (projection?.translationY ?? 0)) / metersPerPoint
+                    let side = 226.0
+                    var printContext = context
+                    printContext.opacity = microprintOpacity
+                    printContext.translateBy(x: canvasSize.width / 2 + dx, y: canvasSize.height / 2 + dy)
+                    printContext.scaleBy(x: scale, y: scale)
+                    var ink = printContext.resolve(Image(decorative: microprintImage, scale: 3))
+                    ink.shading = .color(tint)
+                    printContext.draw(ink, in: CGRect(x: -side / 2, y: -side / 2, width: side, height: side))
                 }
             }
             .frame(width: canvasSize.width, height: canvasSize.height)

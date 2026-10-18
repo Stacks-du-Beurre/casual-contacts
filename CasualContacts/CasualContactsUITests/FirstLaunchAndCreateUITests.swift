@@ -175,16 +175,26 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: false, diagnostics: true)
     }
 
+    func testListScrollsWithoutMicroprintAndPhoto() {
+        runMotionScrolls(liveMaterials: false, diagnostics: true, omitMicroprint: true)
+    }
+
+    func testListScrollsWithoutSecurityThreadAndPhoto() {
+        runMotionScrolls(liveMaterials: false, diagnostics: true, omitSecurityThread: true)
+    }
+
     func testListScrollsWithLiveMaterialsAndContinuousMotionAndPhoto() {
         runMotionScrolls(liveMaterials: true)
     }
 
-    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false, legacyGuilloche: Bool = false, deferMissingMaterials: Bool = false) {
+    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false, legacyGuilloche: Bool = false, deferMissingMaterials: Bool = false, omitMicroprint: Bool = false, omitSecurityThread: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
                                "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
         if deferMissingMaterials { app.launchArguments.append("-MotionDeferMissingMaterials") }
+        if omitMicroprint { app.launchArguments.append("-MotionOmitMicroprint") }
+        if omitSecurityThread { app.launchArguments.append("-MotionOmitSecurityThread") }
         if legacyGuilloche { app.launchArguments.append("-MotionLayeredGuilloche") }
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }

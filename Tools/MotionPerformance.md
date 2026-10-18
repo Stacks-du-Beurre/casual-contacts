@@ -681,3 +681,179 @@ Final production-path simulator verification reproduced 34.44 ms median /
 passed with a photo (37.13 / 61.01 ms) and without (35.54 / 49.44 ms).
 The settings suspension/resume UI check passed. These are callback intervals,
 not GPU frame times. Device validation remains necessary.
+
+## Engraved microprinting prototype (screen-fixed, superseded)
+
+Microprinting is generated from the current name/place, a stable UUID-derived
+issue signature, and the encounter timestamp. The timestamp explicitly uses UTC
+because records do not retain the original local timezone. All data stays on-device.
+Core Text shapes Latin/Cyrillic inscriptions once into a 3x alpha texture.
+The bounded 20 MB cache is shared across compact and expanded artwork.
+
+Optimized simulator, continuous motion, photo-card scroll harness:
+
+| Renderer | Median callback gap (ms) | p95 (ms) |
+| --- | ---: | ---: |
+| First control, no engraving | 36.53 | 84.31 |
+| Separate alpha-mask surface | 46.00 | 117.12 |
+| Separate baked-color surface | 48.53 | 135.38 |
+| Shared canvas, color texture | 53.43 | 302.60 |
+| Shared canvas, alpha texture | 42.21 | 105.03 |
+| Shared alpha canvas repeat | 44.40 | 115.72 |
+| Combined fixed outline and print | 34.25 | 81.97 |
+| Matched control before final repeat | 40.20 | 84.46 |
+| Combined fixed outline and print repeat | 40.20 | 86.04 |
+
+The screen-fixed prototype combined its compact plate with the front outline's draw operation.
+All deeper vector planes retain their existing projection. No additional card
+compositing surface is needed. The 240 pt plate preserves the original 184 x 160
+outline and 226 pt engraving dimensions; it is not scaled with face motion.
+The preparation key includes the record and inherited depth-order setting.
+Expanded cards use the full inscription texture with their zoom layout.
+
+The color-texture experiment exceeded the cache's working set and repeatedly
+prepared plates. Alpha textures reduced each full plate to about 1.4 MB, with
+compact plates below 0.6 MB. Snapshot checks cover Latin and Cyrillic text;
+projection tests compare the central artwork in both depth-order modes.
+The final repeat is near control timing, not proof of 120 Hz GPU presentation.
+Device validation is still needed. Raw trials are in ignored build/microprint-measurements.
+
+
+## Windowed security thread prototype
+
+The new paper-surface ornament uses four exposed foil windows, alternating
+record-name initials, rosettes, and the encounter year in UTC. It adds no
+stored fields, networking, or camera processing. Existing eye/gyro publications
+control its reflection; Reduce Motion freezes that reflection. The thread
+interpolates with the existing list-to-fullscreen layout.
+
+Core Text and the engraved paths are prepared once into an 82.5 KB alpha
+plate. Preparation took at most 0.43 ms in the initial simulator recording.
+A separate prepared RGBA foil image is under 400 KB; both use a bounded
+4 MB / 32-object cache. Compact cards use this image plus a small opacity
+change, without another live Canvas. Expanded cards use an angle-dependent
+metal gradient and a reflected strip clipped to the four windows. The richer
+reflection eases in with expansion. No idle animation timer is added.
+
+Optimized simulator runs used the existing active-motion/photo scrolling
+harness, with no compilation or screen recording during timed runs. These
+are display-callback gaps, not device or GPU-presented frame rates.
+
+| Rendering | Median gap (ms) | p95 gap (ms) |
+| --- | ---: | ---: |
+| Initial live gradients on every card | 42.16 | 132.69 |
+| Paired control, no thread | 41.59 | 85.65 |
+| Cached metal plus live list reflection | 41.54 | 101.16 |
+| Final compact cached image / opacity gleam | 41.69 | 102.35 |
+| Final control, no thread | 42.21 | 83.77 |
+
+The final list implementation keeps typical timing similar and reduces work
+relative to the first prototype, but its p95 remains about 18.6 ms above the
+final control. Do not claim zero performance cost or device 120 Hz from these
+runs. Phone verification is still needed before releasing the new ornament.
+Raw measurements are in ignored build/security-thread-measurements.
+
+Verification: 10 focused tests across five suites passed, including foil angle
+snapshots, the compact foil snapshot, Unicode/UTC inscriptions, texture reuse,
+and the existing projection parity checks. Moving fullscreen transition tests
+passed with and without photos; interactive drag cancellation/dismissal also
+passed. These checks establish functional rendering and transitions, not
+on-device frame rate.
+
+
+## Engraved silk revision
+
+Replaces the four framed foil windows with three tapered exposures along a
+sinuous spine. Two counter-wound filament families form an open weave. A
+separate facet mask catches the moving specular band independently of the
+base engraving. The center contains a small Cormorant signature: initials
+and the encounter year in Roman numerals. UUID bytes select a stable curve
+variation. No persisted model fields or network access are added.
+
+Artwork is prepared on a detached task with its own Core Graphics contexts.
+A thread-safe NSCache shares immutable results. The view remains mounted
+while preparation runs, then fades the artwork in. View-owned textures are
+released on disappearance; the cache is limited to 12 MB / 48 objects. Each
+alpha plate is below 520 KB and the compact neutral-metal image below 700 KB.
+Both base and facet are prepared before expansion, avoiding path generation
+in the zoom animation. Only cached images and light shading update with
+motion. Reduce Motion fixes the light at its neutral position.
+
+The interactive preview uses black-to-alpha exports of the actual native
+engraving and facet snapshots, with a browser reproduction of the native
+lighting formulas. It is explicitly labeled as a light study, not an iOS
+recording. The app screenshots are captured from the installed simulator app.
+
+Eleven focused tests cover the static angle/compact/mask snapshots, Roman
+years and Unicode initials, off-main-thread preparation, cache reuse, and
+existing microprint/projection parity. A prototype async-window snapshot
+check was discarded: UIKit drawHierarchy returned a render-server error in
+the standalone package runner, while reparenting the hosting controller
+correctly triggered the view disappearance cleanup. Live artwork appearance
+is checked in the running app, rather than accepting an empty snapshot.
+
+Earlier four-window performance measurements above do not describe this
+revision. On-device frame rate remains unverified for the new artwork.
+
+Final moving-photo scroll harness passed: median callback gap 40.84 ms,
+p95 99.71 ms. This is a single uncontrolled simulator run, not a device
+FPS claim or a paired performance comparison. Moving-photo fullscreen zoom
+and interactive drag cancellation/dismissal tests also passed.
+
+### Banknote reference revision — optical ribbon
+
+Replaced the rejected tapered silk shapes with four straight exposures of a
+continuous thread. The alpha plates contain demetallised contour fields and
+negative initials/year. Fullscreen lighting uses a green/gold gradient and a
+rolling highlight; compact cards still use one prepared RGBA image. Preparation,
+cache bounds, offscreen release, and Reduce Motion behaviour remain unchanged.
+
+Design references: Swiss National Bank ninth-series security strips, Reserve
+Bank of Australia rolling colour effect, and G+D RollingStar i+ optical threads.
+This is an aesthetic simulation, not a reproduction of banknote security.
+
+- https://www.snb.ch/en/the-snb/mandates-goals/cash/series-9
+- https://www.banknotes.rba.gov.au/australias-banknotes/next-generation-banknotes-program/rolling-colour-effect/
+- https://www.gi-de.com/corporate/Currency_Technology/Banknote_Solution/Banknote_Security_Technology/Security_Threads/RollingStar_i_/gd_brochure_RollingStar_iplus.pdf
+
+Earlier silk timing measurements do not measure this revision. Physical-device
+performance remains to be checked before release.
+
+Optical ribbon validation: optimized app build passed; 11 focused tests in five
+suites passed after inspection and replacement of the six thread-only visual
+references. Existing microprint snapshots and projection checks stayed unchanged.
+The moving-photo fullscreen transition UI check also passed. These are simulator
+correctness checks, not a physical-device frame-rate claim.
+
+## Annual silk and projected microprint
+
+The current ribbon uses the approved Annual silk concept. Its colour cycles
+continuously with the encounter date in UTC: mineral blue, jade, champagne,
+copper, then back to blue. This is a calendar cue, not an estimate of weather.
+The year length accounts for leap years. No readable label carries this cue.
+
+Horizontal and vertical viewpoint changes move a smooth visibility envelope
+along one continuous engraved ribbon. Gyro mode uses roll and pitch. Reduce
+Motion keeps the light fixed. There is no autonomous animation timer. One
+cached alpha engraving and one shaded image draw serve list and fullscreen.
+The preparation cache keys geometry separately from date colour.
+
+Circular microprint now projects at 75% of scene depth in both render paths.
+List cards draw a cached, downsampled 226 pt alpha image inside the existing guilloche Canvas;
+fullscreen uses the same window-plane projection. Gyro-only rendering follows
+75% of the deepest guilloche translation and inherits motion direction settings.
+The original front outline is no longer replaced. Both registration marks are
+crosshairs. There is no initials ornament on the microprint.
+
+Tools/DesignPlaygrounds/RibbonContinuum.html preserves the interactive concept
+comparison with a captured, seeded app background. It is a design playground,
+not a native animation recording or a performance benchmark.
+
+Earlier stationary-print and four-window timing results do not measure this
+revision. Device performance needs a new trace before any frame-rate claim.
+
+Validation for this revision: the optimized app build and all 11 focused tests
+passed. Projection parity covers both depth-order modes, and the microprint
+snapshots preserve matching crosshairs in Latin and Cyrillic. The moving-photo
+fullscreen, interactive drag, and diagnostic scroll UI checks all passed.
+The list texture stays below 0.5 MB. No physical-device frame rate is claimed.
