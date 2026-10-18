@@ -28,6 +28,7 @@ public struct CardView: View {
     @Environment(\.cardMaterialInteractionActive) private var materialInteractionActive
     @State private var microprintImage: CGImage?
     @State private var microprintPathCount = 0
+    @State private var microprintMinimumSide: CGFloat = 0
 
     private var microprintInCanvas: Bool {
         size == .small && windowScene != nil && !CardRenderProbe.layeredGuilloche
@@ -86,7 +87,7 @@ public struct CardView: View {
 
                 if !microprintInCanvas && !CardRenderProbe.omitGuilloche && !CardRenderProbe.omitMicroprint && !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     CardMicroprintLayer(record: record, expansion: size == .large ? expansionProgress : 0, attitude: attitude,
-                                        pathCount: microprintPathCount)
+                                        pathCount: microprintPathCount, minimumSide: microprintMinimumSide)
                 }
 
                 // Figural ornaments — rendered above the sampled backdrop so the
@@ -130,15 +131,17 @@ public struct CardView: View {
             .environment(\.windowCardFrame, liveGeometry ? nil : cardFrame ?? geo.frame(in: .global))
         }
         .environment(\.usesCachedCardMaterials, true)
-        .onChange(of: MicroprintInscription(record: record), initial: true) { _, inscription in
+        .onChange(of: record, initial: true) { _, record in
             let art = record.accoutrements
-            microprintPathCount = paths.blendPaths(for: art.letter, shape: art.guillocheShape, density: .cards).count
+            let blendPaths = paths.blendPaths(for: art.letter, shape: art.guillocheShape, density: .cards)
+            microprintPathCount = blendPaths.count
+            microprintMinimumSide = MicroprintClearance.minimumSide(paths: blendPaths)
             guard size == .small, !CardRenderProbe.omitMicroprint,
                   !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 microprintImage = nil
                 return
             }
-            microprintImage = MicroprintTexture.compact(for: inscription)
+            microprintImage = MicroprintTexture.compact(for: MicroprintInscription(record: record))
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityLabel(for: record))
@@ -228,6 +231,7 @@ public struct CardView: View {
             photo: photo,
             photoSize: photoSize,
             microprintImage: !snapshot && microprintInCanvas ? microprintImage : nil,
+            microprintMinimumSide: microprintMinimumSide,
             isStaticSample: snapshot
         )
         .overlay(alignment: .topTrailing) {

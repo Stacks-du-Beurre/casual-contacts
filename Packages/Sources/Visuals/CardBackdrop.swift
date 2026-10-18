@@ -15,6 +15,7 @@ public struct CardBackdrop: View {
     public let showsGuilloche: Bool
     public let isStaticSample: Bool
     public let microprintImage: CGImage?
+    public let microprintMinimumSide: CGFloat
 
     @Bindable private var blendTuning = CardBlendTuning.shared
     @Bindable private var elementDepthTuning = CardElementDepthTuning.shared
@@ -40,6 +41,7 @@ public struct CardBackdrop: View {
         photoSize: CGSize? = nil,
         showsGuilloche: Bool = true,
         microprintImage: CGImage? = nil,
+        microprintMinimumSide: CGFloat = 0,
         isStaticSample: Bool = false
     ) {
         self.record = record
@@ -50,6 +52,7 @@ public struct CardBackdrop: View {
         self.showsGuilloche = showsGuilloche
         self.isStaticSample = isStaticSample
         self.microprintImage = microprintImage
+        self.microprintMinimumSide = microprintMinimumSide
     }
 
     public var body: some View {
@@ -164,6 +167,7 @@ public struct CardBackdrop: View {
                     perspectiveAmount: elementDepthTuning.perspectiveAmount,
                     skewAmount: elementDepthTuning.isSkewEnabled ? elementDepthTuning.skewAmount : 0,
                     microprintImage: microprintImage,
+                    microprintMinimumSide: microprintMinimumSide,
                     microprintOpacity: 0.52 / max(Self.blendOpacity(for: record.metadata.timeOfDay), 0.52),
                     reveal: renderedReveal
                 )

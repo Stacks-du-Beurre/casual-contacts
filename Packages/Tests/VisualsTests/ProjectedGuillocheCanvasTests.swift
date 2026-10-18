@@ -14,6 +14,7 @@ import CoreModels
         SecurityThreadTests.registerFonts()
         let plate = try #require(MicroprintTexture.compact(for: MicroprintInscription(record: record)))
         #expect(plate.bytesPerRow * plate.height < 500_000)
+        let minimumSide = MicroprintClearance.minimumSide(paths: paths)
         let selectedIndex = CardMicroprintLayer.layerIndex(pathCount: paths.count, reversed: reversed)
         let fraction = CardMicroprintLayer.depthFraction(pathCount: paths.count, reversed: reversed)
         #expect(paths.indices.contains(selectedIndex))
@@ -32,9 +33,10 @@ import CoreModels
                 Color.black
                 GuillocheBlendLayer(paths: paths, density: .cards, attitude: .zero,
                     tint: .white, reversed: true, microprintImage: engraved ? plate : nil,
+                    microprintMinimumSide: minimumSide,
                     microprintOpacity: 0.52 / 0.55)
                     .frame(width: 184, height: 160).opacity(0.55)
-                if separate { CardMicroprintLayer(record: record, expansion: 0, pathCount: paths.count) }
+                if separate { CardMicroprintLayer(record: record, expansion: 0, pathCount: paths.count, minimumSide: minimumSide) }
             }.frame(width: 400, height: 300).coordinateSpace(.named("CardScene"))
                 .environment(\.windowCardSize, CGSize(width: 400, height: 300))
                 .environment(\.windowCardFrame, CGRect(x: 0, y: 0, width: 400, height: 300))

@@ -2,10 +2,38 @@ import Testing
 import SwiftUI
 import Foundation
 import CoreModels
-import Visuals
+@testable import Visuals
 @testable import AppFeature
 
 @Suite struct RealCardPathProviderTests {
+
+    @Test func microprintClearsEveryBlendStyleAtZeroPoint() {
+        let provider = RealCardPathProvider()
+        let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZЁАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ")
+        for letter in letters {
+            for shape in GuillocheShape.allCases {
+                let paths = provider.blendPaths(for: letter, shape: shape, density: .cards)
+                #expect(!paths.isEmpty)
+                let side = max(226, MicroprintClearance.minimumSide(paths: paths))
+                let emptyRadius = side * MicroprintClearance.innerRadiusFraction
+                for path in paths {
+                    path.forEach { element in
+                        let points: [CGPoint]
+                        switch element {
+                        case let .move(to: point), let .line(to: point): points = [point]
+                        case let .quadCurve(to: point, control: control): points = [point, control]
+                        case let .curve(to: point, control1: first, control2: second): points = [point, first, second]
+                        case .closeSubpath: points = []
+                        }
+                        for point in points {
+                            #expect(hypot(point.x - 92, point.y - 80) + 0.25 + 6 <= emptyRadius + 0.001,
+                                    "Zero-pose intersection: \(letter), \(shape)")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Test func rotationPathsReturnNonEmptyForKnownLetter() {
         let provider = RealCardPathProvider()

@@ -17,6 +17,7 @@ public struct GuillocheBlendLayer: View, Animatable {
     public let perspectiveAmount: Double
     public let skewAmount: Double
     public let microprintImage: CGImage?
+    public let microprintMinimumSide: CGFloat
     public let microprintOpacity: Double
     public var reveal: Double
 
@@ -57,6 +58,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         perspectiveAmount: Double = 1.0,
         skewAmount: Double = 0.08,
         microprintImage: CGImage? = nil,
+        microprintMinimumSide: CGFloat = 0,
         microprintOpacity: Double = 1,
         reveal: Double = 1.0
     ) {
@@ -73,6 +75,7 @@ public struct GuillocheBlendLayer: View, Animatable {
         self.perspectiveAmount = perspectiveAmount
         self.skewAmount = skewAmount
         self.microprintImage = microprintImage
+        self.microprintMinimumSide = microprintMinimumSide
         self.microprintOpacity = microprintOpacity
         self.reveal = reveal
     }
@@ -172,7 +175,7 @@ public struct GuillocheBlendLayer: View, Animatable {
                     let scale = projection?.scale ?? 1
                     let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
                     let dy = -((scale - 1) * y + (projection?.translationY ?? 0)) / metersPerPoint
-                    let side = 226.0
+                    let side = max(226, microprintMinimumSide)
                     var printContext = context
                     printContext.opacity = microprintOpacity
                     printContext.translateBy(x: canvasSize.width / 2 + dx, y: canvasSize.height / 2 + dy)

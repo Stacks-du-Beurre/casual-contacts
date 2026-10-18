@@ -44,6 +44,7 @@ struct CardMicroprintLayer: View {
     let expansion: CGFloat
     var attitude: DeviceAttitude = .zero
     var pathCount: Int = GuillocheBlendLayer.defaultMaxDepthLayer + 1
+    var minimumSide: CGFloat = 0
     nonisolated static let stackProgress = 0.75
 
     nonisolated static func layerIndex(pathCount: Int, reversed: Bool) -> Int {
@@ -74,7 +75,7 @@ struct CardMicroprintLayer: View {
     var body: some View {
         Color.clear.overlay {
             GeometryReader { geometry in
-                let side = min(226 + 150 * expansion, max(1, geometry.size.width - 12))
+                let side = max(minimumSide, min(226 + 150 * expansion, max(1, geometry.size.width - 12)))
                 MicroprintPlate(record: record)
                     .equatable()
                     .frame(width: side, height: side)
@@ -105,6 +106,35 @@ private struct MicroprintPlate: View, Equatable {
     }
 }
 
+/// Static zero-pose clearance. Bezier curves stay inside their control-point
+/// hulls, so enclosing every control point encloses every blended layer.
+/// Motion deliberately does not change this radius.
+enum MicroprintClearance {
+    static let innerRadiusFraction: CGFloat = 140.0 / 400.0
+    static let gap: CGFloat = 6
+
+    static func minimumSide(paths: [Path]) -> CGFloat {
+        var radius: CGFloat = 0
+        func include(_ point: CGPoint) {
+            radius = max(radius, hypot(point.x - 92, point.y - 80))
+        }
+        for path in paths {
+            path.forEach { element in
+                switch element {
+                case let .move(to: point), let .line(to: point): include(point)
+                case let .quadCurve(to: point, control: control):
+                    include(point); include(control)
+                case let .curve(to: point, control1: first, control2: second):
+                    include(point); include(first); include(second)
+                case .closeSubpath: break
+                }
+            }
+        }
+        // The blended paths use a 0.5 pt stroke.
+        return (radius + 0.25 + gap) / innerRadiusFraction
+    }
+}
+
 @MainActor enum MicroprintTexture {
     private static let cache: NSCache<NSString, MicroprintImage> = {
         let cache = NSCache<NSString, MicroprintImage>()
@@ -114,7 +144,7 @@ private struct MicroprintPlate: View, Equatable {
     }()
 
     static func image(for inscription: MicroprintInscription) -> CGImage? {
-        let key = [inscription.identity, inscription.subject, inscription.moment]
+        let key = ["radius-105", inscription.identity, inscription.subject, inscription.moment]
             .joined(separator: "\u{1F}") as NSString
         if let cached = cache.object(forKey: key) { return cached.image }
         let started = ProcessInfo.processInfo.systemUptime
@@ -125,10 +155,18 @@ private struct MicroprintPlate: View, Equatable {
                                       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.alphaOnly.rawValue)) else { return nil }
         context.scaleBy(x: 3, y: 3)
         context.translateBy(x: side / 2, y: side / 2)
+        // Keep a guaranteed empty inner circle, including fallback-font glyphs.
+        let inkRegion = CGMutablePath()
+        inkRegion.addRect(CGRect(x: -200, y: -200, width: 400, height: 400))
+        inkRegion.addEllipse(in: CGRect(x: -140, y: -140, width: 280, height: 280))
+        context.addPath(inkRegion)
+        context.clip(using: .evenOdd)
         // Core Graphics' natural y-up coordinates keep Core Text outlines crisp.
         let pearl = CGColor(red: 0.96, green: 0.95, blue: 0.88, alpha: 1)
         context.setStrokeColor(pearl)
         context.setFillColor(pearl)
+
+        let radiusScale = 1.05
 
         // Interrupted concentric rules open around the registration marks.
         // The breaks keep the engraving airy rather than making a border.
@@ -136,7 +174,7 @@ private struct MicroprintPlate: View, Equatable {
             context.setAlpha(alpha)
             context.setLineWidth(width)
             for (start, end) in [(14.0, 166.0), (194.0, 346.0)] {
-                context.addArc(center: .zero, radius: radius,
+                context.addArc(center: .zero, radius: radius * radiusScale,
                                startAngle: start * .pi / 180, endAngle: end * .pi / 180, clockwise: false)
                 context.strokePath()
             }
@@ -146,30 +184,31 @@ private struct MicroprintPlate: View, Equatable {
         context.setLineWidth(0.35)
         for index in 0..<72 where index % 18 > 2 && index % 18 < 16 {
             let angle = Double(index) * .pi / 36
-            let inner = index % 3 == 0 ? 178.5 : 181.0
+            let inner = (index % 3 == 0 ? 178.5 : 181.0) * radiusScale
             context.move(to: CGPoint(x: cos(angle) * inner, y: sin(angle) * inner))
-            context.addLine(to: CGPoint(x: cos(angle) * 183, y: sin(angle) * 183))
+            context.addLine(to: CGPoint(x: cos(angle) * 183 * radiusScale, y: sin(angle) * 183 * radiusScale))
         }
         context.strokePath()
 
         context.setAlpha(0.94)
-        arc(inscription.subject, radius: 162, centerAngle: 90, span: 137,
+        arc(inscription.subject, radius: 162 * radiusScale, centerAngle: 90, span: 137,
             fontSize: 7.6, top: true, context: context)
         arc(inscription.moment + "   ◇   CC " + inscription.identity,
-            radius: 162, centerAngle: -46, span: 108,
+            radius: 162 * radiusScale, centerAngle: -46, span: 108,
             fontSize: 6.8, top: false, context: context)
         context.setAlpha(0.46)
         arc(inscription.subject + "  ·  " + inscription.subject,
-            radius: 146, centerAngle: 90, span: 128,
+            radius: 146 * radiusScale, centerAngle: 90, span: 128,
             fontSize: 4, top: true, context: context)
         arc("CC · " + inscription.identity + "   ·   " + inscription.identity,
-            radius: 146, centerAngle: -46, span: 100,
+            radius: 146 * radiusScale, centerAngle: -46, span: 100,
             fontSize: 4, top: false, context: context)
 
         // Matching registration marks keep both sides precise and understated.
         context.setAlpha(0.72)
         context.setLineWidth(0.45)
-        for x in [-166.0, 166.0] {
+        for originalX in [-166.0, 166.0] {
+            let x = originalX * radiusScale
             context.strokeEllipse(in: CGRect(x: x - 4, y: -4, width: 8, height: 8))
             context.move(to: CGPoint(x: x - 9, y: 0)); context.addLine(to: CGPoint(x: x + 9, y: 0))
             context.move(to: CGPoint(x: x, y: -9)); context.addLine(to: CGPoint(x: x, y: 9))
@@ -190,7 +229,7 @@ private struct MicroprintPlate: View, Equatable {
     /// The moving list plane needs only its native 226 pt image, not the
     /// fullscreen texture. Downsample once; no paths or glyphs change per frame.
     static func compact(for inscription: MicroprintInscription) -> CGImage? {
-        let key = ["compact-projected-1", inscription.identity, inscription.subject, inscription.moment]
+        let key = ["compact-projected-radius-105", inscription.identity, inscription.subject, inscription.moment]
             .joined(separator: "\u{1F}") as NSString
         if let cached = cache.object(forKey: key) { return cached.image }
         guard let source = image(for: inscription),
