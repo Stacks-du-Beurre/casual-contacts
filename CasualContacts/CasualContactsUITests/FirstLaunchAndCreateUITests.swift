@@ -167,6 +167,10 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: false, diagnostics: true, legacyGuilloche: true)
     }
 
+    func testListScrollsWithDeferredMissingMaterialsAndPhoto() {
+        runMotionScrolls(liveMaterials: false, diagnostics: true, deferMissingMaterials: true)
+    }
+
     func testListScrollsWithPerformanceDiagnosticsAndPhoto() {
         runMotionScrolls(liveMaterials: false, diagnostics: true)
     }
@@ -175,11 +179,12 @@ final class FirstLaunchAndCreateUITests: XCTestCase {
         runMotionScrolls(liveMaterials: true)
     }
 
-    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false, legacyGuilloche: Bool = false) {
+    private func runMotionScrolls(liveMaterials: Bool, unthrottled: Bool = false, diagnostics: Bool = false, legacyGuilloche: Bool = false, deferMissingMaterials: Bool = false) {
         let app = XCUIApplication()
         app.launchArguments = ["-ScreenshotMode", "YES", "-ScreenshotSeed", "YES", "-ScreenshotLanguage", "en",
                                "-MotionPerformanceHarness", "-MotionScrollHarness", "-MotionHarnessPhoto",
                                "-FaceScene.listEnabled", "YES", "-FaceScene.expandedEnabled", "YES", "-FaceScene.cameraEnabled", "NO"]
+        if deferMissingMaterials { app.launchArguments.append("-MotionDeferMissingMaterials") }
         if legacyGuilloche { app.launchArguments.append("-MotionLayeredGuilloche") }
         if liveMaterials { app.launchArguments.append("-MotionLiveMaterials") }
         if unthrottled { app.launchArguments.append("-MotionHarnessUnthrottled") }

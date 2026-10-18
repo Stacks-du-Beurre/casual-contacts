@@ -652,3 +652,32 @@ The raw measurements and prototype source copies remain in ignored
 build/motion-performance for further investigation. Future work should measure
 cost within the moving artwork/rendering paths rather than infer CPU cost
 from list body counts alone.
+
+## Prepare missing material samples during scrolling
+
+A card first displayed during a scroll can have no cached text-material sample.
+The old capture policy rejected all work while held. That card continued to
+render its live blurred backdrop throughout the gesture. The new policy allows
+one missing sample after 32 ms, then holds the bitmap. Existing samples remain
+held. Live refresh still waits 500 ms. Inactive and covered cards do not capture.
+The blur radius, sample resolution, transparent strokes, and artwork are unchanged.
+
+Optimized simulator, continuous motion, photo cards, 60 mm depth:
+
+| Run | Median callback gap (ms) | p95 (ms) | Uncached hold events | Captures | Maximum capture CPU span (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Matched old-policy control | 38.72 | 147.39 | 20 | 16 | 1.55 |
+| Missing-sample candidate | 34.58 | 82.16 | 4 | 20 | 1.50 |
+| Missing-sample repeat | 38.65 | 83.31 | 4 | 20 | 1.50 |
+
+The repeated improvement is in long callback gaps, not typical-frame timing or
+total CPU. Simulator callbacks do not measure GPU-presented FPS or establish
+120 Hz device scrolling. Four extra captures replaced repeated live rendering.
+The simulator-only `-MotionDeferMissingMaterials` flag retains the old policy
+for matched comparisons. Capture diagnostics include `duringInteraction`.
+
+Final production-path simulator verification reproduced 34.44 ms median /
+83.31 ms p95 scrolling with 507 motion updates. Moving fullscreen checks
+passed with a photo (37.13 / 61.01 ms) and without (35.54 / 49.44 ms).
+The settings suspension/resume UI check passed. These are callback intervals,
+not GPU frame times. Device validation remains necessary.

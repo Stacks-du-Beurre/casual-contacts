@@ -2,7 +2,8 @@ import CoreModels
 import SwiftUI
 
 /// Keep the visible card live while its hidden blur samples use a cached
-/// bitmap during interactions. Capture after settling, never in the gesture.
+/// bitmap during interactions. Prepare a missing sample once rather than
+/// redrawing the live blur for the rest of the gesture. Refresh after settling.
 struct CardMaterialSample<Content: View>: View {
     let recordKey: Int
     let attitude: DeviceAttitude
@@ -68,8 +69,13 @@ struct CardMaterialSample<Content: View>: View {
         }
         .onChange(of: recordKey) { _, _ in capturedImage = nil }
         .task(id: "\(recordKey):\(paused):\(renderingSuspended):\(scenePhase)") {
-            guard scenePhase == .active, !paused, !renderingSuspended else { return }
-            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+            let warmMissing = paused && preparedImage == nil
+            guard let delay = MaterialCapturePolicy.delayMilliseconds(
+                active: scenePhase == .active, suspended: renderingSuspended,
+                paused: paused, hasImage: preparedImage != nil,
+                deferMissing: CardRenderProbe.deferMissingMaterials
+            ) else { return }
+            do { try await Task.sleep(for: .milliseconds(delay)) } catch { return }
             guard !Task.isCancelled, let sample = mailbox.latest,
                   sample.size.width > 0, sample.size.height > 0 else { return }
             let cacheKey = "\(recordKey):\(Int(sample.size.width.rounded())):\(Int(sample.size.height.rounded())):\(blurRadius)" as NSString
@@ -96,7 +102,8 @@ struct CardMaterialSample<Content: View>: View {
             capturedImage = image
             #if os(iOS)
             PerformanceDiagnostics.shared.event("material_sample_capture", values: [
-                "durationMS": (ProcessInfo.processInfo.systemUptime - started) * 1000
+                "durationMS": (ProcessInfo.processInfo.systemUptime - started) * 1000,
+                "duringInteraction": warmMissing ? 1 : 0
             ])
             #endif
             let prepared = MaterialCaptureImage(image)
@@ -172,5 +179,16 @@ public extension EnvironmentValues {
     var cardMaterialInteractionActive: Bool {
         get { self[CardMaterialInteractionActiveKey.self] }
         set { self[CardMaterialInteractionActiveKey.self] = newValue }
+    }
+}
+
+/// Permit one cold sample during an interaction, but no work behind a covering
+/// screen or while inactive. Existing samples stay held until interaction ends.
+enum MaterialCapturePolicy {
+    static func delayMilliseconds(active: Bool, suspended: Bool, paused: Bool,
+                                  hasImage: Bool, deferMissing: Bool = false) -> Int? {
+        guard active, !suspended else { return nil }
+        if !paused { return 500 }
+        return !hasImage && !deferMissing ? 32 : nil
     }
 }
