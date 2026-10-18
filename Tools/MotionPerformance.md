@@ -838,10 +838,10 @@ Motion keeps the light fixed. There is no autonomous animation timer. One
 cached alpha engraving and one shaded image draw serve list and fullscreen.
 The preparation cache keys geometry separately from date colour.
 
-Circular microprint now projects at 75% of scene depth in both render paths.
+Circular microprint now follows the actual guilloche plane nearest to 75%
+of the stack's depth in both render paths.
 List cards draw a cached, downsampled 226 pt alpha image inside the existing guilloche Canvas;
-fullscreen uses the same window-plane projection. Gyro-only rendering follows
-75% of the deepest guilloche translation and inherits motion direction settings.
+fullscreen uses the same window-plane projection. Gyro-only rendering uses the selected path's exact offset and inherits motion direction settings.
 The original front outline is no longer replaced. Both registration marks are
 crosshairs. There is no initials ornament on the microprint.
 
@@ -857,3 +857,12 @@ passed. Projection parity covers both depth-order modes, and the microprint
 snapshots preserve matching crosshairs in Latin and Cyrillic. The moving-photo
 fullscreen, interactive drag, and diagnostic scroll UI checks all passed.
 The list texture stays below 0.5 MB. No physical-device frame rate is claimed.
+
+The stack spans 70% of scene depth. The inscription's 75% target is measured
+within that stack, then snapped to the closest path index. Fullscreen, list,
+and gyro-only paths use that same index and the card's actual path count.
+Reversing the stack selects the opposite index at the same physical depth.
+
+Snapped-depth validation: the optimized app build, three focused snapshot and
+projection tests, and the moving-photo fullscreen transition UI check passed.
+The nearest-plane assertion checks both stack orders against every path.

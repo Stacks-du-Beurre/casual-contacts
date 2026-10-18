@@ -27,6 +27,7 @@ public struct CardView: View {
     @Environment(\.liveWindowGeometry) private var liveGeometry
     @Environment(\.cardMaterialInteractionActive) private var materialInteractionActive
     @State private var microprintImage: CGImage?
+    @State private var microprintPathCount = 0
 
     private var microprintInCanvas: Bool {
         size == .small && windowScene != nil && !CardRenderProbe.layeredGuilloche
@@ -84,7 +85,8 @@ public struct CardView: View {
                 }
 
                 if !microprintInCanvas && !CardRenderProbe.omitGuilloche && !CardRenderProbe.omitMicroprint && !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    CardMicroprintLayer(record: record, expansion: size == .large ? expansionProgress : 0, attitude: attitude)
+                    CardMicroprintLayer(record: record, expansion: size == .large ? expansionProgress : 0, attitude: attitude,
+                                        pathCount: microprintPathCount)
                 }
 
                 // Figural ornaments — rendered above the sampled backdrop so the
@@ -129,6 +131,8 @@ public struct CardView: View {
         }
         .environment(\.usesCachedCardMaterials, true)
         .onChange(of: MicroprintInscription(record: record), initial: true) { _, inscription in
+            let art = record.accoutrements
+            microprintPathCount = paths.blendPaths(for: art.letter, shape: art.guillocheShape, density: .cards).count
             guard size == .small, !CardRenderProbe.omitMicroprint,
                   !record.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 microprintImage = nil

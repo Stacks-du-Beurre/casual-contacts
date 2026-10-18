@@ -14,7 +14,15 @@ import CoreModels
         SecurityThreadTests.registerFonts()
         let plate = try #require(MicroprintTexture.compact(for: MicroprintInscription(record: record)))
         #expect(plate.bytesPerRow * plate.height < 500_000)
-        #expect(CardMicroprintLayer.depthFraction == 0.75)
+        let selectedIndex = CardMicroprintLayer.layerIndex(pathCount: paths.count, reversed: reversed)
+        let fraction = CardMicroprintLayer.depthFraction(pathCount: paths.count, reversed: reversed)
+        #expect(paths.indices.contains(selectedIndex))
+        let target = CardSceneDepth.deepestBlendFraction * 0.75
+        for index in paths.indices {
+            let candidate = CardSceneDepth.blendFraction(index: index, count: paths.count, reversed: reversed)
+            #expect(abs(fraction - target) <= abs(candidate - target) + 1e-12)
+        }
+        #expect(fraction < CardSceneDepth.deepestBlendFraction)
         let scene = WindowSceneProjection(eye: ViewerPosition(x: 0.06, y: 0.025, distance: 0.3),
             reference: ViewerPosition(x: 0, y: 0, distance: 0.4), backingDepthMeters: 0.06,
             spacing: 1, screenWidthMeters: 0.0666, viewport: CGSize(width: 400, height: 300),
@@ -26,7 +34,7 @@ import CoreModels
                     tint: .white, reversed: true, microprintImage: engraved ? plate : nil,
                     microprintOpacity: 0.52 / 0.55)
                     .frame(width: 184, height: 160).opacity(0.55)
-                if separate { CardMicroprintLayer(record: record, expansion: 0) }
+                if separate { CardMicroprintLayer(record: record, expansion: 0, pathCount: paths.count) }
             }.frame(width: 400, height: 300).coordinateSpace(.named("CardScene"))
                 .environment(\.windowCardSize, CGSize(width: 400, height: 300))
                 .environment(\.windowCardFrame, CGRect(x: 0, y: 0, width: 400, height: 300))

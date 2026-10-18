@@ -37,25 +37,38 @@ struct MicroprintInscription: Hashable {
 }
 
 /// A single cached engraving texture. Motion never re-shapes glyphs or re-strokes
-/// its registration marks. The inscription sits three quarters into the scene.
+/// its registration marks. The inscription follows the nearest guilloche plane
+/// to three quarters of the stack, rather than a separate scene depth.
 struct CardMicroprintLayer: View {
     let record: Record
     let expansion: CGFloat
     var attitude: DeviceAttitude = .zero
-    static let depthFraction = 0.75
+    var pathCount: Int = GuillocheBlendLayer.defaultMaxDepthLayer + 1
+    nonisolated static let stackProgress = 0.75
+
+    nonisolated static func layerIndex(pathCount: Int, reversed: Bool) -> Int {
+        let last = max(0, pathCount - 1)
+        let step = Int((Double(last) * stackProgress).rounded())
+        return reversed ? last - step : step
+    }
+
+    nonisolated static func depthFraction(pathCount: Int, reversed: Bool) -> Double {
+        CardSceneDepth.blendFraction(index: layerIndex(pathCount: pathCount, reversed: reversed),
+                                    count: pathCount, reversed: reversed)
+    }
     @Environment(\.windowSceneProjection) private var scene
     @Bindable private var tuning = CardBlendTuning.shared
 
     private var gyroOffset: CGSize {
         guard scene == nil else { return .zero }
-        let deepest = GuillocheBlendLayer.maxDepthOffset(
-            pathCount: GuillocheBlendLayer.defaultMaxDepthLayer + 1, attitude: attitude,
-            depthScale: tuning.depthScale, reverseDepthOrder: tuning.reverseDepthOrder,
+        return GuillocheBlendLayer.offset(
+            forPathIndex: Self.layerIndex(pathCount: pathCount, reversed: tuning.reverseDepthOrder),
+            pathCount: pathCount, attitude: attitude, depthScale: tuning.depthScale,
+            reversed: true, reverseDepthOrder: tuning.reverseDepthOrder,
             reverseMotionDirection: tuning.reverseMotionDirection,
             movementScaleX: tuning.guillocheMovementScaleX,
             movementScaleY: tuning.guillocheMovementScaleY,
             perspectiveAmount: CardElementDepthTuning.shared.perspectiveAmount)
-        return CGSize(width: deepest.width * Self.depthFraction, height: deepest.height * Self.depthFraction)
     }
 
     var body: some View {
@@ -67,7 +80,8 @@ struct CardMicroprintLayer: View {
                     .frame(width: side, height: side)
                     .opacity(0.52 + 0.14 * expansion)
                     .offset(gyroOffset)
-                    .windowDepth(Self.depthFraction)
+                    .windowDepth(Self.depthFraction(pathCount: pathCount,
+                        reversed: scene?.reverseGuillocheDepthOrder ?? tuning.reverseDepthOrder))
                     .frame(width: geometry.size.width, height: geometry.size.height)
             }
         }

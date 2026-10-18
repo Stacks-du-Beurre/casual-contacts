@@ -164,9 +164,10 @@ public struct GuillocheBlendLayer: View, Animatable {
                     layer.stroke(paths[index], with: .color(tint.opacity(0.8 * localReveal(forIndex: index))), lineWidth: 0.5)
                 }
                 if let microprintImage, reveal >= 1 {
-                    // The inscription has its own plane, independent of the
-                    // stack's depth order. The front outline stays untouched.
-                    let depth = scene.backingDepthMeters * pow(CardMicroprintLayer.depthFraction, scene.spacing)
+                    // Use the same plane as the nearest actual guilloche layer.
+                    let fraction = CardMicroprintLayer.depthFraction(pathCount: paths.count,
+                        reversed: scene.reverseGuillocheDepthOrder)
+                    let depth = scene.backingDepthMeters * pow(fraction, scene.spacing)
                     let projection = WindowPlaneProjection(eye: scene.eye, reference: reference, depth: depth)
                     let scale = projection?.scale ?? 1
                     let dx = ((scale - 1) * x + (projection?.translationX ?? 0)) / metersPerPoint
