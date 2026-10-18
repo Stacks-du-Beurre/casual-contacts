@@ -1,2 +1,1 @@
-• Swipe down on a fullscreen card to return to your list. Drag to control the transition, or release early to stay fullscreen.
-• Smoother card transitions, with list scrolling held until dismissal finishes.
+Smoother scrolling and more responsive 3D card motion, with improved rendering performance and more efficient camera sampling.
